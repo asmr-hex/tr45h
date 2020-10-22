@@ -236,21 +236,22 @@ export const MusicEditor = props => {
 
   const getPreviousWord = text => {
     const words = text.split(" ")
-    return words[words.length - 1]
+    const word = words[words.length - 1] 
+    return {word, start: text.length - word.length, end: text.length}
   }
   
   const handleCreateSound = cmd => {
     // EDGE CASES:
     // (1) space or return in the middle of a word that was previously an entity already (or not)
-    const selection = editorState.getSelection()
+    let selection = editorState.getSelection()
     
     if ((cmd === 'create-sound' || cmd === 'create-sequence') && selection.isCollapsed()) {
       const contentState = editorState.getCurrentContent()
       const rawContentState = convertToRaw(contentState)
-      console.log(rawContentState)
-      
-      const newEditorState = addCharacter(selection, contentState, cmd === 'create-sound' ? ' ' : '\n')
 
+      let newEditorState = addCharacter(selection, contentState, cmd === 'create-sound' ? ' ' : '\n')
+      selection = newEditorState.getSelection()
+      
       // get the block of this selection
       const blockKey = selection.getFocusKey()
 
@@ -260,32 +261,37 @@ export const MusicEditor = props => {
       // get the previous character
       const cursorIndex = selection.getFocusOffset()
       const prevChar = cursorIndex < 1 ? "" : rawContentState.blocks[blockIndex].text[cursorIndex-1]
-      console.log(cursorIndex)
-      console.log(rawContentState.blocks[blockIndex])
-      console.log(prevChar)
-
+      
       if (prevChar !== "" || prevChar === " ") {
+        console.log("auuuu")
+        const newRawContentState = convertToRaw(newEditorState.getCurrentContent())
         // addSound
-        addSound(convertToRaw(editorState.getCurrentContent()))
+        addSound(newRawContentState)
 
         // // get the last word
-        // const prevWord = getPreviousWord(rawContentState.blocks[blockIndex].text.substr(0, cursorIndex))
+        const { word, start, end } = getPreviousWord(newRawContentState.blocks[blockIndex].text.substr(0, cursorIndex))
         
-        // console.log(prevWord)
+        if (sequenceState.sounds[word]) {
+          const status = sequenceState.sounds[word].status
+          const block = newEditorState.getCurrentContent().getBlockForKey(blockKey)
+          const wordSelection = SelectionState
+                .createEmpty(block.getKey())
+                .merge({
+                  anchorOffset: start,
+                  focusOffset: end
+                })
+          const entityKey = EntityKeyMap[status]
+          const contentStateWithStatus = Modifier.applyEntity(
+            contentState,
+            wordSelection,
+            entityKey,
+          )
+          newEditorState = EditorState.push(newEditorState, contentStateWithStatus, 'apply-entity')
+          newEditorState = EditorState.forceSelection(newEditorState, selection)
+ 
+        }
       }
-      
-      // const contentState = editorState.getCurrentContent()
-      // const entityKey = EntityKeyMap[SoundStatus.Searching]
-      // console.log(entityKey)
-      // const contentStateWithStatus = Modifier.applyEntity(
-      //   contentState,
-      //   selection,
-      //   entityKey,
-      // )
-      
-      //addSound(convertToRaw(editorState.getCurrentContent()))
-    
-      // const newEditorState = EditorState.push(editorState, contentStateWithStatus, 'apply-entity')
+
       setEditorState(newEditorState)
       
       return 'handled'
