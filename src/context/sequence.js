@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react'
-import { keys, flatMap, reduce, uniq, intersection, xor } from  'lodash'
+import { merge, reduce, omit } from  'lodash'
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 
@@ -13,30 +13,90 @@ export const useSequenceContext = () => {
   return ctx
 }
 
+// the statuses that a sound can have
+export const SoundStatus = {
+  Searching: 'searching',
+  Downloading: 'downloading',
+  Available: 'available',
+  Unavailable: 'unavailable',
+}
 
 const initialReducerState = {
-  soundBuffers: {}, // byName
+  sounds: {},    // byName
   sequences: {}, // by id
 }
+
+// returns a new state.sounds object with new sound entries.
+// the new sounds will be 'searching' and have null buffers.
+const mergeSounds = (state, addedSoundNameList, deletedSoundNameList) =>
+      merge(
+        {},
+        omit(state.sounds, deletedSoundNameList),
+        reduce(
+          addedSoundNameList,
+          (acc, v) => ({
+            ...acc,
+            [v]: {
+              status: SoundStatus.Searching,
+              buffer: null,
+            }
+          }),
+          {}
+        )
+      )
+
+// returns a new state.sounds object with the buffers populated
+// and the status set to 'available'
+const loadSoundBuffers = (state, buffersByName) =>
+      merge(
+        {},
+        state.sounds,
+        reduce(
+          buffersByName,
+          (acc, buffer, name) => ({
+            ...acc,
+            [name]: {
+              status: SoundStatus.Available,
+              buffer, 
+            }
+          }),
+          {}
+        )
+      )
+
+const setSoundStatuses = (state, statusesByName) =>
+      merge(
+        {},
+        state.sounds,
+        reduce(
+          statusesByName,
+          (acc, status, name) => ({
+            ...acc,
+            [name]: {
+              status
+            }
+          }),
+          {}
+        )
+      )
 
 const sequenceReducer = (state, action) => {
   switch(action.type) {
   case 'UPDATE_SEQUENCES':
-    const { sequences, newSounds } = action
+    const { sequences, sounds } = action
     return {
       sequences,
-      soundBuffers: reduce(newSounds, (acc, v) => ({...acc, [v]: null}), state.soundBuffers)
+      sounds: mergeSounds(state, sounds.added, sounds.deleted)
     }
-  case 'FETCHED_NEW_SOUNDS':
-    console.log("FETCHED NEW SOUNDS")
-    console.log(action)
+  case 'SOUNDS_DOWNLOADED':
     return {
       ...state,
-      soundBuffers: reduce(
-        action.sounds,
-        (acc, v, k) => ({...acc, [k]: v}),
-        state.soundBuffers,
-      )
+      sounds: loadSoundBuffers(state, action.sounds)
+    }
+  case 'SOUND_STATUSES_UPDATED':
+    return {
+      ...state,
+      sounds: setSoundStatuses(state, action.statuses)
     }
   default:
     return state
@@ -59,9 +119,21 @@ const makeFetchNewSounds = dispatch => async keywords => {
       {headers: {Authorization: `Token ${API_TOKEN}`}}
     ).then(res => res.json())
 
-    // are there results?
-    if (results.length === 0) continue
 
+    if (results.length === 0) {
+      // darn. no results found. mark this as unavailable.
+      dispatch({
+        type: 'SOUND_STATUSES_UPDATED',
+        statuses: { [keyword]: SoundStatus.Unavailable }
+      })
+      continue
+    }
+
+    // we found results, lets start downloading the sound.
+    dispatch({
+      type: 'SOUND_STATUSES_UPDATED',
+      statuses: { [keyword]: SoundStatus.Downloading }
+    })
     console.log(`Found Sounds Related to: ${keyword}`)
     
     // randomly select a result from array of results
@@ -75,10 +147,11 @@ const makeFetchNewSounds = dispatch => async keywords => {
 
     keywordToBuffer[keyword] = buffer
 
+
     console.log(`Downloaded MP3 For: ${result.name}`)
   }
   
-  dispatch({type: 'FETCHED_NEW_SOUNDS', sounds: keywordToBuffer})
+  dispatch({type: 'SOUNDS_DOWNLOADED', sounds: keywordToBuffer})
 }
 
 export const SequenceProvider = props => {
