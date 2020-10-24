@@ -1,8 +1,9 @@
 import { values } from 'lodash'
 
 class Sequence {
-  constructor(sequence, audioContext, bpm = 128) {
+  constructor(sequence, audioContext, setCurrentStep, bpm = 128) {
     this.audioContext = audioContext
+    this.setCurrentStep = setCurrentStep
     this.bpm = bpm                   // beats per minute (default 128)
     this.nextNoteTime = 0.0          // when to schedule the next note
     this.scheduleAheadTime = 0.1     // how far ahead to shcedule notes (seconds)
@@ -23,6 +24,9 @@ class Sequence {
   async scheduleNote(time) {
     const sample = this.audioContext.createBufferSource()
     const arrayBuffer = this.soundMap[this.sequence[this.currentStep]].buffer
+
+    // set current step for outside world to see
+    this.setCurrentStep(this.currentStep)
     
     // ignore steps with no sounds (maybe still loading)
     if (!arrayBuffer) return
@@ -50,8 +54,9 @@ class Sequence {
 
 
 export class Scheduler {
-  constructor(audioContext, bpm = 128) {
+  constructor(audioContext, setCurrentStep, bpm = 128) {
     this.audioContext = audioContext
+    this.setCurrentStep = setCurrentStep
     this.bpm = bpm
     this.sequences = {}
     this.lookAheadInterval = 100 // ms
@@ -75,7 +80,11 @@ export class Scheduler {
       if (key in this.sequences) {
         this.sequences[key].setSequence(sequence)
       } else {
-        this.sequences[key] = new Sequence(sequence, this.audioContext, this.bpm)
+        this.sequences[key] = new Sequence(
+          sequence,
+          this.audioContext,
+          step => this.setCurrentStep(key, step),
+          this.bpm)
       }
     }
   }

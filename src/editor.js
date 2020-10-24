@@ -64,6 +64,10 @@ const keyBindingFn = e => {
   if (e.keyCode === 13) {
     return 'create-sequence'
   }
+  // detect Delete
+  // if (e.keyCode === 8) {
+  //   return 'delete-sound'
+  // }
 
   return getDefaultKeyBinding(e)
 }
@@ -93,7 +97,8 @@ export const MusicEditor = props => {
   const {
     sequenceState,
     fetchNewSounds,
-    sequenceDispatch
+    sequenceDispatch,
+    currentSteps
   } = useSequenceContext()
 
   // setup editor state
@@ -360,7 +365,14 @@ export const MusicEditor = props => {
           {
             map(sequenceState.sequences,
                 s =>
-                <div>{`${s.text}`}</div>
+                <div>
+                  {
+                    map(
+                      s.text.split(' ').filter(v => v !== ''),
+                      (v, idx) => <span style={{borderBottom: currentSteps[s.key] === idx ? '1px solid white' : 'none', margin: '4px 4px 4px 4px'}}>{v}</span>
+                    )
+                  }
+                </div>
                )
           }
         </div>

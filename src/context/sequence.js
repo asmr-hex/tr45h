@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import React, { createContext, useContext, useReducer, useState } from 'react'
 import { merge, reduce, omit } from  'lodash'
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -156,11 +156,14 @@ const makeFetchNewSounds = dispatch => async keywords => {
 
 export const SequenceProvider = props => {
   const [sequenceState, sequenceDispatch] = useReducer(sequenceReducer, initialReducerState)
+  const [currentSteps, setCurrentSteps] = useState({})
+  const setCurrentStep = (key, step) =>
+        setCurrentSteps(step ? {...currentSteps, [key]: step} : omit(currentSteps, key))
 
   const fetchNewSounds = makeFetchNewSounds(sequenceDispatch)
   
   return (
-    <SequenceContext.Provider value={{sequenceState, fetchNewSounds, sequenceDispatch}}>
+    <SequenceContext.Provider value={{sequenceState, fetchNewSounds, sequenceDispatch, currentSteps, setCurrentStep}}>
       {props.children}
     </SequenceContext.Provider>
   )

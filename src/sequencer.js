@@ -7,16 +7,16 @@ import { Scheduler } from './scheduler'
 
 export const Sequencer = props => {
   const {audioContext} = useContext(context)
-  const { sequenceState } = useSequenceContext()
+  const { sequenceState, setCurrentStep } = useSequenceContext()
   const [ scheduler, setScheduler ] = useState(null)
 
-  // useEffect(() => {
-  //   const scheduler = new Scheduler(audioContext)
-  //   scheduler.start()
-  //   setScheduler(scheduler)
+  useEffect(() => {
+    const scheduler = new Scheduler(audioContext, setCurrentStep)
+    scheduler.start()
+    setScheduler(scheduler)
 
-  //   return () => scheduler.stop()
-  // }, [])
+    return () => scheduler.stop()
+  }, [])
 
   useEffect(() => {
     if (scheduler) {
