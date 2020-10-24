@@ -181,21 +181,6 @@ export const MusicEditor = props => {
     setEditorState(newEditorState)
   }
 
-  const addCharacter = (selection, content, character) => {
-    const newContentState = character === ' '
-          ? Modifier.insertText(
-            content,
-            selection,
-            character
-          )
-          : Modifier.splitBlock(
-            content,
-            selection
-          )
-
-    return EditorState.push(editorState, newContentState, 'insert-characters')
-  }
-
   const getPreviousWord = text => {
     const words = text.split(" ")
     const word = words[words.length - 1] 
@@ -254,9 +239,9 @@ export const MusicEditor = props => {
           .getText()[cursorIndex - 1]
 
     // is the previous character is not empty
-    if (prevChar !== "" || prevChar === " ") {
+    if (prevChar !== "" || prevChar !== " ") {
       // now we can register this new sound-word
-      // registerSoundWord(convertToRaw(newEditorState.getCurrentContent()))
+      addSound(convertToRaw(newEditorState.getCurrentContent()))
 
       // get the whole previous word
       const {word, start, end} = getPreviousWord(
@@ -298,15 +283,43 @@ export const MusicEditor = props => {
           .getCurrentContent()
           .getBlockBefore(selection.getFocusKey())
     const prevBlockText = prevBlock.getText()
-    const prevBlockLastChar = prevBlockText[prevBlockText.length - 1]
+    const prevBlockLastChar = prevBlockText.length === 0 ? '' : prevBlockText[prevBlockText.length - 1]
+    const prev = {block: prevBlock, text: prevBlockText, char: prevBlockLastChar}
 
     // check the next character in the current block
+    const currBlock = newEditorState.getCurrentContent().getBlockForKey(selection.getFocusKey())
+    const currBlockText = currBlock.getText()
+    const currBlockNextChar = currBlockText.length === 0 ? '' : currBlockText[1]
+    const curr = {block: currBlock, text: currBlockText.split(' ')[0], char: currBlockNextChar}
+    
+    for (const i of [prev, curr]) {
+      if (i.char !== '' || i.char !== ' ') {
+        // actually register the soundWord (by updating the whole sequence)
+        addSound(convertToRaw(newEditorState.getCurrentContent()))
 
-    // 
+        // get the whole previous word
+        const {word, start, end} = getPreviousWord(i.text)
 
+        // is the word an existing sound word?
+        if (sequenceState.sounds[word]) {
+          // we must set its status
+          newEditorState = setWordStatusEntity(
+            word,
+            start,
+            end,
+            i.block.getKey(),
+            newEditorState,
+          )
+        }
+      }
+    }
+
+    setEditorState(newEditorState)
+    
     return 'handled'
   }
 
+  // this is the entrypoint to creating/deleting soundwords and sequences
   const handleActions = cmd => {
     const selection = editorState.getSelection()
 
@@ -325,77 +338,13 @@ export const MusicEditor = props => {
     }
   }
   
-  
-  const handleCreateSound = cmd => {
-    // EDGE CASES:
-    // (1) space or return in the middle of a word that was previously an entity already (or not)
-    let selection = editorState.getSelection()
-    
-    if ((cmd === 'create-sound' || cmd === 'create-sequence') && selection.isCollapsed()) {
-      const contentState = editorState.getCurrentContent()
-      const rawContentState = convertToRaw(contentState)
-
-      let newEditorState = addCharacter(selection, contentState, cmd === 'create-sound' ? ' ' : '\n')
-      selection = newEditorState.getSelection()
-      
-      // get the block of this selection
-      const blockKey = selection.getFocusKey()
-
-      // get the index of the block key
-      const blockIndex = findIndex(rawContentState.blocks, b => b.key === blockKey)
-
-      // get the previous character
-      const cursorIndex = selection.getFocusOffset()
-      const prevChar = cursorIndex < 1 ? "" : rawContentState.blocks[blockIndex].text[cursorIndex-1]
-      
-      if (prevChar !== "" || prevChar === " ") {
-        const newRawContentState = convertToRaw(newEditorState.getCurrentContent())
-        // addSound
-        addSound(newRawContentState)
-
-        // // get the last word
-        const { word, start, end } = getPreviousWord(newRawContentState.blocks[blockIndex].text.substr(0, cursorIndex))
-        
-        if (sequenceState.sounds[word]) {
-          const status = sequenceState.sounds[word].status
-          const block = newEditorState.getCurrentContent().getBlockForKey(blockKey)
-          const wordSelection = SelectionState
-                .createEmpty(block.getKey())
-                .merge({
-                  anchorOffset: start,
-                  focusOffset: end
-                })
-          const entityKey = EntityKeyMap[status]
-          const contentStateWithStatus = Modifier.applyEntity(
-            contentState,
-            wordSelection,
-            entityKey,
-          )
-          newEditorState = EditorState.push(newEditorState, contentStateWithStatus, 'apply-entity')
-          newEditorState = EditorState.forceSelection(newEditorState, selection)
- 
-        }
-      }
-
-      setEditorState(newEditorState)
-      
-      return 'handled'
-    }
-
-    return 'not-handled'
-  }
-
-  // a new sound word will be created under the following circumstances
-  // (1) a space is added and the previous character is not a space or empty space
-  // (2) a return is added and the last character on the previous line is not a space of empty space and the last word is not already a registered entity
-  
   return (
     <div style={{width: '50%', height: '50%'}}>
       <Editor
         ref={editorRef}
         editorState={editorState}
         onChange={onChangeWrapper}
-        handleKeyCommand={handleCreateSound}
+        handleKeyCommand={handleActions}
         keyBindingFn={keyBindingFn}
       />
       <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '10px', border: '1px red solid'}}>
