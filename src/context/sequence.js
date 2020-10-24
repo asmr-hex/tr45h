@@ -158,7 +158,9 @@ export const SequenceProvider = props => {
   const [sequenceState, sequenceDispatch] = useReducer(sequenceReducer, initialReducerState)
   const [currentSteps, setCurrentSteps] = useState({})
   const setCurrentStep = (key, step = null) =>
-    setCurrentSteps(currentSteps => step !== null ? {...currentSteps, [key]: step} : omit(currentSteps, [key]))
+        setCurrentSteps(currentSteps => step !== null
+                        ? {...currentSteps, [key]: {current: step, previous: currentSteps[key] ? currentSteps[key].current : null }}
+                        : omit(currentSteps, [key]))
 
   const fetchNewSounds = makeFetchNewSounds(sequenceDispatch)
 

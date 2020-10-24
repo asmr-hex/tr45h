@@ -7,6 +7,7 @@ import { useSequenceContext, SoundStatus } from './context/sequence'
 
 
 let EntityKeyMap = {}
+let CurrentStepEntityKey = null
 
 // inline styles for sound word states
 const decorated = {
@@ -15,17 +16,39 @@ const decorated = {
   available:   ({children}) => <span style={{ color: "green" }}>{children}</span>,
   unavailable: ({children}) => <span style={{ color: "red" }}>{children}</span>
 }
+// const decoratedStep = {
+//   searching: ({children}) => <span style={{ color: "pink", borderBottom: '1px solid white'}}>{children}</span>,
+//   downloading: ({children}) => <span style={{ color: "blue", borderBottom: '1px solid white' }}>{children}</span>,
+//   available:   ({children}) => <span style={{ color: "green", borderBottom: '1px solid white' }}>{children}</span>,
+//   unavailable: ({children}) => <span style={{ color: "red", borderBottom: '1px solid white' }}>{children}</span>
+// }
 
 const handleStrategy = statuses => (contentBlock, callback, contentState) => {
   contentBlock.findEntityRanges(
     character => {
       const entityKey = character.getEntity()
       if (entityKey === null) return false
+
       return entityKey === EntityKeyMap[statuses[0]]
     },
     callback
   )
 }
+
+// const handleStepStrategy = statuses => (contentBlock, callback, contentState) => {
+//   contentBlock.findEntityRanges(
+//     character => {
+//       const entityKey = character.getEntity()
+//       if (entityKey === null) return false
+
+//       const step = contentState.getEntity(CurrentStepEntityKey).getData()[contentBlock.getKey()]
+      
+//       return entityKey === CurrentStepEntityKey
+//         // && contentState.getEntity(EntityKeyMap[statuses[0]])
+//     },
+//     callback
+//   )
+// }
 
 const decorator = new CompositeDecorator([
   {
@@ -39,10 +62,15 @@ const decorator = new CompositeDecorator([
   {
     strategy: handleStrategy([SoundStatus.Available]),
     component: decorated.available,
-  },  {
+  },
+  {
     strategy: handleStrategy([SoundStatus.Unavailable]),
     component: decorated.unavailable,
-  }
+  },
+  // {
+  //   strategy: handleStepStrategy([SoundStatus.Searching]),
+  //   component: decoratedStep.searching,
+  // }
 ])
 
 const selectAll = (editorState, currentContent) =>
@@ -73,6 +101,7 @@ const keyBindingFn = e => {
 }
 
 const createEntities = (editorState) => {
+  // add status entities
   const { contentState, ...entityMap} = reduce(
     SoundStatus,
     (acc, status) => {
@@ -88,9 +117,17 @@ const createEntities = (editorState) => {
     },
     {contentState: editorState.getCurrentContent()}
   )
-   
+
+  // add current step entity
+  const contentStateWithStepEntity = contentState.createEntity(
+    'CURRENT_STEP_BY_SEQUENCE_ID',
+    'IMMUTABLE',
+    {},
+  )
+  
+  CurrentStepEntityKey = contentStateWithStepEntity.getLastCreatedEntityKey()
   EntityKeyMap = entityMap
-  EditorState.push(editorState, contentState)
+  EditorState.push(editorState, contentStateWithStepEntity)
 }
 
 export const MusicEditor = props => {
@@ -107,6 +144,52 @@ export const MusicEditor = props => {
   )
   const editorRef = useRef(null)
 
+  const findNthWord = (text, n) => {
+    const re = `^(?:\\w+\\W+){${n}}(\\w+)`
+    const matches = [...text.matchAll(new RegExp(re, 'g'))]
+    const word = matches[0][1]
+    const start = matches[0].index
+    const end = start + word.length
+
+    return { word, start, end }
+  }
+  
+  // // update the inline style of the currently playing step in each sequence
+  // useEffect(() => {
+  //   // ignore if we haven't created the step entity yet
+  //   if (!CurrentStepEntityKey) return
+    
+  //   // update current steps data in current steps entity
+  //   let newEditorState = EditorState.push(
+  //     editorState,
+  //     editorState.getCurrentContent().replaceEntityData(CurrentStepEntityKey, currentSteps),
+  //     'replace-entity-data'
+  //   )
+
+  //   for (const [blockKey, step] of Object.entries(currentSteps)) {
+  //     const block = newEditorState.getCurrentContent().getBlockForKey(blockKey)
+  //     const text = block.getText()
+      
+  //     // set the previous step word to its original status entity
+  //     if (step.previous !== null) {
+  //       const { word, start, end } = findNthWord(text, step.previous)
+
+  //       // set the original status
+  //       newEditorState = setWordStatusEntity(word, start, end, blockKey, newEditorState)
+  //     }
+        
+  //     // set the current step word to the current step entity
+  //     const { word, start, end } = findNthWord(text, step.current)
+      
+
+  //     newEditorState = setWordStepEntity(word, start, end, blockKey, newEditorState)
+  //   }
+
+  //   // set the new state
+  //   setEditorState(newEditorState)
+    
+  // }, [currentSteps])
+  
   // update the status entity mapping for all text when the soundStatuses change
   useEffect(() => {
     // save the original selection state
@@ -212,6 +295,33 @@ export const MusicEditor = props => {
       EntityKeyMap[status],
     )
     newEditorState = EditorState.push(newEditorState, contentStateWithStatus, 'apply-entity')
+
+    // set selection back to original selection
+    newEditorState = EditorState.forceSelection(newEditorState, selection)
+
+    return newEditorState
+  }
+
+  const setWordStepEntity = (word, start, end, blockKey, newEditorState) => {
+    // get status of this word
+    const { status } = sequenceState.sounds[word]
+    const selection = newEditorState.getSelection()
+    
+    // create temporary selection
+    const wordSelection = SelectionState
+          .createEmpty(blockKey)
+          .merge({
+            anchorOffset: start,
+            focusOffset: end
+          })
+
+    // apply status entity
+    const contentStateWithStepEntity = Modifier.applyEntity(
+      newEditorState.getCurrentContent(),
+      wordSelection,
+      CurrentStepEntityKey,
+    )
+    newEditorState = EditorState.push(newEditorState, contentStateWithStepEntity, 'apply-entity')
 
     // set selection back to original selection
     newEditorState = EditorState.forceSelection(newEditorState, selection)
@@ -369,7 +479,7 @@ export const MusicEditor = props => {
                   {
                     map(
                       s.text.split(' ').filter(v => v !== ''),
-                      (v, idx) => <span style={{borderBottom: currentSteps[s.key] === idx ? '1px solid white' : 'none', margin: '4px 4px 4px 4px'}}>{v}</span>
+                      (v, idx) => <span style={{borderBottom: currentSteps[s.key] && currentSteps[s.key].current === idx ? '1px solid white' : 'none', margin: '4px 4px 4px 4px'}}>{v}</span>
                     )
                   }
                 </div>
@@ -379,7 +489,7 @@ export const MusicEditor = props => {
         <div>
           {
             map(currentSteps,
-                (step, key) => <div>{`${key}: ${step}`}</div>
+                (step, key) => <div>{`${key}: ${step.current}`}</div>
                )
           }
         </div>
