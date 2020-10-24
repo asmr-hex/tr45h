@@ -376,6 +376,13 @@ export const MusicEditor = props => {
                )
           }
         </div>
+        <div>
+          {
+            map(currentSteps,
+                (step, key) => <div>{`${key}: ${step}`}</div>
+               )
+          }
+        </div>
       </div>
     </div>
   )

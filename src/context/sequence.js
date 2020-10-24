@@ -157,11 +157,11 @@ const makeFetchNewSounds = dispatch => async keywords => {
 export const SequenceProvider = props => {
   const [sequenceState, sequenceDispatch] = useReducer(sequenceReducer, initialReducerState)
   const [currentSteps, setCurrentSteps] = useState({})
-  const setCurrentStep = (key, step) =>
-        setCurrentSteps(step ? {...currentSteps, [key]: step} : omit(currentSteps, key))
+  const setCurrentStep = (key, step = null) =>
+    setCurrentSteps(currentSteps => step !== null ? {...currentSteps, [key]: step} : omit(currentSteps, [key]))
 
   const fetchNewSounds = makeFetchNewSounds(sequenceDispatch)
-  
+
   return (
     <SequenceContext.Provider value={{sequenceState, fetchNewSounds, sequenceDispatch, currentSteps, setCurrentStep}}>
       {props.children}
