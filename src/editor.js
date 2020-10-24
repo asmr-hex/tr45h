@@ -107,15 +107,16 @@ export const MusicEditor = props => {
     // save the original selection state
     const oldSelection = editorState.getSelection()
     let newEditorState = editorState
-    
+    const contentState = newEditorState.getCurrentContent()
+        
     // for all sound_words
-    for (const [soundWord, {status}] of Object.entries(sequenceState.sounds)) {
-      const contentState = newEditorState.getCurrentContent()
-
-      for (const block of contentState.getBlocksAsArray()) {
+    for (const block of contentState.getBlocksAsArray()) {
+      for (const [soundWord, {status}] of Object.entries(sequenceState.sounds)) {
         const text = block.getText()
-        const matches = [...text.matchAll(soundWord)]
+        const re = new RegExp(`\\b${soundWord}\\b`, 'g')
+        const matches = [...text.matchAll(re)]
         matches.forEach(match => {
+          const contentState = newEditorState.getCurrentContent()
           // make selection based on matches
           const selection = SelectionState
                 .createEmpty(block.getKey())
@@ -175,47 +176,8 @@ export const MusicEditor = props => {
 
     onNewSounds(sequences)
   }
-  
-  // const onChange = useRef(debounce(
-  //   (newRawContent, oldRawContent, newSoundCallback) => {
-  //     // do some early returning so we don't trigger unnecessary work
 
-  //     // normalize text (remove the extra spaces in each block)
-  //     const newContent = map(
-  //       newRawContent.blocks,
-  //       v => ({...v, text: reduce(v.text.split(" ").filter(t => t !== ""), (acc, s) => `${acc} ${s}`, '').trim()})
-  //     )
-  //     const oldContent = map(
-  //       oldRawContent.blocks,
-  //       v => ({...v, text: reduce(v.text.split(" ").filter(t => t !== ""), (acc, s) => `${acc} ${s}`, '').trim()})
-  //     )
-
-
-  //     // don't do anything if nothing but empty space has been added
-  //     if (reduce(newContent, (acc, v) => `${acc}${v.text}`, "")
-  //         === reduce(oldContent, (acc, v) => `${acc}${v.text}`, "")) return
-
-  //     const nonEmptyBlocks = newContent.filter(o => o.text !== "")
-  //     const sequences =  nonEmptyBlocks.map(v => ({key: v.key, text: v.text, steps: v.text.split(" ")}))
-
-  //     // to deal with stale state.....ugh.
-  //     newSoundCallback(sequences)
-
-  //   },
-  //   500,
-  // )).current
-  
   const onChangeWrapper = newEditorState => {
-    const newContent = convertToRaw(newEditorState.getCurrentContent())
-    const oldContent = convertToRaw(editorState.getCurrentContent())
-
-    // TODO handle quick updates for spaces and returns!
-    // console.log(newContent)
-    // console.log(entityKeyMap)
-    
-    // update after change (debounced)
-    // onChange(newContent, oldContent, onNewSounds)
-
     setEditorState(newEditorState)
   }
 
@@ -239,6 +201,130 @@ export const MusicEditor = props => {
     const word = words[words.length - 1] 
     return {word, start: text.length - word.length, end: text.length}
   }
+
+  const setWordStatusEntity = (word, start, end, blockKey, newEditorState) => {
+    // get status of this word
+    const { status } = sequenceState.sounds[word]
+    const selection = newEditorState.getSelection()
+    
+    // create temporary selection
+    const wordSelection = SelectionState
+          .createEmpty(blockKey)
+          .merge({
+            anchorOffset: start,
+            focusOffset: end
+          })
+
+    // apply status entity
+    const contentStateWithStatus = Modifier.applyEntity(
+      newEditorState.getCurrentContent(),
+      wordSelection,
+      EntityKeyMap[status],
+    )
+    newEditorState = EditorState.push(newEditorState, contentStateWithStatus, 'apply-entity')
+
+    // set selection back to original selection
+    newEditorState = EditorState.forceSelection(newEditorState, selection)
+
+    return newEditorState
+  }
+  
+  const deleteSoundWord = () => {
+    // todo
+
+    return 'handled'
+  }
+
+  const createSoundWord = () => {
+    // insert empty space
+    let newEditorState = EditorState.push(
+      editorState,
+      Modifier.insertText(editorState.getCurrentContent(), editorState.getSelection(), ' '),
+      'insert-characters'
+    )
+    const selection = newEditorState.getSelection()
+
+    // get previous character
+    const cursorIndex = selection.getFocusOffset()
+    const prevChar = cursorIndex < 1
+          ? ''
+          : newEditorState
+          .getCurrentContent()
+          .getBlockForKey(selection.getFocusKey())
+          .getText()[cursorIndex - 1]
+
+    // is the previous character is not empty
+    if (prevChar !== "" || prevChar === " ") {
+      // now we can register this new sound-word
+      // registerSoundWord(convertToRaw(newEditorState.getCurrentContent()))
+
+      // get the whole previous word
+      const {word, start, end} = getPreviousWord(
+        newEditorState
+          .getCurrentContent()
+          .getBlockForKey(selection.getFocusKey())
+          .getText().substr(0, cursorIndex)
+      )
+
+      // is the word an existing sound word?
+      if (sequenceState.sounds[word]) {
+        // we must set its status
+        newEditorState = setWordStatusEntity(
+          word,
+          start,
+          end,
+          selection.getFocusKey(),
+          newEditorState,
+        )
+      }
+    }
+
+    setEditorState(newEditorState)
+
+    return 'handled'
+  }
+
+  const createSequence = () => {
+    // split the block
+    let newEditorState = EditorState.push(
+      editorState,
+      Modifier.splitBlock(editorState.getCurrentContent(), editorState.getSelection()),
+      'insert-characters'
+    )
+    const selection = newEditorState.getSelection()
+
+    // check the last character of the previous block
+    const prevBlock = newEditorState
+          .getCurrentContent()
+          .getBlockBefore(selection.getFocusKey())
+    const prevBlockText = prevBlock.getText()
+    const prevBlockLastChar = prevBlockText[prevBlockText.length - 1]
+
+    // check the next character in the current block
+
+    // 
+
+    return 'handled'
+  }
+
+  const handleActions = cmd => {
+    const selection = editorState.getSelection()
+
+    // if the selection is not collapsed, do nothing
+    if (!selection.isCollapsed()) return 'not-handled'
+
+    switch(cmd) {
+    case 'create-sound':
+      return createSoundWord()
+    case 'create-sequence':
+      return createSequence()
+    case 'delete-sound':
+      return deleteSoundWord()
+    default:
+      return 'not-handled'
+    }
+  }
+  
   
   const handleCreateSound = cmd => {
     // EDGE CASES:
@@ -263,7 +349,6 @@ export const MusicEditor = props => {
       const prevChar = cursorIndex < 1 ? "" : rawContentState.blocks[blockIndex].text[cursorIndex-1]
       
       if (prevChar !== "" || prevChar === " ") {
-        console.log("auuuu")
         const newRawContentState = convertToRaw(newEditorState.getCurrentContent())
         // addSound
         addSound(newRawContentState)
@@ -312,7 +397,25 @@ export const MusicEditor = props => {
         onChange={onChangeWrapper}
         handleKeyCommand={handleCreateSound}
         keyBindingFn={keyBindingFn}
-      /> 
+      />
+      <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '10px', border: '1px red solid'}}>
+        <div>
+          {
+            map(sequenceState.sounds,
+                (s, name) =>
+                <div>{`${name}: ${s.status}`}</div>
+               )
+          }
+        </div>
+        <div>
+          {
+            map(sequenceState.sequences,
+                s =>
+                <div>{`${s.text}`}</div>
+               )
+          }
+        </div>
+      </div>
     </div>
   )
 }
