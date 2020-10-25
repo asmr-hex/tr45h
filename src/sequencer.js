@@ -11,7 +11,7 @@ export const Sequencer = props => {
   const [ scheduler, setScheduler ] = useState(null)
 
   useEffect(() => {
-    const scheduler = new Scheduler(audioContext, setCurrentStep)
+    const scheduler = new Scheduler(audioContext, setCurrentStep, 128)
     scheduler.start()
     setScheduler(scheduler)
 

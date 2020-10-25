@@ -115,7 +115,7 @@ const makeFetchNewSounds = dispatch => async keywords => {
 
     console.log(`Fetching Sounds Related to: ${keyword}`)
     const { results } = await fetch(
-      `https:freesound.org/apiv2/search/text/?query=${keyword}&fields=name,previews&page_size=150`,
+      `https:freesound.org/apiv2/search/text/?query=${keyword}&fields=name,previews&page_size=150&filter=type:wav channels:2`,
       {headers: {Authorization: `Token ${API_TOKEN}`}}
     ).then(res => res.json())
 
