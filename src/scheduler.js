@@ -1,4 +1,4 @@
-import { values } from 'lodash'
+import { values, keys, intersection, xor } from 'lodash'
 
 
 export class Scheduler {
@@ -9,6 +9,7 @@ export class Scheduler {
     this.sequences = {}
     this.lookAheadInterval = 100 // ms
     this.timerFn = null
+    this.soundMap = {}
   }
 
   async setSoundMap(soundMap) {
@@ -16,9 +17,21 @@ export class Scheduler {
     // to do it at schedule time!
     // soundMap = { 'sound name': {buffer: ArrayBuffer<>, status: 'idk' } }
     // this.soundMap = {'sound name': AudioBuffer<>}
-    this.soundMap = {}
+
+    // remove sounds which exist in this.soundMap but not in soundMap
+    const rmSoundWords = intersection(xor(keys(this.soundMap), keys(soundMap)), keys(this.soundMap))
+    for (const rmSoundWord of rmSoundWords) {
+      delete this.soundMap[rmSoundWord]
+    }
+    
+    // incrementally update the sound map (add new sounds)
     for (const [soundWord, sound] of Object.entries(soundMap)) {
+      // if the buffer is null, don't add it (it is probably still searching/loading)
       if (!sound.buffer) continue
+
+      // if the sound word exists already, do nothing
+      if (this.soundMap[soundWord]) continue
+      
       this.soundMap[soundWord] = await this.audioContext.decodeAudioData(sound.buffer.slice(0))
     }
     
