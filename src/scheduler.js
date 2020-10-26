@@ -32,7 +32,7 @@ export class Scheduler {
       // if the sound word exists already, do nothing
       if (this.soundMap[soundWord]) continue
       
-      this.soundMap[soundWord] = await this.audioContext.decodeAudioData(sound.buffer.slice(0))
+      this.soundMap[soundWord] = await this.audioContext.decodeAudioData(sound.buffer.slice(0), () => {})
     }
     
     for (const key of Object.keys(this.sequences)) {
