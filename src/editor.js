@@ -11,10 +11,10 @@ let CurrentStepEntityKey = null
 
 // inline styles for sound word states
 const decorated = {
-  searching: ({children}) => <span style={{ color: "pink" }}>{children}</span>,
-  downloading: ({children}) => <span style={{ color: "blue" }}>{children}</span>,
-  available:   ({children}) => <span style={{ color: "green" }}>{children}</span>,
-  unavailable: ({children}) => <span style={{ color: "red" }}>{children}</span>
+  searching: ({children}) => <span style={{ color: "#f9ff87" }}>{children}</span>,
+  downloading: ({children}) => <span style={{ color: "#8dff87" }}>{children}</span>,
+  available:   ({children}) => <span style={{ color: "#85e4ff" }}>{children}</span>,
+  unavailable: ({children}) => <span style={{ color: "#ff8aab" }}>{children}</span>
 }
 // const decoratedStep = {
 //   searching: ({children}) => <span style={{ color: "pink", borderBottom: '1px solid white'}}>{children}</span>,
@@ -462,38 +462,38 @@ export const MusicEditor = props => {
         handleKeyCommand={handleActions}
         keyBindingFn={keyBindingFn}
       />
-      <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '10px', border: '1px red solid'}}>
-        <div>
-          {
-            map(sequenceState.sounds,
-                (s, name) =>
-                <div>{`${name}: ${s.status}`}</div>
-               )
-          }
-        </div>
-        <div>
-          {
-            map(sequenceState.sequences,
-                s =>
-                <div>
-                  {
-                    map(
-                      s.text.split(' ').filter(v => v !== ''),
-                      (v, idx) => <span style={{borderBottom: currentSteps[s.key] && currentSteps[s.key].current === idx ? '1px solid white' : 'none', margin: '4px 4px 4px 4px'}}>{v}</span>
-                    )
-                  }
-                </div>
-               )
-          }
-        </div>
-        <div>
-          {
-            map(currentSteps,
-                (step, key) => <div>{`${key}: ${step.current}`}</div>
-               )
-          }
-        </div>
-      </div>
+      {/* <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '10px', border: '1px red solid'}}> */}
+      {/*   <div> */}
+      {/*     { */}
+      {/*       map(sequenceState.sounds, */}
+      {/*           (s, name) => */}
+      {/*           <div>{`${name}: ${s.status}`}</div> */}
+      {/*          ) */}
+      {/*     } */}
+      {/*   </div> */}
+      {/*   <div> */}
+      {/*     { */}
+      {/*       map(sequenceState.sequences, */}
+      {/*           s => */}
+      {/*           <div> */}
+      {/*             { */}
+      {/*               map( */}
+      {/*                 s.text.split(' ').filter(v => v !== ''), */}
+      {/*                 (v, idx) => <span style={{borderBottom: currentSteps[s.key] && currentSteps[s.key].current === idx ? '1px solid white' : 'none', margin: '4px 4px 4px 4px'}}>{v}</span> */}
+      {/*               ) */}
+      {/*             } */}
+      {/*           </div> */}
+      {/*          ) */}
+      {/*     } */}
+      {/*   </div> */}
+      {/*   <div> */}
+      {/*     { */}
+      {/*       map(currentSteps, */}
+      {/*           (step, key) => <div>{`${key}: ${step.current}`}</div> */}
+      {/*          ) */}
+      {/*     } */}
+      {/*   </div> */}
+      {/* </div> */}
     </div>
   )
 }
