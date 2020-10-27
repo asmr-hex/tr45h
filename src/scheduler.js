@@ -124,6 +124,12 @@ class Sequence {
     this.soundMap = {}
     this.sequence = sequence
     this.currentStep = 0
+
+    // experimental effects
+    this.delay = audioContext.createDelay()
+    this.delay.connect(this.audioContext.destination)
+    this.delay.connect(this.mediaStreamDestination)
+    
   }
 
   setBpm(bpm) { this.bpm = bpm }
@@ -146,8 +152,9 @@ class Sequence {
     if (!audioBuffer) return
 
     sample.buffer = audioBuffer
-    sample.connect(this.audioContext.destination)
-    sample.connect(this.mediaStreamDestination)
+    sample.connect(this.delay)
+    // sample.connect(this.audioContext.destination)
+    // sample.connect(this.mediaStreamDestination)
     sample.start(time)
     sample.stop(time + this.noteLength)
   }
