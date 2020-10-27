@@ -6,11 +6,14 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "audio-recorder-polyfill": "^0.4.0",
     "draft-js": "^0.11.7",
     "lodash": "^4.17.20",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.3"
+    "react-scripts": "3.4.3",
+    "react-wave-stream": "^1.0.0",
+    "recorder-js": "^1.0.7"
   },
   "scripts": {
     "start": "react-scripts start",

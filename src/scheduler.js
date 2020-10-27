@@ -1,8 +1,9 @@
-import { values, keys, intersection, xor } from 'lodash'
+import { reduce, filter, values, keys, intersection, xor } from 'lodash'
+import Recorder from 'recorder-js'
 
 
 export class Scheduler {
-  constructor(audioContext, setCurrentStep, bpm = 128) {
+  constructor(audioContext, setCurrentStep, setAnalyzerData, bpm = 128) {
     this.audioContext = audioContext
     this.setCurrentStep = setCurrentStep
     this.bpm = bpm
@@ -10,6 +11,19 @@ export class Scheduler {
     this.lookAheadInterval = 100 // ms
     this.timerFn = null
     this.soundMap = {}
+
+    // recording
+    this.setAnalyzerData = setAnalyzerData
+    this.mediaStreamDestination = this.audioContext.createMediaStreamDestination()
+    this.mediaRecorder = new Recorder(this.audioContext, {
+      onAnalysed: data => {
+        this.setAnalyzerData(data)
+      }
+    })
+    this.mediaRecorder.init(this.mediaStreamDestination.stream)
+    this.isRecording = false
+
+    this.filename = 'untitled'
   }
 
   async setSoundMap(soundMap) {
@@ -47,6 +61,10 @@ export class Scheduler {
   }
   
   setSequences(sequences) {
+    // reset filename to two random words in the sequences
+    const words = filter(reduce(sequences, (acc, v, k) => [...acc, ...v], []), v => v !== '_')
+    this.filename = `${words[Math.floor(Math.random() * words.length)]} ${words[Math.floor(Math.random() * words.length)]}`
+    
     for (const [key, sequence] of Object.entries(sequences)) {
       if (key in this.sequences) {
         this.sequences[key].setSequence(sequence)
@@ -54,8 +72,10 @@ export class Scheduler {
         this.sequences[key] = new Sequence(
           sequence,
           this.audioContext,
+          this.mediaStreamDestination,
           step => this.setCurrentStep(key, step),
-          this.bpm)
+          this.bpm,
+        )
       }
     }
   }
@@ -63,6 +83,19 @@ export class Scheduler {
   stop() {
     clearInterval(this.timerFn)
     this.timerFn = null
+  }
+
+  startRecording() {
+    if (this.isRecording) return
+    this.mediaRecorder.start().then(() => this.isRecording = true)
+  }
+
+  stopRecording() {
+    if (!this.isRecording) return
+    this.mediaRecorder.stop().then(({blob, buffer}) => {
+      this.isRecording = false
+      Recorder.download(blob, this.filename)
+    })
   }
   
   start() {
@@ -79,8 +112,9 @@ export class Scheduler {
 
 
 class Sequence {
-  constructor(sequence, audioContext, setCurrentStep, bpm = 128) {
+  constructor(sequence, audioContext, mediaStreamDestination, setCurrentStep, bpm = 128) {
     this.audioContext = audioContext
+    this.mediaStreamDestination = mediaStreamDestination
     this.setCurrentStep = setCurrentStep
     this.bpm = bpm                   // beats per minute (default 128)
     this.nextNoteTime = 0.0          // when to schedule the next note
@@ -113,6 +147,7 @@ class Sequence {
 
     sample.buffer = audioBuffer
     sample.connect(this.audioContext.destination)
+    sample.connect(this.mediaStreamDestination)
     sample.start(time)
     sample.stop(time + this.noteLength)
   }

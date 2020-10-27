@@ -1,3 +1,5 @@
+// import AudioRecorder from 'audio-recorder-polyfill'
+
 /* Copyright 2013 Chris Wilson
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,6 +59,11 @@ BiquadFilterNode.type and OscillatorNode.type.
       param.setTargetAtTime = param.setTargetValueAtTime;
   }
 
+  // audio-recorder-polyfill (see https://github.com/ai/audio-recorder-polyfill)
+  // if (!window.MediaRecorder) {
+  //   window.MediaRecorder = AudioRecorder
+  // }
+  
   if (window.hasOwnProperty('webkitAudioContext') &&
       !window.hasOwnProperty('AudioContext')) {
     window.AudioContext = window.webkitAudioContext;
