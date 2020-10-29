@@ -83,8 +83,16 @@ export class Scheduler {
   stop() {
     clearInterval(this.timerFn)
     this.timerFn = null
+    for (const sequence of values(this.sequences)) {
+      sequence.resetReadHead()
+    }
   }
 
+  pause() {
+    clearInterval(this.timerFn)
+    this.timerFn = null    
+  }
+  
   startRecording() {
     if (this.isRecording) return
     this.mediaRecorder.start().then(() => this.isRecording = true)
@@ -139,6 +147,9 @@ class Sequence {
   setSequence(sequence) {
     this.sequence = sequence
     this.currentStep = (this.currentStep % sequence.length + sequence.length) % sequence.length
+  }
+  resetReadHead() {
+    this.setCurrentStep(0)
   }
   
   async scheduleNote(time) {

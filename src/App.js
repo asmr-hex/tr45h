@@ -10,18 +10,28 @@ import { Toolbar } from  './toolbar'
 
 
 const App = () => {
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
-
+  const playback = {
+    isPlaying,
+    isPaused,
+    isRecording,
+    setIsPlaying,
+    setIsPaused,
+    setIsRecording,
+  }
+  
   return (
     <div className="App">
-      <Toolbar {...{isRecording, setIsRecording}}/>
+      <Toolbar {...playback}/>
       <SequenceProvider>
         <header className="App-header">
            <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
             <MusicEditor/>
             {/* <SequenceVisualizer/> */}
           </div>
-          <Sequencer isRecording={isRecording}/>
+          <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused}/>
         </header>
       </SequenceProvider>
     </div>

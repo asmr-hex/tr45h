@@ -7,7 +7,11 @@ import { Scheduler } from './scheduler'
 
 
 export const Sequencer = props => {
-  const { isRecording } = props
+  const {
+    isRecording,
+    isPlaying,
+    isPaused
+  } = props
 
   const [analyzerData, setAnalyzerData] = useState([])
   
@@ -32,10 +36,35 @@ export const Sequencer = props => {
 
   useEffect(() => {
     if (!scheduler) return 
-    if (isRecording) scheduler.startRecording()
-    if (!isRecording) scheduler.stopRecording()
+    if (isRecording) {
+      if (!isPlaying) scheduler.start()
+      scheduler.startRecording()
+    } else {
+      scheduler.stopRecording()
+    }
   }, [isRecording])
-  
+
+  useEffect(() => {
+    if (!scheduler) return
+
+    if (isPlaying) {
+      scheduler.start()
+    } else {
+      if (isRecording) scheduler.stopRecording()
+      scheduler.stop()
+    }
+  }, [isPlaying])
+
+  useEffect(() => {
+    if (!scheduler) return
+
+    if (isPaused) {
+      if (isRecording) scheduler.stopRecording()
+      scheduler.pause()
+    } else {
+      if (isPlaying) scheduler.start()
+    }
+  }, [isPaused])
   
   return null
   // (
