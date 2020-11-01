@@ -38,25 +38,30 @@ one two three four # each sound-phrase gets one quarter-note pulse
 
 # ensure features
 # this operator ensures that sound-phrases or sequences of sound phrases satisfy the provided sonic features
-apple{}
+apple(A#, 400hz) # its almost as if you are calling a sound-phrase as a function.
 
 # random choice (OR)
-apple || orange                         # each sound-phrase gets a quarter note, but are randomnly chosen with probability 0.5
-apple ||(0.4) orange                  # apple has p=0.6 and orange has p=0.4
-apple || orange || pear                 # apple, orange & pear have p=0.33
-apple ||(0.2) orange ||(0.4) pear   # orange p=0.2, pear p=0.4, apple p=0.4 (takes the remaining)
-apple ||(0.9) orange || pear         # orange p=0.9, pear and apple p=0.5 (split the remaining)
+apple | orange                         # each sound-phrase gets a quarter note, but are randomnly chosen with probability 0.5
+apple |(0.4) orange                  # apple has p=0.6 and orange has p=0.4
+apple | orange || pear                 # apple, orange & pear have p=0.33
+apple |(0.2) orange |(0.4) pear   # orange p=0.2, pear p=0.4, apple p=0.4 (takes the remaining)
+apple |(0.9) orange | pear         # orange p=0.9, pear and apple p=0.5 (split the remaining)
 
-apple || orange pear                    # OR only applies to apple & orange, pear is not random
-apple || (orange || pear)               # apple and (orange || pear) p=0.5, orange and pear p=0.5 locally within grouping, but globally each p=0.25
-apple ||(0.9) (orange ||(0.7) pear) # apple p=0.1, orange p_local=0.3 p=0.27; pear p_local=0.7 p=0.63
+apple | orange pear                    # OR only applies to apple & orange, pear is not random
+apple | (orange | pear)               # apple and (orange || pear) p=0.5, orange and pear p=0.5 locally within grouping, but globally each p=0.25
+apple |(0.9) (orange |(0.7) pear) # apple p=0.1, orange p_local=0.3 p=0.27; pear p_local=0.7 p=0.63
 # note: any grouping must have their probabilities sum to 1
 # random choice can be applied to sequences too!
 
 # processing operators
 # you can define a processor chain with '.'
 
-apple.volume(a:5,d:3,s:5,r:6).reverse.delay(500).reverb(500).pan(30, 70)
+apple.volume(a=5,d=3,s=5,r=6).reverse.delay(500).reverb(500).pan(30, 70)
+
+# you can save process chains into variables also
+chain1 = volume(10).reverse.delay(8)
+# and use them later
+apple.chain1
 
 ```
 

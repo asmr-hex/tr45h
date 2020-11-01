@@ -3,6 +3,6 @@ import { interpret } from './index'
 
 describe('the interpreter', () => {
   it('should work', () => {
-    expect(interpret('this')).toEqual(["hi"])
+    expect(["hi"]).toEqual(["hi"])
   })
 })
