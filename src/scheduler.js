@@ -7,6 +7,7 @@ export class Scheduler {
     this.audioContext = audioContext
     this.setCurrentStep = setCurrentStep
     this.bpm = bpm
+    this.tmpBpm = bpm
     this.sequences = {}
     this.lookAheadInterval = 100 // ms
     this.timerFn = null
@@ -55,9 +56,7 @@ export class Scheduler {
   }
 
   setBpm(bpm) {
-    for (const key of Object.keys(this.sequences)) {
-      this.sequences[key].setBpm(bpm)
-    }
+    this.tmpBpm = bpm
   }
   
   setSequences(sequences) {
@@ -110,10 +109,13 @@ export class Scheduler {
     this.timerFn = setInterval(() => {
       // if Web Audio has been suspended (see https://goo.gl/7K7WLu), resume
       if (this.audioContext.state === "suspended") this.audioContext.resume()
-      
+
       for (const sequence of values(this.sequences)) {
+        sequence.setBpm(this.tmpBpm)
         sequence.schedule()
       }
+      this.bpm = this.tmpBpm
+      
     }, this.lookAheadInterval)
   }
 }

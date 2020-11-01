@@ -13,6 +13,7 @@ const App = () => {
   const [isPlaying, setIsPlaying] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [bpm, setBpm] = useState(128)
   const playback = {
     isPlaying,
     isPaused,
@@ -20,6 +21,8 @@ const App = () => {
     setIsPlaying,
     setIsPaused,
     setIsRecording,
+    bpm,
+    setBpm,
   }
   
   return (
@@ -31,7 +34,7 @@ const App = () => {
             <MusicEditor/>
             {/* <SequenceVisualizer/> */}
           </div>
-          <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused}/>
+          <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused} bpm={bpm}/>
         </header>
       </SequenceProvider>
     </div>

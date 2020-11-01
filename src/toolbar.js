@@ -1,6 +1,6 @@
 import React from 'react'
 import { makeStyles } from "@material-ui/core/styles"
-import { IconButton } from '@material-ui/core'
+import { IconButton, Slider } from '@material-ui/core'
 import RecordIcon from '@material-ui/icons/FiberManualRecord'
 import PlayIcon from '@material-ui/icons/PlayArrow'
 import PauseIcon from '@material-ui/icons/Pause'
@@ -44,6 +44,11 @@ const useStyles = makeStyles(theme => ({
     color: '#faf566',
     "&:hover, &.Mui-focusVisible": { backgroundColor: "#b0ad56" },
   },
+  slider: {
+    thumb: {
+      backgroundColor: 'red',
+    },
+  }
 }))
 
 export const Toolbar = props => {
@@ -54,6 +59,8 @@ export const Toolbar = props => {
     setIsPlaying,
     isPaused,
     setIsPaused,
+    bpm,
+    setBpm
   } = props
   const classes = useStyles()
   const styles = {
@@ -88,6 +95,10 @@ export const Toolbar = props => {
     setIsPaused(false)
     setIsRecording(false)
   }
+
+  const changeBpm = (e, newBpm) => {
+    setBpm(newBpm)
+  }
   
   return (
     <div style={styles}>
@@ -97,7 +108,7 @@ export const Toolbar = props => {
         className={isPlaying ? classes.buttonPlaying : classes.buttonNotPlaying}
         onClick={togglePlayPause}>
         {
-          !isPaused
+          isPaused
             ? <PlayIcon/>
             : <PauseIcon/>
         }
@@ -108,6 +119,7 @@ export const Toolbar = props => {
       <IconButton aria-label="record" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleRecording}>
         <RecordIcon />
       </IconButton>
+      <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/>
     </div>
   )
 }

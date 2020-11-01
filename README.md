@@ -1,68 +1,67 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# tr4shy
 
-## Available Scripts
+## syntax
 
-In the project directory, you can run:
+```
+# comment
 
-### `yarn start`
+# writing sound-phrases without additional syntax
+this, should work even with punctuation!
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+# permitted punctuation in sound-phrases (. , ? ! - _)
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+# you can assign a sound-phrase or group or sound-phrases (a sequence) to a variable
+# if you type an equal sign after a sound-phrase. e.g.,
+# note: the bound sounds will be downloaded after binding, but won't be played until the variable name is evaluated
+# also note: the constituent sounds bound to a variable will be available to use on their own outside of the variable binding
+this = "my bound sound-phrase"
+that = {a bound sequence of sound-phrases}
 
-### `yarn test`
+# this brings us to groupings
+# parenthesis define logical groupings of sound phrases
+# note: if you start typing a phrase-grouping it won't start downloading the sounds until you are done?
+(this is a logical grouped sequence of sound-phrases)
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# --- subdivisions ---
+# any sound-phrase or sequence of sound-phrases can be evenly subdivided to fit into one slot of the current subdivision
+# for example
+one two three four # each sound-phrase gets one quarter-note pulse
+[one] two three four # this is the same as above
+[one two] three four # "one" and "two" are divided to fit into one quarter-note pulse (thus they are 8th notes)
+[one two three] four # "one" "two" "three" are triplets fitting into one quarter-note pulse
+[[one two] three] four # "one" "two" fit into one 8th note pulse, "three" fits into one 8th note pulse "four" is a quarter note
 
-### `yarn build`
+# rest
+~ ~ ~ ~ # four rests
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# --- operators ---
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+# ensure features
+# this operator ensures that sound-phrases or sequences of sound phrases satisfy the provided sonic features
+apple{}
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# random choice (OR)
+apple || orange                         # each sound-phrase gets a quarter note, but are randomnly chosen with probability 0.5
+apple ||(0.4) orange                  # apple has p=0.6 and orange has p=0.4
+apple || orange || pear                 # apple, orange & pear have p=0.33
+apple ||(0.2) orange ||(0.4) pear   # orange p=0.2, pear p=0.4, apple p=0.4 (takes the remaining)
+apple ||(0.9) orange || pear         # orange p=0.9, pear and apple p=0.5 (split the remaining)
 
-### `yarn eject`
+apple || orange pear                    # OR only applies to apple & orange, pear is not random
+apple || (orange || pear)               # apple and (orange || pear) p=0.5, orange and pear p=0.5 locally within grouping, but globally each p=0.25
+apple ||(0.9) (orange ||(0.7) pear) # apple p=0.1, orange p_local=0.3 p=0.27; pear p_local=0.7 p=0.63
+# note: any grouping must have their probabilities sum to 1
+# random choice can be applied to sequences too!
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+# processing operators
+# you can define a processor chain with '.'
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+apple.volume(a:5,d:3,s:5,r:6).reverse.delay(500).reverb(500).pan(30, 70)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+## editor components
+### interpreter
+* lexing
+* parsing
+* evaluation

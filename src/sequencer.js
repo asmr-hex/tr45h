@@ -10,7 +10,8 @@ export const Sequencer = props => {
   const {
     isRecording,
     isPlaying,
-    isPaused
+    isPaused,
+    bpm,
   } = props
 
   const [analyzerData, setAnalyzerData] = useState([])
@@ -20,7 +21,7 @@ export const Sequencer = props => {
   const [ scheduler, setScheduler ] = useState(null)
 
   useEffect(() => {
-    const scheduler = new Scheduler(audioContext, setCurrentStep, setAnalyzerData, 128)
+    const scheduler = new Scheduler(audioContext, setCurrentStep, setAnalyzerData, bpm)
     scheduler.start()
     setScheduler(scheduler)
 
@@ -34,6 +35,11 @@ export const Sequencer = props => {
     }
   }, [sequenceState])
 
+  useEffect(() => {
+    if (!scheduler) return 
+    scheduler.setBpm(bpm)
+  }, [bpm])
+  
   useEffect(() => {
     if (!scheduler) return 
     if (isRecording) {
