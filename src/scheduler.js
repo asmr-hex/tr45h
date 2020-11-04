@@ -2,6 +2,21 @@ import { reduce, filter, values, keys, intersection, xor } from 'lodash'
 import Recorder from 'recorder-js'
 
 
+/**
+ * Notes about supporting new language features
+ * ultimately what the scheduler wants when it is scheduling sounds is an array of sound-phrases to
+ * play for each sequence and an array of sequences to schedule.
+ * since individual sound-phrases and also sequences can be:
+ *  (1) bound to variables
+ *  (2) have processing operators applied
+ * we need to have a way to simply resolve all sounds and processing chains at schedule time
+ * so, the resolution process, from the point of view from the scheduler will resemble:
+ *  (1) collect all sequences being evaluated
+ *  (2) collect all sound-phrases being evaluated in each sequence
+ * all sequences must eventually resolve to Array<SOUND_LITERAL>, where a SOUND_LITERAL has a buffer
+ * since non-resolved sequences can be composed of 
+ */
+
 export class Scheduler {
   constructor(audioContext, setCurrentStep, setAnalyzerData, bpm = 128) {
     this.audioContext = audioContext

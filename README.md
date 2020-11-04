@@ -15,7 +15,7 @@ this, should work even with punctuation!
 # note: the bound sounds will be downloaded after binding, but won't be played until the variable name is evaluated
 # also note: the constituent sounds bound to a variable will be available to use on their own outside of the variable binding
 this = "my bound sound-phrase"
-that = {a bound sequence of sound-phrases}
+that = (a bound sequence of sound-phrases)
 
 # this brings us to groupings
 # parenthesis define logical groupings of sound phrases
@@ -63,6 +63,12 @@ chain1 = volume(10).reverse.delay(8)
 # and use them later
 apple.chain1
 
+
+some examples
+
+(one [two (three four [five six])])
+lets call [...] a beatexpr
+a beatexpr can have a sequence inside
 ```
 
 ## editor components
