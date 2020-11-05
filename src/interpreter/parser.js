@@ -11,6 +11,17 @@ export class Parser {
     return this.leftFactor(this.eliminateLeftRecursion(cfg))
   }
 
+  /**
+   * eliminateLeftRecursion takes a context free grammar and removes all left
+   * recursive productions.
+   *
+   * @description this algorithm is guaranteed to work if the provided grammar
+   *   (1) has no cycles, i.e. derivations of the form A +=> A
+   *   (2) has no ε-productions, i.e. productions of the form A -> ε
+   * see the dragon book, section 4.3 for more details.
+   *
+   * @param {Map<NonTerminals, Array<Array<NonTerminals|Terminals>>>} cfg potentially left-recursive grammar.
+   */
   eliminateLeftRecursion(cfg) {
     // TODO
   }
