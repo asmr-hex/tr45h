@@ -16,6 +16,10 @@
 //
 // 
 
+// how to left-factor lists....
+// https://stackoverflow.com/questions/33987688/looking-for-advice-on-making-this-bnf-grammar-suitable-for-ll1-parsing-left-f
+// interesting!
+
 // small start: only support parentheses and beatexpr
 // (right now paranthesis do nothing...)
 /**

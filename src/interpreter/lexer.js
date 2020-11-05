@@ -100,7 +100,7 @@ export class Lexer {
 
   isWhiteSpace(c) { return /\s/.test(c) }
   isSeparator(c) { return /[\[\]\(\)\{\}\'\"\,]/.test(c) }
-  isOperator(c) { return /[\|\.\=]/.test(c) }
+  isOperator(c) { return /[\|\.\=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
   isComment(c) { return /[\#]/.test(c) }
   isDigit(c) { return /[0-9]/.test(c) }
   // since identifiers can have digits in the name, we don't check for non-digitness
