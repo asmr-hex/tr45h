@@ -1,6 +1,9 @@
 import { includes, reduce, flatMap, map } from 'lodash'
 import { CyclicGrammarError } from './error.js'
 
+export const SpecialTerminals = {
+  epsilon: null,
+}
 
 export const NonTerminals = {
   program: 'program',
@@ -14,6 +17,7 @@ export const NonTerminals = {
 }
 
 export const Terminals = {
+  ...SpecialTerminals,
   lparen: /\(/,
   rparen: /\)/,
   lbracket: /\[/,
@@ -120,7 +124,20 @@ export const firstSet = (nonterminal, cfg, visited=[]) => {
 export const isTerminal = (symbol, cfg) =>
   includes(cfg.terminals, symbol)
 
+
+
 // TODO write algorithm for L-Recursion Elimination
+/**
+ * eliminateLeftRecursion takes a context free grammar and removes all left
+ * recursive productions.
+ *
+ * @description this algorithm is guaranteed to work if the provided grammar
+ *   (1) has no cycles, i.e. derivations of the form A +=> A
+ *   (2) has no ε-productions, i.e. productions of the form A -> ε
+ * see the dragon book, section 4.3 for more details.
+ *
+ * @param {Map<NonTerminals, Array<Array<NonTerminals|Terminals>>>} cfg potentially left-recursive grammar.
+ */
 
 // TODO write algorithm for L-Factoring
 

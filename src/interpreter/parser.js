@@ -1,33 +1,37 @@
-import { map } from 'lodash'
+import { map, includes } from 'lodash'
+import {
+  Terminals,
+  NonTerminals,
+  ContextFreeGrammar,
+  hasCycles,
+  firstSet,
+} from './cfg'
 
+
+// look at this JSON parser in js https://wesleytsai.io/2015/06/13/a-json-parser/
 
 export class Parser {
   constructor(cfg) {
-    // construct parser from cfg
-    this.parse = this.generateParser(cfg)
+    // verify that cfg doesn't have cycles
+    if (hasCycles(cfg)) throw new Error('CFG contains cycles')
+
+    this.cst = {}
+    
+    // construct parser functions from cfg (by hand right now)
+    this.parsers = this.generateParsers()
   }
 
-  generateParser(cfg) {
-    return this.leftFactor(this.eliminateLeftRecursion(cfg))
-  }
-
-  /**
-   * eliminateLeftRecursion takes a context free grammar and removes all left
-   * recursive productions.
-   *
-   * @description this algorithm is guaranteed to work if the provided grammar
-   *   (1) has no cycles, i.e. derivations of the form A +=> A
-   *   (2) has no ε-productions, i.e. productions of the form A -> ε
-   * see the dragon book, section 4.3 for more details.
-   *
-   * @param {Map<NonTerminals, Array<Array<NonTerminals|Terminals>>>} cfg potentially left-recursive grammar.
-   */
-  eliminateLeftRecursion(cfg) {
-    // TODO
-  }
-
-  leftFactor(cfg) {
-    // TODO
+  generateParsers() {
+    return {
+      [NonTerminals.program]: () => {
+        if (includes(firstSet(NonTerminals.statements, ContextFreeGrammar), this.lookAhead)) {
+          this.parsers[NonTerminals.statements]()
+        } else {
+          // error
+        }
+      },
+      
+    }
   }
   
   /**
@@ -44,6 +48,7 @@ export class Parser {
    * @return {?} the parse tree for th entire program.
    */
   program(input) {
+    this.cst = {}
     return this.statements(input)
   }
 
