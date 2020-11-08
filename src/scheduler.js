@@ -189,7 +189,7 @@ class Sequence {
 
   nextNote() {
     // console.log(this.sequence[this.currentStep])
-    const ppqn = 1 // TODO change this when we want to change tempos
+    const ppqn = 1 // TODO change this when we want to change tempos // IF WE USE PARSED SEQUENCES WE NEED TO BE USING THE PPQN FROM THE PREVIOUS STEP
     this.nextNoteTime += (1/ppqn) * (60.0 / this.bpm) // add seconds / beat (scaled by ppqn)
     this.currentStep = ( (this.currentStep + 1 ) % this.sequence.length + this.sequence.length) % this.sequence.length
   }

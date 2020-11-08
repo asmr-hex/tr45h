@@ -8,3 +8,14 @@ export class CyclicGrammarError extends Error {
     this.name = 'CyclicGrammarError'
   }
 }
+
+/**
+ * NotImplementedError is thrown when a method on an abstrat class is not implemented.
+ */
+export class NotImplementedError extends Error {
+  constructor(methodName) {
+    super(`Not Implemented Error: ${methodName} is not implemented`)
+    this.name = 'NotImplementedError'
+  }
+}
+

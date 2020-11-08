@@ -9,6 +9,7 @@ import {
 
 
 // look at this JSON parser in js https://wesleytsai.io/2015/06/13/a-json-parser/
+// look at this https://blog.mgechev.com/2017/09/16/developing-simple-interpreter-transpiler-compiler-tutorial/
 
 export class Parser {
   constructor(cfg) {
