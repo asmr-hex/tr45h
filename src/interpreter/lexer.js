@@ -52,6 +52,15 @@ export class Lexer {
         })
         this.advance()
       }
+      else if (this.isQuote(this.char)) {
+        this.addToken({
+          type: 'QUOTE',
+          value: this.char,
+          start: this.index,
+          end: this.index,
+        })
+        this.advance()
+      }
       else if (this.isOperator(this.char)) {
         this.addToken({
           type: 'OPERATOR',
@@ -99,10 +108,17 @@ export class Lexer {
   addToken(token) { this.tokens.push(token) }
 
   isWhiteSpace(c) { return /\s/.test(c) }
-  isSeparator(c) { return /[\[\]\(\)\{\}\'\"\,]/.test(c) }
+  isSeparator(c) { return /[\[\]\(\)\{\}\,]/.test(c) }
+  isQuote(c) { return /[\'\"]/.test(c) }
   isOperator(c) { return /[\|\.\=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
   isComment(c) { return /[\#]/.test(c) }
   isDigit(c) { return /[0-9]/.test(c) }
   // since identifiers can have digits in the name, we don't check for non-digitness
-  isIdentifier(c) { return typeof c === 'string' && !this.isWhiteSpace(c) && !this.isSeparator(c) && !this.isOperator(c)}
+  isIdentifier(c) {
+    return typeof c === 'string'
+      && !this.isWhiteSpace(c)
+      && !this.isSeparator(c)
+      && !this.isQuote(c)
+      && !this.isOperator(c)
+  }
 }

@@ -1,10 +1,120 @@
 import { Parser } from './parser'
-import { Terminals, NonTerminals, ContextFreeGrammar } from './cfg'
+import { Lexer } from './lexer'
+import {
+  Sequence,
+  Terminal
+} from './types'
 
-describe('the parser', () => {
-  const parser = new Parser(ContextFreeGrammar)
 
-  it('isnt tested', () => expect(true).toBeTruthy())
+describe('Parser', () => {
+  const parser = new Parser()
+  const lexer = new Lexer()
+
+  describe('.analyze()', () => {
+    
+    describe('word and multi-word sequences', () => {
+      
+      it('parses a plain sound literal sequence', () => {
+        const input = `apple orange pear banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'orange', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'pear', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+      
+      it('parses a literal sequence with multiword steps using \" quotes', () => {
+        const input = `apple "orange pear" banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'orange pear', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+      
+      it('parses a literal sequence with multiword steps using \' quotes', () => {
+        const input = `apple 'orange pear' banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'orange pear', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+      
+      it('parses a literal sequence with multiword steps using \' quotes and nested \" quotes', () => {
+        const input = `apple 'orange "pear"' banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'orange "pear"', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+
+      it('parses a literal sequence with multiword steps using \" quotes and nested \' quotes', () => {
+        const input = `apple "orange 'pear'" banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: `orange 'pear'`, fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+      
+      it('parses a literal sequence with multiword steps preserving spaces inside quotes', () => {
+        const input = `apple "    orange  pear " banana`
+        parser.setTokens(lexer.tokenize(input))
+        
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: `    orange  pear `, fx: [], ppqn: 1}),
+          new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })
+      
+    })
+
+    describe('sub-beat expressions', () => {
+      it('parses a sequences with one sub-beat expression', () => {
+        const input = `apple [orange banana] pear`
+        parser.setTokens(lexer.tokenize(input))
+
+        const expectedAST = new Sequence([
+          new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+          new Sequence([
+            new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 2}),
+            new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 2}),
+          ]),
+          new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+        ])
+        
+        expect(parser.analyze()).toEqual(expectedAST)
+      })      
+    })
+  })
+  
+
   // describe('program parser', () => {
 
   //   it('parses', () => {
