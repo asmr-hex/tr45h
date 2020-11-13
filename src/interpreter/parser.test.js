@@ -307,6 +307,101 @@ describe('Parser', () => {
         const result = deterministicParser.analyze()
         expect(result).toEqual(expectedAST)
       })
+
+      it('parses a sequence with multi-choice operator', () => {
+        const choiceFn = (choices, cdf) => choices[0]
+        const deterministicParser = new Parser({choiceFn})
+        const input = `apple | orange | pear | banana`
+        deterministicParser.setTokens(lexer.tokenize(input))
+
+        const expectedAST = new Sequence([
+          new Choice([
+            new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+            new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
+            new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+            new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
+          ], [0.25, 0.25, 0.25, 0.25], choiceFn)
+        ])
+
+        const result = deterministicParser.analyze()
+        expect(result).toEqual(expectedAST)
+      })
+    })
+
+    describe('beat expr / sub sequences / choices interacting', () => {
+
+      it('parses a sequence with multi-choice operator with a subsequence as a choice', () => {
+        const choiceFn = (choices, cdf) => choices[0]
+        const deterministicParser = new Parser({choiceFn})
+        const input = `apple | (orange pear) | banana`
+        deterministicParser.setTokens(lexer.tokenize(input))
+
+        const expectedAST = new Sequence([
+          new Choice([
+            new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+            new Sequence([
+              new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
+              new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+            ]),
+            new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
+          ], [1/3, 1/3, 1/3], choiceFn)
+        ])
+
+        const result = deterministicParser.analyze()
+        expect(result).toEqual(expectedAST)
+      })
+
+      it('parses a sequence with multi-choice operator with a beat expr as a choice', () => {
+        const choiceFn = (choices, cdf) => choices[0]
+        const deterministicParser = new Parser({choiceFn})
+        const input = `apple | [orange pear] | banana`
+        deterministicParser.setTokens(lexer.tokenize(input))
+
+        const expectedAST = new Sequence([
+          new Choice([
+            new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+            new SubBeatSequence([
+              new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
+              new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+            ]),
+            new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
+          ], [1/3, 1/3, 1/3], choiceFn)
+        ])
+
+        const result = deterministicParser.analyze()
+        expect(result).toEqual(expectedAST)
+      })
+
+      it('parses a sequence with multi-choice operator nested beat exp and choices', () => {
+        const choiceFn = (choices, cdf) => choices[0]
+        const deterministicParser = new Parser({choiceFn})
+        const input = `apple | [orange (pear pear | [pineapple lime] | mango)] | banana`
+        deterministicParser.setTokens(lexer.tokenize(input))
+
+        const expectedAST = new Sequence([
+          new Choice([
+            new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
+            new SubBeatSequence([
+              new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
+              new Sequence([
+                new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+                new Choice([
+                  new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
+                  new SubBeatSequence([
+                    new Terminal({type: 'sound', value: `pineapple`, fx: [], ppqn: 1}),
+                    new Terminal({type: 'sound', value: `lime`, fx: [], ppqn: 1}),
+                  ]),
+                  new Terminal({type: 'sound', value: `mango`, fx: [], ppqn: 1}),
+                ], [1/3, 1/3, 1/3], choiceFn)
+              ])
+            ]),
+            new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
+          ], [1/3, 1/3, 1/3], choiceFn)
+        ])
+
+        const result = deterministicParser.analyze()
+        expect(result).toEqual(expectedAST)
+      })
     })
   })
 })
