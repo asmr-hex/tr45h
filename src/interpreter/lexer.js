@@ -1,4 +1,7 @@
-
+import {
+  SeparatorBalanceError,
+  SeparatorMismatchError,
+} from './error'
 
 export class Lexer {
   constructor() {
@@ -25,6 +28,14 @@ export class Lexer {
   tokenize(input) {
     this.reset()
     this.input = input
+    let sepStack = []
+    const lSeps =`([`
+    const rSeps = `)]`
+
+    // TODO !!! handle paren and bracket balance checks in this code! THIS WILL ensure that we don't proceed
+    // with parsing if we have unbalanced stuff!
+    // do something like this! https://riptutorial.com/python/example/25649/parsing-parentheses
+    // as we go through each token!
 
     while (this.index < input.length) {
       this.char = this.input[this.index]
@@ -44,6 +55,16 @@ export class Lexer {
         this.index = this.input.length
       }
       else if (this.isSeparator(this.char)) {
+        // perform balanced separator check
+        const separator = {value: this.char, location: this.index}
+        if (/[\(\[]/.test(this.char)) { sepStack.push(separator) }
+        else if (/[\)\]]/.test(this.char)) {
+          if (sepStack.length === 0) throw new SeparatorBalanceError(separator)
+
+          const stackTop = sepStack.pop()
+          if (stackTop.value !== lSeps[rSeps.indexOf(this.char)])
+            throw new SeparatorMismatchError(stackTop, separator)
+        }
         this.addToken({
           type: 'SEPARATOR',
           value: this.char,
@@ -101,6 +122,9 @@ export class Lexer {
       }
     }
 
+    // make sure that all separators have been balanced
+    if (sepStack.length !== 0) throw new SeparatorBalanceError(sepStack.pop())
+    
     return this.tokens
   }
 

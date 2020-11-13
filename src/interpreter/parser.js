@@ -9,17 +9,23 @@ import {
 import {
   Terminal,
   Sequence,
+  SubBeatSequence,
   Choice
 } from './types'
+import {
+  EndOfSequence,
+  SyntaxError,
+} from './error'
 
 
 // look at this JSON parser in js https://wesleytsai.io/2015/06/13/a-json-parser/
 // look at this https://blog.mgechev.com/2017/09/16/developing-simple-interpreter-transpiler-compiler-tutorial/
 
 export class Parser {
-  constructor() {
+  constructor(options) {
     this.tokens = []
     this.tokenIndex = 0
+    this.options = options
   }
 
   setTokens(tokens) {
@@ -57,14 +63,13 @@ export class Parser {
   statements(input) {
     return map(
       input,
-      tokens => this.statement(tokens)
+      tokens => this.statement()
     )
   }
 
   /**
    * statements is the RD parser function for the <stmt> nonterminal.
    *
-   * @param {Array<token>} input an array of tokens (corresponding to a line of code).
    * @return {?} the parse tree for a statement.
    */
   statement() {
@@ -74,46 +79,95 @@ export class Parser {
   /**
    * sequence is the RD parser function for the <seq> nonterminal.
    *
-   * @param {Array<token>} input an array of tokens (corresponding to a line of code).
    * @return {?} the parse tree for a sequence.
    */
   sequence() {
-    let steps = []
-    while (this.peek()) {
-      switch(this.peek().type) {
-      case 'QUOTE':
-      case 'IDENTIFIER':
-        steps.push(this.sound())
-        break
-      case 'SEPARATOR':
-        steps.push(this.separator())
-        break
-      default:
-        throw new Error("fukc")
-      }
-    }
-
-    // initialize a new sequence
-    return new Sequence(steps)
-  }
-
-  separator() {
-    switch(this.peek().value) {
-    case '[':
-    case ']':
-      return this.subbeat()
-    }
+    const steps = this.steps()
+    return steps.length !== 0 ? new Sequence(steps) : null
   }
 
   subbeat() {
+    const steps = this.steps()
+    return steps.length !== 0 ? new SubBeatSequence(steps) : null
+  }
+
+  steps(limit = 0) {
+    let steps = []
+    try {
+      while (this.peek()) {
+
+        // optionally limit the number of steps we parse
+        if (limit > 0) {
+          if (steps.length === limit) return steps
+        }
+        
+        switch(this.peek().type) {
+        case 'QUOTE':
+        case 'IDENTIFIER':
+          steps.push(this.sound())
+          break
+        case 'SEPARATOR':
+          const v = this.separator()
+          if (v !== null) steps.push(v)
+          break
+        case 'OPERATOR':
+          if (steps.length === 0) throw new SyntaxError(`Unexpected '${this.peek().value}' operator placement!`)
+          steps.push(this.operator(steps.pop()))
+          break
+        default:
+          throw new SyntaxError(`Unkown Symbol '${this.peek().type}'`)
+        }
+      } 
+    } catch (e) {
+      if (e instanceof EndOfSequence) return steps
+      throw e
+    }
+
+    return steps
+  }
+
+  choice(lhs) {
+    let choices = [lhs]
+    let probabilities = []
+    try {
+      while (this.peek()) {
+        choices.push(...this.steps(1))
+        if (this.peek().value === '|') { this.consume() }
+        else { throw new EndOfSequence() }
+      }
+    } catch (e) {
+      if (!e instanceof EndOfSequence) throw e
+    }
+
+    // TODO calculate probabilities
+    probabilities = map(choices, i => 1/choices.length)
+    
+    return new Choice(choices, probabilities, this.options.choiceFn)
+  }
+  
+  operator(lhs) {
     switch (this.peek().value) {
-    case '[':
-      return this.sequence()
-    case ']':
-    default:
+    case '|':
+      this.consume()
+      return this.choice(lhs)
     }
   }
   
+  separator() {
+    switch(this.peek().value) {
+    case '(':
+      this.consume()
+      return this.sequence()
+    case '[':
+      this.consume()
+      return this.subbeat()
+    case ')':
+    case ']':
+      this.consume()
+      throw new EndOfSequence()
+    }
+  }
+
   sound() {
     switch (this.peek().type) {
     case 'IDENTIFIER':

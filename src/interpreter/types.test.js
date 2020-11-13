@@ -2,6 +2,7 @@ import {
   ASTNode,
   Terminal,
   Sequence,
+  SubBeatSequence,
   Choice,
 } from './types'
 import { NotImplementedError } from './error'
@@ -176,6 +177,61 @@ describe('language types', () => {
     })
   })
 
+  describe('SubBeatSequence', () => {
+    it('resolves ppqn for Terminal sequences', () => {
+      const subbeat = new SubBeatSequence([
+        new Terminal({type: 'sound', value: 'A', fx: [], ppqn: 1}),
+        new Terminal({type: 'sound', value: 'B', fx: [], ppqn: 2}),
+        new Terminal({type: 'sound', value: 'C', fx: [], ppqn: 3})
+      ])
+
+      expect(subbeat.current().ppqn).toEqual(3)
+      expect(subbeat.next().ppqn).toEqual(3)
+
+      expect(subbeat.advance()).toBeFalsy()
+      expect(subbeat.current().ppqn).toEqual(3)
+      expect(subbeat.next().ppqn).toEqual(6)
+
+      expect(subbeat.advance()).toBeFalsy()
+      expect(subbeat.current().ppqn).toEqual(6)
+      expect(subbeat.next().ppqn).toEqual(9)
+
+      expect(subbeat.advance()).toBeTruthy()
+      expect(subbeat.current().ppqn).toEqual(9)
+      expect(subbeat.next().ppqn).toEqual(3)
+    })
+
+    it('resolves ppqn for sequences with nested sub beats', () => {
+      const subbeat = new SubBeatSequence([
+        new Terminal({type: 'sound', value: 'A', fx: [], ppqn: 1}),
+        new SubBeatSequence([
+          new Terminal({type: 'sound', value: 'B', fx: [], ppqn: 2}),
+          new Terminal({type: 'sound', value: 'C', fx: [], ppqn: 3}),
+        ]),
+        new Terminal({type: 'sound', value: 'D', fx: [], ppqn: 4}),
+      ])
+
+      expect(subbeat.current().ppqn).toEqual(3)
+      expect(subbeat.next().ppqn).toEqual(3)
+
+      expect(subbeat.advance()).toBeFalsy()
+      expect(subbeat.current().ppqn).toEqual(3)
+      expect(subbeat.next().ppqn).toEqual(12)
+
+      expect(subbeat.advance()).toBeFalsy()
+      expect(subbeat.current().ppqn).toEqual(12)
+      expect(subbeat.next().ppqn).toEqual(18)
+
+      expect(subbeat.advance()).toBeFalsy()
+      expect(subbeat.current().ppqn).toEqual(18)
+      expect(subbeat.next().ppqn).toEqual(12)
+      
+      expect(subbeat.advance()).toBeTruthy()
+      expect(subbeat.current().ppqn).toEqual(12)
+      expect(subbeat.next().ppqn).toEqual(3)
+    })
+  })
+  
   describe('Choice', () => {
     it('randomly chooses an initial choice', () => {
       const choiceFn = (choices, cdf) => choices[2]

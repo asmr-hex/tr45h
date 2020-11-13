@@ -1,10 +1,14 @@
 import { Lexer } from './lexer'
+import {
+  SeparatorBalanceError,
+  SeparatorMismatchError,
+} from './error'
 
 
-describe('the lexer', () => {
+describe('Lexer', () => {
   const lexer = new Lexer()
 
-  describe('advance()', () => {
+  describe('.advance()', () => {
     it('advances to the next character', () => {
       lexer.reset()
       const str = 'abcde'
@@ -28,7 +32,7 @@ describe('the lexer', () => {
     })
   })
   
-  describe('isWhitespace(c)', () => {
+  describe('.isWhitespace(c)', () => {
     it('detects space', () => {
       expect(lexer.isWhiteSpace(' ')).toBeTruthy()
     })
@@ -46,7 +50,7 @@ describe('the lexer', () => {
     })
   })
 
-  describe('isSeparator(c)', () => {
+  describe('.isSeparator(c)', () => {
     it('detects open paren', () => {
       expect(lexer.isSeparator('(')).toBeTruthy()
     })
@@ -65,18 +69,21 @@ describe('the lexer', () => {
     it('detects closed square bracket', () => {
       expect(lexer.isSeparator(']')).toBeTruthy()
     })
-    it('detects double quotes', () => {
-      expect(lexer.isSeparator('"')).toBeTruthy()
-    })
-    it('detects single quotes', () => {
-      expect(lexer.isSeparator('\'')).toBeTruthy()
-    })
     it('detects commas', () => {
       expect(lexer.isSeparator(',')).toBeTruthy()
     })
   })
 
-  describe('isOperator(c)', () => {
+  describe('.isQuote(c)', () => {
+    it('detects double quotes', () => {
+      expect(lexer.isQuote('"')).toBeTruthy()
+    })
+    it('detects single quotes', () => {
+      expect(lexer.isQuote('\'')).toBeTruthy()
+    })
+  })
+  
+  describe('.isOperator(c)', () => {
     it('detects logical OR (|)', () => {
       expect(lexer.isOperator('|')).toBeTruthy()
     })
@@ -91,13 +98,13 @@ describe('the lexer', () => {
     })
   })
 
-  describe('isComment(c)', () => {
+  describe('.isComment(c)', () => {
     it('detects comments (#)', () => {
       expect(lexer.isComment('#')).toBeTruthy()
     })
   })
   
-  describe('isDigit(c)', () => {
+  describe('.isDigit(c)', () => {
     it('detects all digits [0-9]', () => {
       for (let i = 0; i <= 9; i++) {
         expect(lexer.isDigit(`${i}`)).toBeTruthy()
@@ -105,7 +112,7 @@ describe('the lexer', () => {
     })
   })
 
-  describe('isIdentifier(c)', () => {
+  describe('.isIdentifier(c)', () => {
     it('detects all valid characters that can be within identifiers', () => {
       const validIdentifierTokens = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!?;0123456789'
       for (let i = 0; i < validIdentifierTokens.length; i++) {
@@ -114,7 +121,7 @@ describe('the lexer', () => {
     })
   })
 
-  describe('tokenize(str)', () => {
+  describe('.tokenize(str)', () => {
     it('lexes integer numbers with > 1 digit', () => {
       const str = '  1989 '
       const expectedResult = [{type: 'NUMBER', value: 1989, start: 2, end: 5}]
@@ -186,26 +193,26 @@ describe('the lexer', () => {
     it('lexes single quotes', () => {
       const str = `'one two 'three' '`
       const expectedResult = [
-        {type: 'SEPARATOR', value: '\'', start: 0, end: 0},
+        {type: 'QUOTE', value: '\'', start: 0, end: 0},
         {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
         {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: '\'', start: 9, end: 9},
+        {type: 'QUOTE', value: '\'', start: 9, end: 9},
         {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'SEPARATOR', value: '\'', start: 15, end: 15},
-        {type: 'SEPARATOR', value: '\'', start: 17, end: 17},
+        {type: 'QUOTE', value: '\'', start: 15, end: 15},
+        {type: 'QUOTE', value: '\'', start: 17, end: 17},
       ]
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes double quotes', () => {
       const str = `"one two "three" "`
       const expectedResult = [
-        {type: 'SEPARATOR', value: '"', start: 0, end: 0},
+        {type: 'QUOTE', value: '"', start: 0, end: 0},
         {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
         {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: '"', start: 9, end: 9},
+        {type: 'QUOTE', value: '"', start: 9, end: 9},
         {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'SEPARATOR', value: '"', start: 15, end: 15},
-        {type: 'SEPARATOR', value: '"', start: 17, end: 17},
+        {type: 'QUOTE', value: '"', start: 15, end: 15},
+        {type: 'QUOTE', value: '"', start: 17, end: 17},
       ]
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
@@ -284,6 +291,26 @@ describe('the lexer', () => {
         {type: 'IDENTIFIER', value: 'reverse', start: 5, end: 11},
       ]
       expect(lexer.tokenize(str)).toEqual(expectedResult)
+    })
+
+    it('throws a SeparatorBalanceError when an unbalanced close parenthesis is detected', () => {
+      const str = `this is wrong)`
+      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: ')', location: 13}))
+    })
+
+    it('throws a SeparatorBalanceError when an unbalanced close square bracket is detected', () => {
+      const str = `this is wrong]`
+      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: ']', location: 13}))
+    })
+
+    it('throws a SeparatorBalanceError when an unbalanced open parenthesis is detected', () => {
+      const str = `(this is wrong`
+      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: '(', location: 0}))
+    })
+
+    it('throws a SeparatorBalanceError when an unbalanced open square bracket is detected', () => {
+      const str = `[this is wrong`
+      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: '[', location: 0}))
     })
   })
 })

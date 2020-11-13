@@ -157,6 +157,25 @@ export class Sequence extends NonTerminal {
   }
 }
 
+// we don't know the ppqn until we bubble up....
+// which means that, when its evaluation time, we pass the context to
+// actually set the ppqn on the terminals.
+export class SubBeatSequence extends Sequence {
+  current() {
+    return {
+      ...this._current,
+      ppqn: this._current.ppqn * this._seq.length
+    }
+  }
+
+  next() {
+    return {
+      ...this._next,
+      ppqn: this._next.ppqn * this._seq.length
+    }
+  }
+}
+
 const choose = (choices, cdf) =>
   choices[cdf.filter(c => c <= Math.random() * cdf[cdf.length - 1]).length]
 
