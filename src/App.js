@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import './App.css'
 
 import { SequenceProvider } from './context/sequence'
-import { MusicEditor } from './editor'
+import { MusicEditor } from './editor/index'
 import { Sequencer } from './sequencer'
 import { SequenceVisualizer } from './visualizer'
 import { Toolbar } from  './toolbar'

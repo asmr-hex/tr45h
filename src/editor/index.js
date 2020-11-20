@@ -1,3 +1,16 @@
+import React, { useEffect, useState, useRef } from 'react'
+import {
+  Editor,
+  EditorState,
+  SelectionState,
+  convertToRaw,
+  convertFromRaw,
+  CompositeDecorator,
+  Modifier,
+  getDefaultKeyBinding,
+} from 'draft-js'
+import 'draft-js/dist/Draft.css'
+import { Interpreter } from '../interpreter'
 
 /**
  * MusicEditor is the main editor for writing sound-phrase music
@@ -13,27 +26,40 @@
  *  * what data shape will be most helpful for the syntax highlighting?
  */
 export const MusicEditor = props => {
-  const {
-    sequenceState,
-    fetchNewSounds,
-    sequenceDispatch,
-    currentSteps
-  } = useSequenceContext()
+  // const {
+  //   sequenceState,
+  //   fetchNewSounds,
+  //   sequenceDispatch,
+  //   currentSteps
+  // } = useSequenceContext()
 
+  // declare interpreter
+  const [interpreter, setInterpreter] = useState(null)
+  
   // setup editor state
   const [editorState, setEditorState] = useState(
-    () => EditorState.createEmpty(decorator)
+    () => EditorState.createEmpty()
   )
   const editorRef = useRef(null)
 
+  // initialize an interpreter on mount
+  useEffect(() => {
+    setInterpreter(new Interpreter())
+  }, [])
+
+  const onChange = newEditorState => {
+    // TODO design something that will trigger reparsing
+    interpreter.analyze()
+    
+    setEditorState(newEditorState)
+  }
+  
   return (
     <div style={{width: '50%', height: '50%'}}>
       <Editor
         ref={editorRef}
         editorState={editorState}
-        onChange={onChangeWrapper}
-        handleKeyCommand={handleActions}
-        keyBindingFn={keyBindingFn}
+        onChange={onChange}
       />
     </div>
   )
