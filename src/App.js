@@ -34,7 +34,7 @@ const App = () => {
             <MusicEditor/>
             {/* <SequenceVisualizer/> */}
           </div>
-          <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused} bpm={bpm}/>
+          {/* <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused} bpm={bpm}/> */}
         </header>
       </SequenceProvider>
     </div>

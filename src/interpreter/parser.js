@@ -10,7 +10,8 @@ import {
   Terminal,
   Sequence,
   SubBeatSequence,
-  Choice
+  Choice,
+  choose
 } from './types'
 import {
   EndOfSequence,
@@ -22,10 +23,14 @@ import {
 // look at this https://blog.mgechev.com/2017/09/16/developing-simple-interpreter-transpiler-compiler-tutorial/
 
 export class Parser {
-  constructor(options) {
+  constructor(symbolTable, options = {}) {
+    this.symbolTable = symbolTable
     this.tokens = []
     this.tokenIndex = 0
-    this.options = options
+    this.options = {
+      choiceFn: choose,
+      ...options,
+    }
   }
 
   setTokens(tokens) {
@@ -39,8 +44,8 @@ export class Parser {
   /**
    * recursive descent parser
    */
-  analyze() {
-    return this.statement()
+  analyze(input) {
+    return this.program(input)
   }
 
   /**
@@ -63,7 +68,10 @@ export class Parser {
   statements(input) {
     return map(
       input,
-      tokens => this.statement()
+      tokens => {
+        this.setTokens(tokens)
+        return this.statement()
+      }
     )
   }
 
@@ -171,7 +179,9 @@ export class Parser {
   sound() {
     switch (this.peek().type) {
     case 'IDENTIFIER':
-      return new Terminal({type: 'sound', value: this.consume().value, fx: [], ppqn: 1 })
+      const identifier = this.consume().value
+      this.symbolTable.merge({identifier, type: 'sound'})
+      return new Terminal({type: 'sound', value: identifier, fx: [], ppqn: 1 })
     case 'QUOTE':
       return this.soundPhrase()
     default:
@@ -190,7 +200,9 @@ export class Parser {
         words = `${words}${spaces}${this.consume().value}`
       } else {
         this.consume()
-        return new Terminal({type: 'sound', value: `${words}${spaces}`, fx: [], ppqn: 1 })  
+        const identifier = `${words}${spaces}`
+        this.symbolTable.merge({identifier, type: 'sound'})
+        return new Terminal({type: 'sound', value: identifier, fx: [], ppqn: 1 })  
       }
     }
 

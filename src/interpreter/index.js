@@ -1,19 +1,22 @@
-import { Lexer } from './lexer'
-import { SymbolTable } from './symbols'
+import { map } from 'lodash'
 
-export const interpret = str => {
-  const lexer = new Lexer()
-  const lexed = lexer.tokenize(str)
-  
-  return ["hi"]
-}
+import { Scheduler } from '../scheduler'
+
+import { Lexer } from './lexer'
+import { Parser } from './parser'
+import { SymbolTable } from './symbols'
 
 
 export class Interpreter {
   constructor() {
     this.symbols = new SymbolTable()
+    this.lexer = new Lexer()
+    this.parser = new Parser(this.symbols)
     this.text = null
     this.ast = null // TODO initialize an empty AST
+
+    this.scheduler = new Scheduler(this.ast, this.symbols, 80)
+    this.scheduler.start()
   }
 
   /**
@@ -58,6 +61,15 @@ export class Interpreter {
     // we done.
   }
 
+  parse(blockArray) {
+    const blockTokens = map(blockArray, block => this.lexer.tokenize(block.text))
+    const ast = this.parser.analyze(blockTokens)
+    this.ast = ast
+    this.scheduler.setSymbols(this.symbols)
+    this.scheduler.setAST(this.ast)
+    // console.log(ast)
+  }
+  
   /**
    * diff determines the diffed regions of text.
    *

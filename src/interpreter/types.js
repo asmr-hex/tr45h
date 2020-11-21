@@ -176,7 +176,7 @@ export class SubBeatSequence extends Sequence {
   }
 }
 
-const choose = (choices, cdf) =>
+export const choose = (choices, cdf) =>
   choices[cdf.filter(c => c <= Math.random() * cdf[cdf.length - 1]).length]
 
 export class Choice extends NonTerminal {

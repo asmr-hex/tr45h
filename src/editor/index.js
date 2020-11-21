@@ -47,15 +47,20 @@ export const MusicEditor = props => {
     setInterpreter(new Interpreter())
   }, [])
 
+  const reparse = e => {
+    interpreter.parse(convertToRaw(editorState.getCurrentContent()).blocks)
+  }
+  
   const onChange = newEditorState => {
     // TODO design something that will trigger reparsing
-    interpreter.analyze()
+    // interpreter.analyze()
     
     setEditorState(newEditorState)
   }
   
   return (
     <div style={{width: '50%', height: '50%'}}>
+      <button onClick={reparse}>reparse</button>
       <Editor
         ref={editorRef}
         editorState={editorState}
