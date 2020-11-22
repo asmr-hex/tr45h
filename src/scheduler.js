@@ -189,7 +189,7 @@ class Sequence {
     if (!audioBuffer) return
 
     // calculate endTime
-    const endTime = time + (1/this.ast.next().ppqn) * (60.0 / this.bpm) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
+    const endTime = time + (1/this.ast.current().ppqn) * (60.0 / this.bpm) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
     
     sample.buffer = audioBuffer
     sample.connect(this.delay)
