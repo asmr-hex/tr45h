@@ -188,13 +188,31 @@ class Sequence {
     // ignore steps with no sounds (maybe still loading)
     if (!audioBuffer) return
 
+    // calculate endTime
+    const endTime = time + (1/this.ast.next().ppqn) * (60.0 / this.bpm) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
+    
     sample.buffer = audioBuffer
     sample.connect(this.delay)
     // sample.connect(this.audioContext.destination)
     // sample.connect(this.mediaStreamDestination)
     sample.start(time)
-    sample.stop(time + (1/this.ast.next().ppqn) * (60.0 / this.bpm)) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
+    sample.stop(endTime)
 
+    // schedule UI step event for this
+    // TODO this is like a hack kinda.....but maybe its fine!
+    // anyway, i want to make this a little more elegant
+    const stepElements = document.getElementsByClassName(this.ast.current().id)
+    setTimeout(() => {
+      for (const el of stepElements) {
+        el.style.borderBottom = '5px solid white'
+      }
+    }, (time - this.audioContext.currentTime) * 1000)
+    setTimeout(() => {
+      for (const el of stepElements) {
+        el.style.borderBottom = 'none'
+      }
+    }, (endTime - this.audioContext.currentTime) * 1000) 
+    
     // console.log({bpm: this.bpm, ppqn: this.ast.current().ppqn, sound: this.ast.current().value})
   }
 

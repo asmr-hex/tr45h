@@ -67,7 +67,7 @@ export class SyntaxHighlightDecorator {
    */
   getComponentForKey(key) {
     return props => (
-      <span className={props.token.type}>{props.children}</span>
+      <span className={`${key} ${props.token.type}`}>{props.children}</span>
     ) 
   }
 

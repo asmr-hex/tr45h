@@ -65,7 +65,7 @@ export class Lexer {
    * @param {string} input  a chunk of code to perform lexical analysis on
    * @return {Array<token>} an array of tokens
    */
-  tokenize(input) {
+  tokenize(input, blockKey='') {
     this.reset()
     this.input = input
     let sepStack = []
@@ -106,7 +106,8 @@ export class Lexer {
           type: 'COMMENT',
           value: comment,
           start,
-          length: this.input.length - start
+          length: this.input.length - start,
+          block: blockKey,
         })
         this.index = this.input.length
       }
@@ -160,6 +161,7 @@ export class Lexer {
           value: this.char,
           start: this.index,
           length: 1,
+          block: blockKey,
         })
         this.advance()
       }
@@ -202,7 +204,8 @@ export class Lexer {
             value: multiWordIdentifier,
             start: start,
             length: multiWordIdentifier.length + 2, // add 2 for open/close quotes
-          })          
+            block: blockKey,
+          })
         }
 
         this.advance()
@@ -221,6 +224,7 @@ export class Lexer {
           value: this.char,
           start: this.index,
           length: 1,
+          block: blockKey,
         })
         this.advance()
       }
@@ -247,6 +251,7 @@ export class Lexer {
           value: num,
           start,
           length: this.index - start,
+          block: blockKey,
         })
       }
 
@@ -265,7 +270,8 @@ export class Lexer {
           type: 'IDENTIFIER',
           value: identifier,
           start,
-          length: identifier.length
+          length: identifier.length,
+          block: blockKey,
         })
       }
 

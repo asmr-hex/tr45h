@@ -190,9 +190,9 @@ export class Parser {
   sound() {
     switch (this.peek().type) {
     case 'IDENTIFIER':
-      const identifier = this.consume().value
-      this.symbolTable.merge({identifier, type: 'sound'})
-      return new Terminal({type: 'sound', value: identifier, fx: [], ppqn: 1 })
+      const token = this.consume()
+      this.symbolTable.merge({identifier: token.value, type: 'sound'})
+      return new Terminal({type: 'sound', value: token.value, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` })
     default:
       throw new Error("aaaaa")
     }
