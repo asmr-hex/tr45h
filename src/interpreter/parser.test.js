@@ -1,5 +1,8 @@
+import 'web-audio-test-api'
+
 import { Parser } from './parser'
 import { Lexer } from './lexer'
+import { SymbolTable } from './symbols'
 import {
   Sequence,
   SubBeatSequence,
@@ -9,7 +12,7 @@ import {
 
 
 describe('Parser', () => {
-  const parser = new Parser()
+  const parser = new Parser(new SymbolTable())
   const lexer = new Lexer()
 
   describe('.analyze()', () => {
@@ -18,81 +21,81 @@ describe('Parser', () => {
       
       it('parses a plain sound literal sequence', () => {
         const input = `apple orange pear banana`
-        parser.setTokens(lexer.tokenize(input))
-        
-        const expectedAST = new Sequence([
+        const blockTokens = [ lexer.tokenize(input) ]
+
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'orange', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'pear', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
       
       it('parses a literal sequence with multiword steps using \" quotes', () => {
         const input = `apple "orange pear" banana`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [ lexer.tokenize(input) ]
         
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'orange pear', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
       
       it('parses a literal sequence with multiword steps using \' quotes', () => {
         const input = `apple 'orange pear' banana`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [ lexer.tokenize(input) ]
         
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'orange pear', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
       
       it('parses a literal sequence with multiword steps using \' quotes and nested \" quotes', () => {
         const input = `apple 'orange "pear"' banana`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
         
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'orange "pear"', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
 
       it('parses a literal sequence with multiword steps using \" quotes and nested \' quotes', () => {
         const input = `apple "orange 'pear'" banana`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
         
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: `orange 'pear'`, fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
       
       it('parses a literal sequence with multiword steps preserving spaces inside quotes', () => {
         const input = `apple "    orange  pear " banana`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
         
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: `    orange  pear `, fx: [], ppqn: 1}),
           new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
-        ])
+        ])]
         
-        expect(parser.analyze()).toEqual(expectedAST)
+        expect(parser.analyze(blockTokens)).toEqual(expectedAST)
       })
       
     })
@@ -100,54 +103,54 @@ describe('Parser', () => {
     describe('sub-beat expressions', () => {
       it('parses a sequences with one sub-beat expression', () => {
         const input = `apple [orange banana] pear`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new SubBeatSequence([
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
           ]),
           new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
-        ])
+        ])]
 
-        const result = parser.analyze()
+        const result = parser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('orange')
-        expect(result.next().ppqn).toEqual(2)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('orange')
+        expect(result[0].next().ppqn).toEqual(2)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('orange')
-        expect(result.current().ppqn).toEqual(2)
-        expect(result.next().value).toEqual('banana')
-        expect(result.next().ppqn).toEqual(2)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('orange')
+        expect(result[0].current().ppqn).toEqual(2)
+        expect(result[0].next().value).toEqual('banana')
+        expect(result[0].next().ppqn).toEqual(2)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('banana')
-        expect(result.current().ppqn).toEqual(2)
-        expect(result.next().value).toEqual('pear')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('banana')
+        expect(result[0].current().ppqn).toEqual(2)
+        expect(result[0].next().value).toEqual('pear')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeTruthy()
-        expect(result.current().value).toEqual('pear')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeTruthy()
+        expect(result[0].current().value).toEqual('pear')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
       })
 
       it('parses a sequences with nested sub-beat expression', () => {
         const input = `apple [orange [ banana pineapple  guava]] pear`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens =[lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new SubBeatSequence([
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
@@ -158,172 +161,172 @@ describe('Parser', () => {
             ])
           ]),
           new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
-        ])
+        ])]
 
-        const result = parser.analyze()
+        const result = parser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('orange')
-        expect(result.next().ppqn).toEqual(2)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('orange')
+        expect(result[0].next().ppqn).toEqual(2)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('orange')
-        expect(result.current().ppqn).toEqual(2)
-        expect(result.next().value).toEqual('banana')
-        expect(result.next().ppqn).toEqual(6)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('orange')
+        expect(result[0].current().ppqn).toEqual(2)
+        expect(result[0].next().value).toEqual('banana')
+        expect(result[0].next().ppqn).toEqual(6)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('banana')
-        expect(result.current().ppqn).toEqual(6)
-        expect(result.next().value).toEqual('pineapple')
-        expect(result.next().ppqn).toEqual(6)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('banana')
+        expect(result[0].current().ppqn).toEqual(6)
+        expect(result[0].next().value).toEqual('pineapple')
+        expect(result[0].next().ppqn).toEqual(6)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('pineapple')
-        expect(result.current().ppqn).toEqual(6)
-        expect(result.next().value).toEqual('guava')
-        expect(result.next().ppqn).toEqual(6)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('pineapple')
+        expect(result[0].current().ppqn).toEqual(6)
+        expect(result[0].next().value).toEqual('guava')
+        expect(result[0].next().ppqn).toEqual(6)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('guava')
-        expect(result.current().ppqn).toEqual(6)
-        expect(result.next().value).toEqual('pear')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('guava')
+        expect(result[0].current().ppqn).toEqual(6)
+        expect(result[0].next().value).toEqual('pear')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeTruthy()
-        expect(result.current().value).toEqual('pear')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeTruthy()
+        expect(result[0].current().value).toEqual('pear')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
       })
 
       it('ignores empty subbeat expressions', () => {
         const input = `apple [orange [] ] pear`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new SubBeatSequence([
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
           ]),
           new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
-        ])
+        ])]
 
-        const result = parser.analyze()
+        const result = parser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('orange')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('orange')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('orange')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('pear')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('orange')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('pear')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeTruthy()
-        expect(result.current().value).toEqual('pear')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeTruthy()
+        expect(result[0].current().value).toEqual('pear')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
       })
     })
 
     describe('subsequences', () => {
       it('parses a sequences with subsequences', () => {
         const input = `apple (orange banana) pear`
-        parser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
           new SubBeatSequence([
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: 'banana', fx: [], ppqn: 1}),
           ]),
           new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
-        ])
+        ])]
 
-        const result = parser.analyze()
+        const result = parser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('apple')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('orange')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('apple')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('orange')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('orange')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('banana')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('orange')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('banana')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeFalsy()
-        expect(result.current().value).toEqual('banana')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('pear')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeFalsy()
+        expect(result[0].current().value).toEqual('banana')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('pear')
+        expect(result[0].next().ppqn).toEqual(1)
 
-        expect(result.advance()).toBeTruthy()
-        expect(result.current().value).toEqual('pear')
-        expect(result.current().ppqn).toEqual(1)
-        expect(result.next().value).toEqual('apple')
-        expect(result.next().ppqn).toEqual(1)
+        expect(result[0].advance()).toBeTruthy()
+        expect(result[0].current().value).toEqual('pear')
+        expect(result[0].current().ppqn).toEqual(1)
+        expect(result[0].next().value).toEqual('apple')
+        expect(result[0].next().ppqn).toEqual(1)
       })
     })
 
     describe('choice operator', () => {
       it('parses a sequence with a simple choice operator', () => {
         const choiceFn = (choices, cdf) => choices[0]
-        const deterministicParser = new Parser({choiceFn})
+        const deterministicParser = new Parser(new SymbolTable(), {choiceFn})
         const input = `apple | orange`
-        deterministicParser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Choice([
             new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
           ], [0.5, 0.5], choiceFn)
-        ])
+        ])]
 
-        const result = deterministicParser.analyze()
+        const result = deterministicParser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
       })
 
       it('parses a sequence with multi-choice operator', () => {
         const choiceFn = (choices, cdf) => choices[0]
-        const deterministicParser = new Parser({choiceFn})
+        const deterministicParser = new Parser(new SymbolTable(), {choiceFn})
         const input = `apple | orange | pear | banana`
-        deterministicParser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Choice([
             new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: `orange`, fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: `pear`, fx: [], ppqn: 1}),
             new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
           ], [0.25, 0.25, 0.25, 0.25], choiceFn)
-        ])
+        ])]
 
-        const result = deterministicParser.analyze()
+        const result = deterministicParser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
       })
     })
@@ -332,11 +335,11 @@ describe('Parser', () => {
 
       it('parses a sequence with multi-choice operator with a subsequence as a choice', () => {
         const choiceFn = (choices, cdf) => choices[0]
-        const deterministicParser = new Parser({choiceFn})
+        const deterministicParser = new Parser(new SymbolTable(), {choiceFn})
         const input = `apple | (orange pear) | banana`
-        deterministicParser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Choice([
             new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
             new Sequence([
@@ -345,19 +348,19 @@ describe('Parser', () => {
             ]),
             new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
           ], [1/3, 1/3, 1/3], choiceFn)
-        ])
+        ])]
 
-        const result = deterministicParser.analyze()
+        const result = deterministicParser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
       })
 
       it('parses a sequence with multi-choice operator with a beat expr as a choice', () => {
         const choiceFn = (choices, cdf) => choices[0]
-        const deterministicParser = new Parser({choiceFn})
+        const deterministicParser = new Parser(new SymbolTable(), {choiceFn})
         const input = `apple | [orange pear] | banana`
-        deterministicParser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Choice([
             new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
             new SubBeatSequence([
@@ -366,19 +369,19 @@ describe('Parser', () => {
             ]),
             new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
           ], [1/3, 1/3, 1/3], choiceFn)
-        ])
+        ])]
 
-        const result = deterministicParser.analyze()
+        const result = deterministicParser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
       })
 
       it('parses a sequence with multi-choice operator nested beat exp and choices', () => {
         const choiceFn = (choices, cdf) => choices[0]
-        const deterministicParser = new Parser({choiceFn})
+        const deterministicParser = new Parser(new SymbolTable(), {choiceFn})
         const input = `apple | [orange (pear pear | [pineapple lime] | mango)] | banana`
-        deterministicParser.setTokens(lexer.tokenize(input))
+        const blockTokens = [lexer.tokenize(input)]
 
-        const expectedAST = new Sequence([
+        const expectedAST = [new Sequence([
           new Choice([
             new Terminal({type: 'sound', value: 'apple', fx: [], ppqn: 1}),
             new SubBeatSequence([
@@ -397,9 +400,9 @@ describe('Parser', () => {
             ]),
             new Terminal({type: 'sound', value: `banana`, fx: [], ppqn: 1}),
           ], [1/3, 1/3, 1/3], choiceFn)
-        ])
+        ])]
 
-        const result = deterministicParser.analyze()
+        const result = deterministicParser.analyze(blockTokens)
         expect(result).toEqual(expectedAST)
       })
     })

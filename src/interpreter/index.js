@@ -60,7 +60,7 @@ export class Interpreter {
 
     // we done.
   }
-
+  
   parse(blockArray) {
     const blockTokens = map(blockArray, block => this.lexer.tokenize(block.text))
     const ast = this.parser.analyze(blockTokens)

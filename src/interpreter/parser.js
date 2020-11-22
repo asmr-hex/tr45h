@@ -26,6 +26,7 @@ export class Parser {
   constructor(symbolTable, options = {}) {
     this.symbolTable = symbolTable
     this.tokens = []
+    this.errors = []
     this.tokenIndex = 0
     this.options = {
       choiceFn: choose,
@@ -33,8 +34,9 @@ export class Parser {
     }
   }
 
-  setTokens(tokens) {
+  setTokens({ tokens, errors }) {
     this.tokens = tokens
+    this.errors = errors
     this.tokenIndex = 0
   }
 
@@ -44,8 +46,8 @@ export class Parser {
   /**
    * recursive descent parser
    */
-  analyze(input) {
-    return this.program(input)
+  analyze(tokenizedBlocks) {
+    return this.program(tokenizedBlocks)
   }
 
   /**
@@ -54,9 +56,8 @@ export class Parser {
    * @param {Array<Array<token>>} input an array of arrays of tokens (corresponding to each line of code).
    * @return {?} the parse tree for th entire program.
    */
-  program(input) {
-    this.cst = {}
-    return this.statements(input)
+  program(tokenizedBlocks) {
+    return this.statements(tokenizedBlocks)
   }
 
   /**
@@ -65,9 +66,9 @@ export class Parser {
    * @param {Array<Array<token>>} input an array of arrays of tokens (corresponding to each line of code).
    * @return {?} the parse tree for all statements.
    */
-  statements(input) {
+  statements(tokenizedBlocks) {
     return map(
-      input,
+      tokenizedBlocks,
       tokens => {
         this.setTokens(tokens)
         return this.statement()
