@@ -10,7 +10,10 @@ import {
   getDefaultKeyBinding,
 } from 'draft-js'
 import 'draft-js/dist/Draft.css'
+
+import { SyntaxHighlightDecorator } from './decorator'
 import { Interpreter } from '../interpreter'
+import '../interpreter/grammar.css'
 
 /**
  * MusicEditor is the main editor for writing sound-phrase music
@@ -35,22 +38,29 @@ export const MusicEditor = props => {
 
   // declare interpreter
   const [interpreter, setInterpreter] = useState(null)
-  
+
   // setup editor state
   const [editorState, setEditorState] = useState(
     () => EditorState.createEmpty()
   )
   const editorRef = useRef(null)
 
-  // initialize an interpreter on mount
+  // on mount, set interpreter and decorator.
+  // note: we do this instead of creating a ref to store the interpreter since
+  // a subsystem of the interpreter (scheduler) uses the WebAudio API. Thus, the
+  // interpreter class must be instantiated when the browser has loaded the WebAudio
+  // API (e.g. on initial component mount)
   useEffect(() => {
-    setInterpreter(new Interpreter())
+    const interpreter = new Interpreter()
+    const decorator = new SyntaxHighlightDecorator(interpreter)
+    setEditorState(EditorState.set(editorState, {decorator}))
+    setInterpreter(interpreter)
   }, [])
 
   const reparse = e => {
     interpreter.parse(convertToRaw(editorState.getCurrentContent()).blocks)
   }
-  
+
   const onChange = newEditorState => {
     // TODO design something that will trigger reparsing
     // interpreter.analyze()

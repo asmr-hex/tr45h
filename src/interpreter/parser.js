@@ -22,6 +22,17 @@ import {
 // look at this JSON parser in js https://wesleytsai.io/2015/06/13/a-json-parser/
 // look at this https://blog.mgechev.com/2017/09/16/developing-simple-interpreter-transpiler-compiler-tutorial/
 
+
+/**
+ * Parser constructs a Concrete Syntax Tree for input token arrays.
+ *
+ * @description the Lexer output is the input to the parser. While the lexer handles and recovers
+ * from lexical errors (such as parentheses balancing/mismatches), it is the role of the parser to
+ * handle and recover from semantic errors by analyzing the arrangement of the provided tokens. In
+ * particular, the usage and placement of identifiers (is it a function or sound word literal or a 
+ * number?)
+ * 
+ */
 export class Parser {
   constructor(symbolTable, options = {}) {
     this.symbolTable = symbolTable
@@ -111,7 +122,6 @@ export class Parser {
         }
         
         switch(this.peek().type) {
-        case 'QUOTE':
         case 'IDENTIFIER':
           steps.push(this.sound())
           break
@@ -183,30 +193,8 @@ export class Parser {
       const identifier = this.consume().value
       this.symbolTable.merge({identifier, type: 'sound'})
       return new Terminal({type: 'sound', value: identifier, fx: [], ppqn: 1 })
-    case 'QUOTE':
-      return this.soundPhrase()
     default:
       throw new Error("aaaaa")
     }
-  }
-
-  soundPhrase() {
-    let words = ``
-    const quoteType = this.peek().value
-    let lastStopIndex = this.consume().end
-    while (this.peek()) {
-      const spaces = reduce(range(this.peek().start - lastStopIndex - 1), acc => acc + " ", "")
-      if (this.peek().value !== quoteType) {
-        lastStopIndex = this.peek().end
-        words = `${words}${spaces}${this.consume().value}`
-      } else {
-        this.consume()
-        const identifier = `${words}${spaces}`
-        this.symbolTable.merge({identifier, type: 'sound'})
-        return new Terminal({type: 'sound', value: identifier, fx: [], ppqn: 1 })  
-      }
-    }
-
-    throw new Error("unbalanced quotes!")
   }
 }

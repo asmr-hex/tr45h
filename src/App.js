@@ -28,7 +28,6 @@ const App = () => {
   return (
     <div className="App">
       <Toolbar {...playback}/>
-      <SequenceProvider>
         <header className="App-header">
            <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
             <MusicEditor/>
@@ -36,7 +35,6 @@ const App = () => {
           </div>
           {/* <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused} bpm={bpm}/> */}
         </header>
-      </SequenceProvider>
     </div>
   );
 }

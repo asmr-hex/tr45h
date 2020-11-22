@@ -7,6 +7,14 @@ import { Parser } from './parser'
 import { SymbolTable } from './symbols'
 
 
+/**
+ * the Interpreter is the main orchestrator for text analysis and evaluation.
+ *
+ * @description the interpreter orchestrates and delegates particular tasks to a
+ * variety of subsystems: lexer, parser, symbol table, scheduler. Additionally, the
+ * interpreter communicates bidirectionally with the text editor itself, both recieving
+ * text to interpret and transmitting information about syntax highlighting.
+ */
 export class Interpreter {
   constructor() {
     this.symbols = new SymbolTable()

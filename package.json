@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^7.1.2",
     "audio-recorder-polyfill": "^0.4.0",
     "draft-js": "^0.11.7",
+    "immutable": "^3.7.6",
     "lodash": "^4.17.20",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
