@@ -73,7 +73,7 @@ export class SymbolTable {
 
     // TODO dispatch status info for this sound
     
-    console.log(`Fetching Sounds Related to: ${symbol.identifier}`)
+    // console.debug(`Fetching Sounds Related to: ${symbol.identifier}`)
     const { results } = await fetch(
       `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=name,previews&page_size=150`,
       {headers: {Authorization: `Token ${API_TOKEN}`}}
@@ -93,7 +93,7 @@ export class SymbolTable {
 
     // we found results, lets start downloading the sound.
     // TODO dispatch status info for this sound
-    console.log(`Found Sounds Related to: ${symbol.identifier}`)
+    // console.debug(`Found Sounds Related to: ${symbol.identifier}`)
     
     // randomly select a result from array of results
     const result = results[Math.floor(Math.random() * results.length)]
@@ -112,7 +112,7 @@ export class SymbolTable {
       break      
     }
 
-    console.log(`Fetching MP3 For: ${result.name}`)
+    // console.debug(`Fetching MP3 For: ${result.name}`)
     // fetch Array Buffer of Mp3
     const buffer = await fetch(previewUrl)
           .then(res => res.arrayBuffer())
@@ -123,6 +123,6 @@ export class SymbolTable {
     })
 
     // TODO dispatch status info for this sound
-    console.log(`Downloaded MP3 For: ${result.name}`)
+    // console.debug(`Downloaded MP3 For: ${result.name}`)
   }
 }

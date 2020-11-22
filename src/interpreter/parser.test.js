@@ -1,5 +1,3 @@
-import 'web-audio-test-api'
-
 import { Parser } from './parser'
 import { Lexer } from './lexer'
 import { SymbolTable } from './symbols'
@@ -9,6 +7,7 @@ import {
   Terminal,
   Choice
 } from './types'
+
 
 
 describe('Parser', () => {
