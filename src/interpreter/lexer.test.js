@@ -2,6 +2,7 @@ import { Lexer } from './lexer'
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
+  QuoteMissingError
 } from './error'
 
 
@@ -124,193 +125,320 @@ describe('Lexer', () => {
   describe('.tokenize(str)', () => {
     it('lexes integer numbers with > 1 digit', () => {
       const str = '  1989 '
-      const expectedResult = [{type: 'NUMBER', value: 1989, start: 2, end: 5}]
+      const expectedResult = {
+        errors: [],
+        tokens: [{type: 'NUMBER', value: 1989, start: 2, length: 4}]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes decimal numbers with > 1 digit', () => {
       const str = ' 1989.9891 '
-      const expectedResult = [{type: 'NUMBER', value: 1989.9891, start: 1, end: 9}]
+      const expectedResult = {
+        errors: [],
+        tokens: [{type: 'NUMBER', value: 1989.9891, start: 1, length: 9}]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes sequences of identifiers', () => {
       const str = ' apple orange   pear '
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'apple', start: 1, end: 5},
-        {type: 'IDENTIFIER', value: 'orange', start: 7, end: 12},
-        {type: 'IDENTIFIER', value: 'pear', start: 16, end: 19},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'apple', start: 1, length: 5},
+          {type: 'IDENTIFIER', value: 'orange', start: 7, length: 6},
+          {type: 'IDENTIFIER', value: 'pear', start: 16, length: 4},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes sequences of identifiers with numbers in the names (except at beginning)', () => {
       const str = ' app13 or4nge   pe4r '
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'app13', start: 1, end: 5},
-        {type: 'IDENTIFIER', value: 'or4nge', start: 7, end: 12},
-        {type: 'IDENTIFIER', value: 'pe4r', start: 16, end: 19},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'app13', start: 1, length: 5},
+          {type: 'IDENTIFIER', value: 'or4nge', start: 7, length: 6},
+          {type: 'IDENTIFIER', value: 'pe4r', start: 16, length: 4},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes parenthesis', () => {
       const str = '(one two (three) )'
-      const expectedResult = [
-        {type: 'SEPARATOR', value: '(', start: 0, end: 0},
-        {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: '(', start: 9, end: 9},
-        {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'SEPARATOR', value: ')', start: 15, end: 15},
-        {type: 'SEPARATOR', value: ')', start: 17, end: 17},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'SEPARATOR', value: '(', start: 0, length: 1},
+          {type: 'IDENTIFIER', value: 'one', start: 1, length: 3},
+          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3},
+          {type: 'SEPARATOR', value: '(', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5},
+          {type: 'SEPARATOR', value: ')', start: 15, length: 1},
+          {type: 'SEPARATOR', value: ')', start: 17, length: 1},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes curly brackets', () => {
       const str = '{one two {three} }'
-      const expectedResult = [
-        {type: 'SEPARATOR', value: '{', start: 0, end: 0},
-        {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: '{', start: 9, end: 9},
-        {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'SEPARATOR', value: '}', start: 15, end: 15},
-        {type: 'SEPARATOR', value: '}', start: 17, end: 17},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'SEPARATOR', value: '{', start: 0, length: 1},
+          {type: 'IDENTIFIER', value: 'one', start: 1, length: 3},
+          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3},
+          {type: 'SEPARATOR', value: '{', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5},
+          {type: 'SEPARATOR', value: '}', start: 15, length: 1},
+          {type: 'SEPARATOR', value: '}', start: 17, length: 1},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes square brackets', () => {
       const str = '[one two [three] ]'
-      const expectedResult = [
-        {type: 'SEPARATOR', value: '[', start: 0, end: 0},
-        {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: '[', start: 9, end: 9},
-        {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'SEPARATOR', value: ']', start: 15, end: 15},
-        {type: 'SEPARATOR', value: ']', start: 17, end: 17},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'SEPARATOR', value: '[', start: 0, length: 1},
+          {type: 'IDENTIFIER', value: 'one', start: 1, length: 3},
+          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3},
+          {type: 'SEPARATOR', value: '[', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5},
+          {type: 'SEPARATOR', value: ']', start: 15, length: 1},
+          {type: 'SEPARATOR', value: ']', start: 17, length: 1},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes single quotes', () => {
       const str = `'one two 'three' '`
-      const expectedResult = [
-        {type: 'QUOTE', value: '\'', start: 0, end: 0},
-        {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'QUOTE', value: '\'', start: 9, end: 9},
-        {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'QUOTE', value: '\'', start: 15, end: 15},
-        {type: 'QUOTE', value: '\'', start: 17, end: 17},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'one two ', start: 0, length: 10},
+          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes double quotes', () => {
       const str = `"one two "three" "`
-      const expectedResult = [
-        {type: 'QUOTE', value: '"', start: 0, end: 0},
-        {type: 'IDENTIFIER', value: 'one', start: 1, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'QUOTE', value: '"', start: 9, end: 9},
-        {type: 'IDENTIFIER', value: 'three', start: 10, end: 14},
-        {type: 'QUOTE', value: '"', start: 15, end: 15},
-        {type: 'QUOTE', value: '"', start: 17, end: 17},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'one two ', start: 0, length: 10},
+          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
     it('lexes commas', () => {
       const str = `one, two,three`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'one', start: 0, end: 2},
-        {type: 'SEPARATOR', value: ',', start: 3, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: ',', start: 8, end: 8},
-        {type: 'IDENTIFIER', value: 'three', start: 9, end: 13},
-      ]
-      expect(lexer.tokenize(str)).toEqual(expectedResult)
-    })
-
-    it('lexes commas', () => {
-      const str = `one, two,three`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'one', start: 0, end: 2},
-        {type: 'SEPARATOR', value: ',', start: 3, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: ',', start: 8, end: 8},
-        {type: 'IDENTIFIER', value: 'three', start: 9, end: 13},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'one', start: 0, length: 3},
+          {type: 'SEPARATOR', value: ',', start: 3, length: 1},
+          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3},
+          {type: 'SEPARATOR', value: ',', start: 8, length: 1},
+          {type: 'IDENTIFIER', value: 'three', start: 9, length: 5},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes comments', () => {
       const str = `one, two,three # well this is a fine list`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'one', start: 0, end: 2},
-        {type: 'SEPARATOR', value: ',', start: 3, end: 3},
-        {type: 'IDENTIFIER', value: 'two', start: 5, end: 7},
-        {type: 'SEPARATOR', value: ',', start: 8, end: 8},
-        {type: 'IDENTIFIER', value: 'three', start: 9, end: 13},
-        {type: 'COMMENT', value: '# well this is a fine list', start: 15, end: 40},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'one', start: 0, length: 3},
+          {type: 'SEPARATOR', value: ',', start: 3, length: 1},
+          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3},
+          {type: 'SEPARATOR', value: ',', start: 8, length: 1},
+          {type: 'IDENTIFIER', value: 'three', start: 9, length: 5},
+          {type: 'COMMENT', value: '# well this is a fine list', start: 15, length: 26},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes logical OR operators', () => {
       const str = `this | that`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'this', start: 0, end: 3},
-        {type: 'OPERATOR', value: '|', start: 5, end: 5},
-        {type: 'IDENTIFIER', value: 'that', start: 7, end: 10},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'this', start: 0, length: 4},
+          {type: 'OPERATOR', value: '|', start: 5, length: 1},
+          {type: 'IDENTIFIER', value: 'that', start: 7, length: 4},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes assignment operators', () => {
       const str = `this = something`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'this', start: 0, end: 3},
-        {type: 'OPERATOR', value: '=', start: 5, end: 5},
-        {type: 'IDENTIFIER', value: 'something', start: 7, end: 15},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'this', start: 0, length: 4},
+          {type: 'OPERATOR', value: '=', start: 5, length: 1},
+          {type: 'IDENTIFIER', value: 'something', start: 7, length: 9},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes chaining operator', () => {
       const str = `this.reverse`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'this', start: 0, end: 3},
-        {type: 'OPERATOR', value: '.', start: 4, end: 4},
-        {type: 'IDENTIFIER', value: 'reverse', start: 5, end: 11},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'this', start: 0, length: 4},
+          {type: 'OPERATOR', value: '.', start: 4, length: 1},
+          {type: 'IDENTIFIER', value: 'reverse', start: 5, length: 7},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
     it('lexes chaining operator after identifier with last character as a digit', () => {
       const str = `thi5.reverse`
-      const expectedResult = [
-        {type: 'IDENTIFIER', value: 'thi5', start: 0, end: 3},
-        {type: 'OPERATOR', value: '.', start: 4, end: 4},
-        {type: 'IDENTIFIER', value: 'reverse', start: 5, end: 11},
-      ]
+      const expectedResult = {
+        errors: [],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'thi5', start: 0, length: 4},
+          {type: 'OPERATOR', value: '.', start: 4, length: 1},
+          {type: 'IDENTIFIER', value: 'reverse', start: 5, length: 7},
+        ]
+      }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
     })
 
-    it('throws a SeparatorBalanceError when an unbalanced close parenthesis is detected', () => {
-      const str = `this is wrong)`
-      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: ')', location: 13}))
+    
+    //////////////////////
+    //                  //
+    //  ERROR HANDLING  //
+    //                  //
+    //////////////////////
+
+    it(`handles missing double quote errors`, () => {
+      const str = `" this has a missing quote`
+      const expectedResults = {
+        errors: [ {start: 0, length: 26, reason: new QuoteMissingError(0) } ],
+        tokens: []
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
     })
 
-    it('throws a SeparatorBalanceError when an unbalanced close square bracket is detected', () => {
-      const str = `this is wrong]`
-      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: ']', location: 13}))
+    it(`handles missing single quote errors`, () => {
+      const str = `' this has a missing quote`
+      const expectedResults = {
+        errors: [ {start: 0, length: 26, reason: new QuoteMissingError(0) } ],
+        tokens: []
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
     })
 
-    it('throws a SeparatorBalanceError when an unbalanced open parenthesis is detected', () => {
-      const str = `(this is wrong`
-      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: '(', location: 0}))
+    it(`handles dangling closing parenthesis`, () => {
+      const str = `apple ) orange`
+      const expectedResults = {
+        errors: [ {start: 6, length: 1, reason: new SeparatorBalanceError({value: ')', location: 6}) } ],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'apple', start: 0, length: 5},
+          {type: 'IDENTIFIER', value: 'orange', start: 8, length: 6},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
     })
 
-    it('throws a SeparatorBalanceError when an unbalanced open square bracket is detected', () => {
-      const str = `[this is wrong`
-      expect(() => lexer.tokenize(str)).toThrowError(new SeparatorBalanceError({value: '[', location: 0}))
+    it(`handles dangling closing square brackets`, () => {
+      const str = `apple ] orange`
+      const expectedResults = {
+        errors: [ {start: 6, length: 1, reason: new SeparatorBalanceError({value: ']', location: 6}) } ],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'apple', start: 0, length: 5},
+          {type: 'IDENTIFIER', value: 'orange', start: 8, length: 6},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
     })
+
+    it(`handles unclosed parentheses`, () => {
+      const str = `(apple) ((orange)`
+      const expectedResults = {
+        errors: [ {start: 8, length: 9, reason: new SeparatorBalanceError({value: '(', location: 8}) } ],
+        tokens: [
+          {type: 'SEPARATOR', value: '(', start: 0, length: 1},
+          {type: 'IDENTIFIER', value: 'apple', start: 1, length: 5},
+          {type: 'SEPARATOR', value: ')', start: 6, length: 1},
+          {type: 'SEPARATOR', value: '(', start: 8, length: 1},
+          {type: 'SEPARATOR', value: '(', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'orange', start: 10, length: 6},
+          {type: 'SEPARATOR', value: ')', start: 16, length: 1},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
+    })
+
+    it(`handles unclosed square brackets`, () => {
+      const str = `[apple] [[orange]`
+      const expectedResults = {
+        errors: [ {start: 8, length: 9, reason: new SeparatorBalanceError({value: '[', location: 8}) } ],
+        tokens: [
+          {type: 'SEPARATOR', value: '[', start: 0, length: 1},
+          {type: 'IDENTIFIER', value: 'apple', start: 1, length: 5},
+          {type: 'SEPARATOR', value: ']', start: 6, length: 1},
+          {type: 'SEPARATOR', value: '[', start: 8, length: 1},
+          {type: 'SEPARATOR', value: '[', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'orange', start: 10, length: 6},
+          {type: 'SEPARATOR', value: ']', start: 16, length: 1},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
+    })
+    
+    it(`handles one separator mismatch error`, () => {
+      const str = `a ( b [ c ) d )`
+      const expectedResults = {
+        errors: [
+          {start: 6, length: 5, reason: new SeparatorMismatchError({value: '[', location: 6}, {value: ')', location: 10}) },
+        ],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'a', start: 0, length: 1},
+          {type: 'SEPARATOR', value: '(', start: 2, length: 1},
+          {type: 'IDENTIFIER', value: 'b', start: 4, length: 1},
+          {type: 'SEPARATOR', value: '[', start: 6, length: 1},
+          {type: 'IDENTIFIER', value: 'c', start: 8, length: 1},
+          {type: 'IDENTIFIER', value: 'd', start: 12, length: 1},
+          {type: 'SEPARATOR', value: ')', start: 14, length: 1},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
+    })
+
+    it(`handles multiple separator mismatch error`, () => {
+      const str = `a ( b ([ c )] d )`
+      const expectedResults = {
+        errors: [
+          {start: 7, length: 5, reason: new SeparatorMismatchError({value: '[', location: 7}, {value: ')', location: 11}) },
+          {start: 6, length: 7, reason: new SeparatorMismatchError({value: '(', location: 6}, {value: ']', location: 12}) },
+        ],
+        tokens: [
+          {type: 'IDENTIFIER', value: 'a', start: 0, length: 1},
+          {type: 'SEPARATOR', value: '(', start: 2, length: 1},
+          {type: 'IDENTIFIER', value: 'b', start: 4, length: 1},
+          {type: 'SEPARATOR', value: '(', start: 6, length: 1},
+          {type: 'SEPARATOR', value: '[', start: 7, length: 1},
+          {type: 'IDENTIFIER', value: 'c', start: 9, length: 1},
+          {type: 'IDENTIFIER', value: 'd', start: 14, length: 1},
+          {type: 'SEPARATOR', value: ')', start: 16, length: 1},
+        ]
+      }
+      expect(lexer.tokenize(str)).toEqual(expectedResults)
+    })
+    
   })
 })

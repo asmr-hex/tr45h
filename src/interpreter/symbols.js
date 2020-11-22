@@ -62,7 +62,7 @@ export class SymbolTable {
     if (!symbol.type || symbol.type !== 'sound') return
 
     // okay, is it a new sound?
-    if (symbol.identifier in filter(this.symbols, s => s.type === 'sound').map(s => s.identifier)) return
+    if ( filter(this.symbols, s => s.type === 'sound').map(s => s.identifier).includes(symbol.identifier)) return
     
     // okay this is a new sound!
     this._fetchNewSound(symbol)

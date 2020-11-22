@@ -1,8 +1,47 @@
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
+  QuoteMissingError,
 } from './error'
 
+
+/**
+ * Lexer tokenizes an input string.
+ *
+ * @description Since we will be live lexing, it is important that our program is robust to
+ * lexical errors, i.e. errors are contained to upperbound regions and lexing can continue
+ * if possible. Ultimately, we would like to report the lexical errors to the musician while
+ * allowing the correct parts of their program to run. To achieve this, lets enumerate the types
+ * of errors that can occur in the lexing phase:
+ *
+ *   * QuoteMissingError - this will only happen when a quote has been opened but not closed.
+ *                         so, recovering from this error means that everything after the opening
+ *                         quote must be included in the error region.
+ *
+ *   * SeparatorBalanceError - this will occur in two scenarios:
+ *                               (1) a closing separator has occured before it was opened. in this case,
+ *                                   we can actually just mark this separator as an error region, ignore
+ *                                   it and continue lexing. (dangling closing separator)
+ *                               (2) the end of a line has occured and one or more opening separators were
+ *                                   not closed. Unfortunately, the only way to guarantee the program can
+ *                                   continue, is if we mark everything from the first unbalanced separator
+ *                                   as an error region. Note that this case will occur at the end of the
+ *                                   lexing loop.
+ *
+ *   * SeparatorMismatchError - this will occur if a separator is closed with the wrong separator type.
+ *                              this can occur inthe middle of lexing, but can be recovered from. in order
+ *                              to recover, we will set the error region to the last (mismatched) open separator
+ *                              pop from the open separator stack, and continue lexing. Below are some examples
+ *                              with the error regions highlighted.
+ *                                  ______________    
+ *                              ( a { a [ a  a } ] a a )
+ *                                      ________
+ *                              ( a { a [ a  a } } a a )
+ *
+ * @throws {SeparatorBalanceError} Parenthesis, Square Brackets, or Curly Braces are unbalanced.
+ * @throws {SeparatorMismatchError} Parenthesis, Square Brackets, or Curly Braces are mismatched.
+ * @throws {QuoteMissingError} There is a missing quote.
+ */
 export class Lexer {
   constructor() {
     this.reset()
@@ -17,6 +56,7 @@ export class Lexer {
     this.tokens = []
     this.char   = null
     this.index  = 0
+    this.errorRegions = []
   }
 
   /**
@@ -37,12 +77,28 @@ export class Lexer {
     // do something like this! https://riptutorial.com/python/example/25649/parsing-parentheses
     // as we go through each token!
 
+    // scan through entire string character by character.
     while (this.index < input.length) {
       this.char = this.input[this.index]
 
+      
+      //////////////////
+      //              //
+      //  WHITESPACE  //
+      //              //
+      //////////////////
+      
       if (this.isWhiteSpace(this.char)) {
         this.advance()
       }
+
+      
+      ////////////////
+      //            //
+      //  COMMENTS  //
+      //            //
+      ////////////////
+      
       else if (this.isComment(this.char)) {
         let comment = this.input.substring(this.index, this.input.length)
         const start = this.index
@@ -50,51 +106,137 @@ export class Lexer {
           type: 'COMMENT',
           value: comment,
           start,
-          end: this.input.length - 1
+          length: this.input.length - start
         })
         this.index = this.input.length
       }
+
+      
+      //////////////////
+      //              //
+      //  SEPARATORS  //
+      //              //
+      //////////////////
+      
       else if (this.isSeparator(this.char)) {
         // perform balanced separator check
         const separator = {value: this.char, location: this.index}
-        if (/[\(\[]/.test(this.char)) { sepStack.push(separator) }
-        else if (/[\)\]]/.test(this.char)) {
-          if (sepStack.length === 0) throw new SeparatorBalanceError(separator)
+        if (/[([]/.test(this.char)) {
+          // push open separator to stack
+          sepStack.push(separator)
+        }
+        else if (/[)\]]/.test(this.char)) {
+          // handle potential error regions
+          try {
+            // dangling closing separator?
+            if (sepStack.length === 0) throw new SeparatorBalanceError(separator)            
+          } catch(e) {
+            // since this is just a dangling closing separator, we can mark it as an
+            // error region and continue lexing.
+            this.errorRegions.push({start: this.index, length: 1, reason: e})
+            this.advance()
+            continue
+          }
 
+          // pop closing separator from stack
           const stackTop = sepStack.pop()
-          if (stackTop.value !== lSeps[rSeps.indexOf(this.char)])
-            throw new SeparatorMismatchError(stackTop, separator)
+          // handle potential error regions
+          try {
+            // ensure it is the proper type of closing separator
+            if (stackTop.value !== lSeps[rSeps.indexOf(this.char)])
+              throw new SeparatorMismatchError(stackTop, separator)            
+          } catch (e) {
+            // this is a mismatched separator error. we need to mark from this
+            // character to the previous mismatched open separator as an error region,
+            // but we can continue to try to lex.
+            this.errorRegions.push({start: stackTop.location, length: (this.index + 1) - stackTop.location, reason: e})
+            this.advance()
+            continue
+          }
+
         }
         this.addToken({
           type: 'SEPARATOR',
           value: this.char,
           start: this.index,
-          end: this.index,
+          length: 1,
         })
         this.advance()
       }
+
+      
+      //////////////
+      //          //
+      //  QUOTES  //
+      //          //
+      //////////////
+      
       else if (this.isQuote(this.char)) {
-        this.addToken({
-          type: 'QUOTE',
-          value: this.char,
-          start: this.index,
-          end: this.index,
-        })
+        // arguably, we could be doing the 'collection' of quoted identifiers during
+        // parsing, but since multi-word identifiers can not be recursive, then it
+        // is probably easier to tokenize them immediately here.
+        let multiWordIdentifier = ``
+        const quoteType = this.char
+        const start = this.index
+        const isValidQuoteBody = c => {
+          if ( c === undefined ) throw new QuoteMissingError(start)
+          return !(this.isQuote(c) && c == quoteType)
+        }
+        
+        // handle potential errors
+        try {
+          while (isValidQuoteBody(this.advance())) multiWordIdentifier += this.char  
+        } catch(e) {
+          if (e instanceof QuoteMissingError) {
+            // since a missing quote can only happen at the end of a line,
+            // we will package up the error and return from here
+            this.errorRegions.push({start, length: multiWordIdentifier.length + 1, reason: e})
+            return { errors: this.errorRegions, tokens: this.tokens }
+          }
+        }
+
+        // only add the token if the multiWordIdentifier is not just whitespace
+        if (multiWordIdentifier.trim() !== "") {
+          this.addToken({
+            type: 'IDENTIFIER',
+            value: multiWordIdentifier,
+            start: start,
+            length: multiWordIdentifier.length + 2, // add 2 for open/close quotes
+          })          
+        }
+
         this.advance()
       }
+
+
+      /////////////////
+      //             //
+      //  OPERATORS  //
+      //             //
+      /////////////////
+      
       else if (this.isOperator(this.char)) {
         this.addToken({
           type: 'OPERATOR',
           value: this.char,
           start: this.index,
-          end: this.index,
+          length: 1,
         })
         this.advance()
       }
+
+
+      ///////////////
+      //           //
+      //  NUMBERS  //
+      //           //
+      ///////////////
+      
       else if (this.isDigit(this.char)) {
         let num = this.char
         const start = this.index
         while (this.isDigit(this.advance())) num += this.char
+        // tokenize fractional numbers
         if (this.char === '.') {
           num += this.char
           while (this.isDigit(this.advance())) num += this.char
@@ -104,9 +246,17 @@ export class Lexer {
           type: 'NUMBER',
           value: num,
           start,
-          end: this.index - 1,
+          length: this.index - start,
         })
       }
+
+      
+      ///////////////////
+      //               //
+      //  IDENTIFIERS  //
+      //               //
+      ///////////////////
+      
       else if (this.isIdentifier(this.char)) {
         let identifier = this.char
         const start = this.index
@@ -115,27 +265,45 @@ export class Lexer {
           type: 'IDENTIFIER',
           value: identifier,
           start,
-          end: this.index - 1
+          length: identifier.length
         })
-      } else {
-        // handle errors somehow
+      }
+
+
+      //////////////////////////
+      //                      //
+      //  INVALID CHARACTERS  //
+      //                      //
+      //////////////////////////
+      
+      else {
+        // handle errors somehow?
       }
     }
 
     // make sure that all separators have been balanced
-    if (sepStack.length !== 0) throw new SeparatorBalanceError(sepStack.pop())
+    try {
+      if (sepStack.length !== 0) throw new SeparatorBalanceError(sepStack[0])      
+    } catch(e) {
+      // sadly the line ended with unbalanced separators. we need to mark everything from
+      // the first unbalanced separator to the end as an error region.
+      this.errorRegions.push({start: sepStack[0].location, length: this.input.length - sepStack[0].location, reason: e})
+    }
     
-    return this.tokens
+    return {
+      errors: this.errorRegions,
+      tokens: this.tokens,
+    }
   }
 
   advance() { return this.char = this.input[++this.index] }
   addToken(token) { this.tokens.push(token) }
 
   isWhiteSpace(c) { return /\s/.test(c) }
-  isSeparator(c) { return /[\[\]\(\)\{\}\,]/.test(c) }
-  isQuote(c) { return /[\'\"]/.test(c) }
-  isOperator(c) { return /[\|\.\=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
-  isComment(c) { return /[\#]/.test(c) }
+  isSeparator(c) { return /[[\](){},]/.test(c) }
+  isQuote(c) { return /['"]/.test(c) }
+  isOperator(c) { return /[|.=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
+  isComment(c) { return /[#]/.test(c) }
   isDigit(c) { return /[0-9]/.test(c) }
   // since identifiers can have digits in the name, we don't check for non-digitness
   isIdentifier(c) {

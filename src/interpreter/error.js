@@ -26,6 +26,7 @@ export class SyntaxError extends Error {
   constructor(message) {
     super(`Syntax Error: ${message}`)
     this.name = 'SyntaxError'
+    this.message = message
   }
 }
 
@@ -49,6 +50,13 @@ export class SeparatorMismatchError extends SyntaxError {
     this.name = 'SeparatorMismatchError'
     this.leftSeparator = lSep
     this.rightSeparator = rSep
+  }
+}
+
+export class QuoteMissingError extends SyntaxError {
+  constructor(i) {
+    super(`missing quote to match ${i}`)
+    this.name = `QuoteMissingError`
   }
 }
 
