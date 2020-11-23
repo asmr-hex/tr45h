@@ -1,3 +1,5 @@
+import { min, max } from 'lodash'
+
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
@@ -295,6 +297,10 @@ export class Lexer {
       // the first unbalanced separator to the end as an error region.
       this.errorRegions.push({start: sepStack[0].location, length: this.input.length - sepStack[0].location, reason: e})
     }
+
+    // dedupe error regions and remove tokens from error regions
+    this.dedupeErrorRegions()
+    this.removeErrorTokens()
     
     return {
       errors: this.errorRegions,
@@ -302,6 +308,64 @@ export class Lexer {
     }
   }
 
+  dedupeErrorRegions() {
+    const errorRegions = []
+    
+    for (const error of this.errorRegions) {
+      let overlappingRegion = false
+      // does this error overlap with any of the previous error regions?
+      for (let i = 0; i < errorRegions.length; i++) {
+        const r = this.rangeOverlaps(error, errorRegions[i])
+        if (r.overlaps) {
+          overlappingRegion = true
+          errorRegions[i] = {
+            start: r.min,
+            length: (r.max + 1) - r.min,
+            reasons: [...errorRegions[i].reasons, error.reason]
+          }
+          break
+        }
+      }
+      if (!overlappingRegion)
+        errorRegions.push({ type: 'ERROR', start: error.start, length: error.length, reasons: [error.reason] })
+    }
+
+    this.errorRegions = errorRegions
+  }
+
+  removeErrorTokens() {
+    const tokens = []
+    for (const token of this.tokens) {
+      let inErrorRegion = false
+      for (const error of this.errorRegions) {
+        const r = this.rangeOverlaps(token, error)
+        if (r.overlaps) {
+          inErrorRegion = true
+          break
+        }
+      }
+
+      if (!inErrorRegion)
+        tokens.push(token)
+    }
+
+    this.tokens = tokens
+  }
+  
+  rangeOverlaps(x, y) {
+    const a = [ x.start, x.start + x.length - 1 ]
+    const b = [ y.start, y.start + y.length - 1 ]
+    let overlap = false
+    if ( (a[0] >= b[0] && a[0] <= b[1]) || (a[1] >= b[0] && a[1] <= b[1]) )
+      overlap = true
+    
+    return {
+      overlap,
+      min: min([...a, ...b]),
+      max: max([...a, ...b]),
+    }
+  }
+  
   advance() { return this.char = this.input[++this.index] }
   addToken(token) { this.tokens.push(token) }
 

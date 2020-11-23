@@ -10,3 +10,11 @@
 .SEPARATOR {
     color: cyan;
 }
+
+.OPERATOR {
+    color: fuchsia;
+}
+
+.ERROR {
+    background-color: red;
+}
