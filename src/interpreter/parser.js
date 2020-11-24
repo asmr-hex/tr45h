@@ -51,7 +51,11 @@ export class Parser {
     this.tokenIndex = 0
   }
 
-  peek() { return this.tokens[this.tokenIndex] }
+  peek() {
+    
+    console.log(this.tokens)
+    return this.tokens[this.tokenIndex]
+  }
   consume() { return this.tokens[this.tokenIndex++] }
   
   /**
@@ -59,6 +63,10 @@ export class Parser {
    */
   analyze(tokenizedBlocks) {
     return this.program(tokenizedBlocks)
+  }
+
+  analyzeStatement(tokenizedBlock) {
+    return this.statement(tokenizedBlock)
   }
 
   /**
@@ -81,8 +89,7 @@ export class Parser {
     return map(
       tokenizedBlocks,
       tokens => {
-        this.setTokens(tokens)
-        return this.statement()
+        return this.statement(tokens)
       }
     ).filter(s => s !== null)
   }
@@ -92,7 +99,8 @@ export class Parser {
    *
    * @return {?} the parse tree for a statement.
    */
-  statement() {
+  statement(tokens) {
+    this.setTokens(tokens)
     return this.sequence()
   }
 

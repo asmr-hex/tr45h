@@ -5,6 +5,7 @@ import { Scheduler } from '../scheduler'
 import { Lexer } from './lexer'
 import { Parser } from './parser'
 import { SymbolTable } from './symbols'
+import { AST } from './ast'
 
 
 /**
@@ -21,9 +22,9 @@ export class Interpreter {
     this.lexer = new Lexer()
     this.parser = new Parser(this.symbols)
     this.text = null
-    this.ast = null // TODO initialize an empty AST
+    this.ast = new AST()
 
-    this.scheduler = new Scheduler(this.ast, this.symbols, 80)
+    this.scheduler = new Scheduler(this.ast.program, this.symbols, 80)
     this.scheduler.start()
   }
 
@@ -84,9 +85,9 @@ export class Interpreter {
   analyzeBlock(blockKey, blockIndex, blockText) {
     // perform lexical analysis
     const lexicon = this.lexer.tokenize(blockText, blockKey)
-
+    
     // perform semantic analysis
-    const semantics = this.parser.analyze(lexicon)
+    const semantics = this.parser.analyzeStatement(lexicon)
 
     // update AST with semantic analysis results for this block (statement)
     this.ast.merge(semantics, blockKey, blockIndex)
@@ -94,7 +95,9 @@ export class Interpreter {
     // signal to scheduler (evaluator) that symbol table and ast have changed!
     // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
     this.scheduler.setSymbols(this.symbols)
-    this.scheduler.setAST(this.ast)    
+    this.scheduler.setAST(this.ast.program)
+
+    return lexicon
   }
   
   parse(blockArray) {
