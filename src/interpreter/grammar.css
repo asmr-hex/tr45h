@@ -38,3 +38,7 @@
 .unavailable {
     color: purple;
 }
+
+.current-step {
+    border-bottom: 5px solid white;
+}

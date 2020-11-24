@@ -204,12 +204,12 @@ class Sequence {
     const stepElements = document.getElementsByClassName(this.ast.current().id)
     setTimeout(() => {
       for (const el of stepElements) {
-        el.style.borderBottom = '5px solid white'
+        el.classList.add('current-step')
       }
     }, (time - this.audioContext.currentTime) * 1000)
     setTimeout(() => {
       for (const el of stepElements) {
-        el.style.borderBottom = 'none'
+        el.classList.remove('current-step')
       }
     }, (endTime - this.audioContext.currentTime) * 1000) 
     

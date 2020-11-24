@@ -30,7 +30,8 @@ export class SyntaxHighlightDecorator {
    * @description this annotates each character in each block with its particular
    * decorator key. Importantly, this is run only on blocks that are modified. Thus,
    * it is convenient to run reparsing on a particular block here, since each block
-   * (at this point) corresponds to one statement(1).
+   * (at this point) corresponds to one statement(1). Its also important to note that
+   * this method is run before the main onChange function invoked by the editor.
    *
    * The details about when this function is executed are important, particularly there
    * are some important edge-cases to understand:
@@ -57,8 +58,6 @@ export class SyntaxHighlightDecorator {
     const blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)
     let decorations  = Array(blockText.length).fill(null)
-
-    console.log(blockKey)
     
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted[blockKey] = {}
@@ -108,12 +107,14 @@ export class SyntaxHighlightDecorator {
   getComponentForKey(key) {
     return props => {
       const symbol = this.interpreter.symbols.get(props.token.value)
-      // console.log(this.interpreter.symbols)
+      const elements = document.getElementsByClassName(key)
+      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains('current-step') : false
       const classes = [
-        key,
-        props.token.type,
+        key, // individual token class
+        props.token.type, // type of token class
         props.token.value ? `token-${props.token.value.replace(/\s+/g, '')}` : '', // in case of error or token
-        symbol === null ? '' : symbol.status,
+        symbol === null ? '' : symbol.status, // status class
+        isCurrentStep ? 'current-step' : '', // current step class
       ].join(' ')
       return (
         <span className={classes}>{props.children}</span>

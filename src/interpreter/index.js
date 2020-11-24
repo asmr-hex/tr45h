@@ -68,6 +68,34 @@ export class Interpreter {
 
     // we done.
   }
+
+  /**
+   * analyzes a single block of text. results are merged into the existing AST.
+   *
+   * @param {string} blockKey the key of the block to be interpreted.
+   * @param {int} blockIndex the index of the block to be interpreted.
+   * @param {string} blockText the text of the block to be interpreted.
+   *
+   * @return {LexicalAnlysisResults} used for syntax highlighting in the caller.
+   * TODO when we introduce more language features, we will need to be returning
+   * SemanticAnalysisResults since more advanced features will rely on semantic
+   * analysis to return the proper error regions.
+   */
+  analyzeBlock(blockKey, blockIndex, blockText) {
+    // perform lexical analysis
+    const lexicon = this.lexer.tokenize(blockText, blockKey)
+
+    // perform semantic analysis
+    const semantics = this.parser.analyze(lexicon)
+
+    // update AST with semantic analysis results for this block (statement)
+    this.ast.merge(semantics, blockKey, blockIndex)
+
+    // signal to scheduler (evaluator) that symbol table and ast have changed!
+    // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
+    this.scheduler.setSymbols(this.symbols)
+    this.scheduler.setAST(this.ast)    
+  }
   
   parse(blockArray) {
     const blockTokens = map(blockArray, block => this.lexer.tokenize(block.text, block.key))

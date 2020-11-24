@@ -81,7 +81,7 @@ export const MusicEditor = props => {
       .map(b => b.key)
                   
     // TODO prune AST with deleted / now empty blocks
-    console.log(uniq([...removedBlocks, ...nowEmptyBlocks]))
+    // console.log(uniq([...removedBlocks, ...nowEmptyBlocks]))
     
     setEditorState(newEditorState)
   }
