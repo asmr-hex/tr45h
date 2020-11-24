@@ -22,3 +22,19 @@
 .COMMENT {
     color: black;
 }
+
+.searching {
+    color: orange;
+}
+
+.downloading {
+    color: green;
+}
+
+.available {
+    color: blue;
+}
+
+.unavailable {
+    color: purple;
+}

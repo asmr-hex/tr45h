@@ -16,7 +16,8 @@
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.3",
     "react-wave-stream": "^1.0.0",
-    "recorder-js": "^1.0.7"
+    "recorder-js": "^1.0.7",
+    "rxjs": "^6.6.3"
   },
   "scripts": {
     "start": "react-scripts start",

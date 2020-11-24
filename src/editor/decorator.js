@@ -1,4 +1,5 @@
 import React from  'react'
+import { convertToRaw } from 'draft-js'
 import { List } from 'immutable'
 
 
@@ -26,16 +27,39 @@ export class SyntaxHighlightDecorator {
   /**
    * Given a `ContentBlock`, return an immutable List of decorator keys.
    *
+   * @description this annotates each character in each block with its particular
+   * decorator key. Importantly, this is run only on blocks that are modified. Thus,
+   * it is convenient to run reparsing on a particular block here, since each block
+   * (at this point) corresponds to one statement(1).
+   *
+   * The details about when this function is executed are important, particularly there
+   * are some important edge-cases to understand:
+   *  * when an entire block is deleted, this will not be executed for that block (makes sense).
+   *
+   *  * when a block is split into two separate blocks (by inserting a carriage return), this function
+   *    is run for both blocks.
+   *
+   * The general rule for this method being executed is it is executed for any blocks that are modified.
+   * This means that in the first edge case described above, if a block is deleted (either by selecting the
+   * entire line and deleting or if it only contained one character and that character is deleted) and no
+   * other modifications are made to other remaining blocks, then this method *will not be* executed. For
+   * this reason, we can prune the AST in the main editor's onChange handler when block deletions have been
+   * detected. And in this method, we can focus on reparsing (not pruning).
+   *
    * @param {BlockNodeRecord} block a Draftjs `ContentBlock`.
    * @param {ContentState} contentState the Draftjs `ContentState`.
    * @return {List<string>} an immutable List of decorator keys.
    */
   getDecorations(block, contentState) {
-    const blockType = block.getType()
-    const blockKey  = block.getKey()
-    const blockText = block.getText()
-    let decorations = Array(blockText.length).fill(null)
+    const blockKeys   = contentState.getBlocksAsArray().map(b => b.key)
+    const blockType  = block.getType()
+    const blockKey   = block.getKey()
+    const blockText  = block.getText()
+    const blockIndex = blockKeys.indexOf(blockKey)
+    let decorations  = Array(blockText.length).fill(null)
 
+    console.log(blockKey)
+    
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted[blockKey] = {}
 
@@ -82,9 +106,19 @@ export class SyntaxHighlightDecorator {
    * @return {Function} the component to use when rendering decorated range.
    */
   getComponentForKey(key) {
-    return props => (
-      <span className={`${key} ${props.token.type}`}>{props.children}</span>
-    ) 
+    return props => {
+      const symbol = this.interpreter.symbols.get(props.token.value)
+      // console.log(this.interpreter.symbols)
+      const classes = [
+        key,
+        props.token.type,
+        props.token.value ? `token-${props.token.value.replace(/\s+/g, '')}` : '', // in case of error or token
+        symbol === null ? '' : symbol.status,
+      ].join(' ')
+      return (
+        <span className={classes}>{props.children}</span>
+      ) 
+    }
   }
 
   /**

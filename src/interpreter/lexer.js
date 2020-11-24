@@ -195,6 +195,11 @@ export class Lexer {
             // since a missing quote can only happen at the end of a line,
             // we will package up the error and return from here
             this.errorRegions.push({start, length: multiWordIdentifier.length + 1, reason: e})
+            
+            // dedupe error regions and remove tokens from error regions
+            this.dedupeErrorRegions()
+            this.removeErrorTokens()
+            
             return { errors: this.errorRegions, tokens: this.tokens }
           }
         }

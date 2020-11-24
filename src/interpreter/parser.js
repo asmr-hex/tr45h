@@ -84,7 +84,7 @@ export class Parser {
         this.setTokens(tokens)
         return this.statement()
       }
-    )
+    ).filter(s => s !== null)
   }
 
   /**
@@ -133,6 +133,9 @@ export class Parser {
           if (steps.length === 0) throw new SyntaxError(`Unexpected '${this.peek().value}' operator placement!`)
           steps.push(this.operator(steps.pop()))
           break
+        case 'COMMENT':
+          this.consume()
+          break
         default:
           throw new SyntaxError(`Unkown Symbol '${this.peek().type}'`)
         }
@@ -141,7 +144,7 @@ export class Parser {
       if (e instanceof EndOfSequence) return steps
       throw e
     }
-
+    
     return steps
   }
 

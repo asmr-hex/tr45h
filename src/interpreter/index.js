@@ -75,7 +75,6 @@ export class Interpreter {
     this.ast = ast
     this.scheduler.setSymbols(this.symbols)
     this.scheduler.setAST(this.ast)
-    // console.log(ast)
   }
   
   /**

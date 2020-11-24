@@ -10,6 +10,7 @@ import {
   getDefaultKeyBinding,
 } from 'draft-js'
 import 'draft-js/dist/Draft.css'
+import { intersection, reduce, uniq, xor } from 'lodash'
 
 import { SyntaxHighlightDecorator } from './decorator'
 import { Interpreter } from '../interpreter'
@@ -62,8 +63,25 @@ export const MusicEditor = props => {
   }
 
   const onChange = newEditorState => {
-    // TODO design something that will trigger reparsing
-    // interpreter.analyze()
+    // detect block deletions
+    const newBlockKeys = newEditorState.getCurrentContent().getBlocksAsArray().map(b => b.key)
+    const oldBlockKeys = editorState.getCurrentContent().getBlocksAsArray().map(b => b.key)
+    const removedBlocks = intersection(xor(oldBlockKeys, newBlockKeys), oldBlockKeys)
+
+    // detect previously non-empty, now empty blocks
+    const oldBlockTextMap = reduce(
+      editorState.getCurrentContent().getBlocksAsArray(),
+      (acc, b) => ({...acc, [b.key]: b.text}),
+      {}
+    )
+    const nowEmptyBlocks = newEditorState.getCurrentContent().getBlocksAsArray()
+          .filter(b => {
+            return oldBlockTextMap[b.key] && oldBlockTextMap[b.key].trim() !== '' && b.text.trim() === ''
+          })
+      .map(b => b.key)
+                  
+    // TODO prune AST with deleted / now empty blocks
+    console.log(uniq([...removedBlocks, ...nowEmptyBlocks]))
     
     setEditorState(newEditorState)
   }

@@ -33,18 +33,23 @@ export class SymbolTable {
   //   value: <value>
   // }
   merge(symbol) {
-    const fields = symbol.identifier in this.symbols
+    // is this a new symbol?
+    const exists = symbol.identifier in this.symbols
+          
+    // get existing or default fields
+    const fields = exists
           ? this.symbols[symbol.identifier]
           : { type: null, status: null, value: null }
 
-    // if this identifier is a new sound, we need to resolve it
-    this._resolveSound(symbol)
-    
     // merge symbol
     this.symbols[symbol.identifier] = {
       ...fields,
       ...symbol,
     }
+
+    if (!exists && symbol.type && symbol.type === 'sound')
+      // this identifier is a new sound, we need to resolve it
+      this._fetchNewSound(symbol)
   }
 
   get(identifier) {
@@ -57,23 +62,14 @@ export class SymbolTable {
     delete this.symbols[identifier]
   }
 
-  _resolveSound(symbol) {    
-    // make sure this is a sound
-    if (!symbol.type || symbol.type !== 'sound') return
-
-    // okay, is it a new sound?
-    if ( filter(this.symbols, s => s.type === 'sound').map(s => s.identifier).includes(symbol.identifier)) return
-    
-    // okay this is a new sound!
-    this._fetchNewSound(symbol)
-  }
-
   async _fetchNewSound(symbol) {
     // deal with "_" keyword
 
     // TODO dispatch status info for this sound
     
     // console.debug(`Fetching Sounds Related to: ${symbol.identifier}`)
+    this.merge( {identifier: symbol.identifier, status: 'searching'} )
+    this.updateVisualStatus(symbol.identifier, 'searching')
     const { results } = await fetch(
       `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=name,previews&page_size=150`,
       {headers: {Authorization: `Token ${API_TOKEN}`}}
@@ -85,8 +81,7 @@ export class SymbolTable {
 
       // mark as unavailable in symbol table
       this.merge( {identifier: symbol.identifier, status: 'unavailable'} )
-
-      // TODO dispatch status info for this sound
+      this.updateVisualStatus(symbol.identifier, 'unavailable')
       
       return
     }
@@ -95,10 +90,14 @@ export class SymbolTable {
     // TODO dispatch status info for this sound
     // console.debug(`Found Sounds Related to: ${symbol.identifier}`)
     
+    
     // randomly select a result from array of results
     const result = results[Math.floor(Math.random() * results.length)]
     let previewUrl = result.previews["preview-hq-mp3"]
 
+    this.merge( {identifier: symbol.identifier, status: 'downloading'} )
+    this.updateVisualStatus(symbol.identifier, 'downloading')
+    
     // ======== DEBUGGING================
     switch (symbol.identifier) {
     case 'c':
@@ -120,9 +119,18 @@ export class SymbolTable {
     this.merge({
       identifier: symbol.identifier,
       value: await audioContext.decodeAudioData(buffer.slice(0), () => {}),
+      status: 'available'
     })
 
     // TODO dispatch status info for this sound
     // console.debug(`Downloaded MP3 For: ${result.name}`)
+    this.updateVisualStatus(symbol.identifier, 'available')
+  }
+
+  updateVisualStatus(identifier, status) {
+    const elements = document.getElementsByClassName(`token-${identifier.replace(/\s+/g, '')}`)
+    for (const el of elements) {
+      el.classList.add(status)
+    }
   }
 }
