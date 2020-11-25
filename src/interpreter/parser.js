@@ -52,8 +52,6 @@ export class Parser {
   }
 
   peek() {
-    
-    console.log(this.tokens)
     return this.tokens[this.tokenIndex]
   }
   consume() { return this.tokens[this.tokenIndex++] }

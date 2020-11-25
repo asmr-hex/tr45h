@@ -1,4 +1,4 @@
-import { map } from 'lodash'
+import { debounce, map } from 'lodash'
 
 import { Scheduler } from '../scheduler'
 
@@ -17,17 +17,27 @@ import { AST } from './ast'
  * text to interpret and transmitting information about syntax highlighting.
  */
 export class Interpreter {
-  constructor() {
-    this.symbols = new SymbolTable()
+  constructor(theme) {
+    this.theme = theme
+    
+    this.symbols = new SymbolTable(theme)
     this.lexer = new Lexer()
     this.parser = new Parser(this.symbols)
     this.text = null
     this.ast = new AST()
 
-    this.scheduler = new Scheduler(this.ast.program, this.symbols, 80)
+    this.scheduler = new Scheduler(this.ast.program, this.symbols, theme, 80)
     this.scheduler.start()
+
+    this.debouncedParse = debounce(this.parseBlock, 1000)
   }
 
+  updateTheme(theme) {
+    this.theme = theme
+    this.symbols.updateTheme(theme)
+    this.scheduler.updateTheme(theme)
+  }
+  
   /**
    * analyze takes a new text state and updates the AST.
    *
@@ -85,7 +95,18 @@ export class Interpreter {
   analyzeBlock(blockKey, blockIndex, blockText) {
     // perform lexical analysis
     const lexicon = this.lexer.tokenize(blockText, blockKey)
+
+    // keep up-to-date list of identifiers used in blocks (for garbage collection purposes)
+    this.symbols.updateActiveIdentifiers(blockKey, lexicon)
+
+    this.debouncedParse(lexicon, blockKey, blockIndex)
+    // console.log(Object.keys(this.symbols.symbols))
     
+    return lexicon
+  }
+
+  // this is for debouncing
+  parseBlock(lexicon, blockKey, blockIndex) {
     // perform semantic analysis
     const semantics = this.parser.analyzeStatement(lexicon)
 
@@ -95,9 +116,7 @@ export class Interpreter {
     // signal to scheduler (evaluator) that symbol table and ast have changed!
     // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
     this.scheduler.setSymbols(this.symbols)
-    this.scheduler.setAST(this.ast.program)
-
-    return lexicon
+    this.scheduler.setAST(this.ast.program)    
   }
   
   parse(blockArray) {

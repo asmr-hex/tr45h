@@ -19,11 +19,17 @@ export class SyntaxHighlightDecorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpreter) {
+  constructor(interpreter, theme) {
     this.interpreter = interpreter
     this.highlighted = {}
+
+    this.theme = theme
   }
 
+  updateTheme(theme) {
+    this.theme = theme
+  }
+  
   /**
    * Given a `ContentBlock`, return an immutable List of decorator keys.
    *
@@ -109,14 +115,15 @@ export class SyntaxHighlightDecorator {
     return props => {
       const symbol = this.interpreter.symbols.get(props.token.value)
       const elements = document.getElementsByClassName(key)
-      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains('current-step') : false
+      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
       const classes = [
-        key, // individual token class
-        props.token.type, // type of token class
-        props.token.value ? `token-${props.token.value.replace(/\s+/g, '')}` : '', // in case of error or token
-        symbol === null ? '' : symbol.status, // status class
-        isCurrentStep ? 'current-step' : '', // current step class
+        key,                                                                        // individual token class
+        this.theme.classes[props.token.type.toLowerCase()],                         // token type class
+        symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
+        props.token.value ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
+        isCurrentStep ? this.theme.classes.currentStep : '',                        // current step class
       ].join(' ')
+
       return (
         <span className={classes}>{props.children}</span>
       ) 

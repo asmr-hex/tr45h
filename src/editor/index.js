@@ -10,11 +10,33 @@ import {
   getDefaultKeyBinding,
 } from 'draft-js'
 import 'draft-js/dist/Draft.css'
+import { useTheme, makeStyles } from "@material-ui/core/styles"
 import { intersection, reduce, uniq, xor } from 'lodash'
 
 import { SyntaxHighlightDecorator } from './decorator'
 import { Interpreter } from '../interpreter'
 import '../interpreter/grammar.css'
+
+
+// make style classes for tokens and statuses
+const useStyles = makeStyles(theme => ({
+  identifier: { color: theme.palette.text.tokens.identifier },
+  number: { color: theme.palette.text.tokens.number },
+  separator: { color: theme.palette.text.tokens.separator },
+  operator: { color: theme.palette.text.tokens.operator },
+  comment: { color: theme.palette.text.tokens.comment },
+  error: {
+    color: theme.palette.text.tokens.error,
+    backgroundColor: theme.palette.background.error,
+  },
+  searching: { color: theme.palette.text.status.searching },
+  downloading: { color: theme.palette.text.status.downloading },
+  available: { color: theme.palette.text.status.available },
+  unavailable: { color: theme.palette.text.status.unavailable },
+  currentStep: {
+    borderBottom: `2px ${theme.palette.divider} solid`,
+  },
+}))
 
 /**
  * MusicEditor is the main editor for writing sound-phrase music
@@ -36,9 +58,12 @@ export const MusicEditor = props => {
   //   sequenceDispatch,
   //   currentSteps
   // } = useSequenceContext()
-
-  // declare interpreter
+  const theme = useTheme()
+  const styleClasses = useStyles()
+  
+  // declare interpreter & decorator
   const [interpreter, setInterpreter] = useState(null)
+  const [decorator, setDecorator] = useState(null)
 
   // setup editor state
   const [editorState, setEditorState] = useState(
@@ -52,16 +77,23 @@ export const MusicEditor = props => {
   // interpreter class must be instantiated when the browser has loaded the WebAudio
   // API (e.g. on initial component mount)
   useEffect(() => {
-    const interpreter = new Interpreter()
-    const decorator = new SyntaxHighlightDecorator(interpreter)
+    const themeMap = {styles: theme, classes: styleClasses}
+    const interpreter = new Interpreter(themeMap)
+    const decorator = new SyntaxHighlightDecorator(interpreter, themeMap)
     setEditorState(EditorState.set(editorState, {decorator}))
+    setDecorator(decorator)
     setInterpreter(interpreter)
   }, [])
 
-  const reparse = e => {
-    interpreter.parse(convertToRaw(editorState.getCurrentContent()).blocks)
-  }
-
+  // update theme inside intrpreter
+  useEffect(() => {
+    const themeMap = {styles: theme, classes: styleClasses}
+    if (interpreter) {
+      interpreter.updateTheme(themeMap)
+      decorator.updateTheme(themeMap)
+    }
+  }, [theme, styleClasses])
+  
   const onChange = newEditorState => {
     // detect block deletions
     const newBlockKeys = newEditorState.getCurrentContent().getBlocksAsArray().map(b => b.key)
@@ -88,7 +120,6 @@ export const MusicEditor = props => {
   
   return (
     <div style={{width: '50%', height: '50%'}}>
-      <button onClick={reparse}>reparse</button>
       <Editor
         ref={editorRef}
         editorState={editorState}

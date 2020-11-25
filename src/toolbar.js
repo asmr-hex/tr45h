@@ -1,10 +1,25 @@
 import React from 'react'
-import { makeStyles } from "@material-ui/core/styles"
-import { IconButton, Slider } from '@material-ui/core'
+import {
+  makeStyles,
+  withTheme,
+  styled
+} from "@material-ui/core/styles"
+import {
+  IconButton,
+  Slider,
+  Switch,
+  FormGroup,
+  FormControlLabel,
+} from '@material-ui/core'
 import RecordIcon from '@material-ui/icons/FiberManualRecord'
 import PlayIcon from '@material-ui/icons/PlayArrow'
 import PauseIcon from '@material-ui/icons/Pause'
 import StopIcon from '@material-ui/icons/Stop'
+import DarkIcon from '@material-ui/icons/Brightness3'
+import LightIcon from '@material-ui/icons/WbSunny';
+
+import { Theme, useTheme } from './themes'
+
 
 
 const useStyles = makeStyles(theme => ({
@@ -48,7 +63,24 @@ const useStyles = makeStyles(theme => ({
     thumb: {
       backgroundColor: 'red',
     },
-  }
+  },
+  theme: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+}))
+
+const ToolbarBody = withTheme(styled('div')({
+  position: 'fixed',
+  top: 0,
+  width: '100%',
+  backgroundColor: p => p.theme.palette.background.secondary, //'#23272e',
+  padding: '1% 0% 1% 0%',
+  zIndex: 999999,
+  display: 'flex',
+  justifyContent: 'center',
+  
 }))
 
 export const Toolbar = props => {
@@ -63,17 +95,19 @@ export const Toolbar = props => {
     setBpm
   } = props
   const classes = useStyles()
-  const styles = {
-    position: 'fixed',
-    top: 0,
-    width: '100%',
-    backgroundColor: '#23272e',
-    padding: '1% 0% 1% 0%',
-    zIndex: 999999,
-    display: 'flex',
-    justifyContent: 'center'
-  }
+  // const styles = {
+  //   position: 'fixed',
+  //   top: 0,
+  //   width: '100%',
+  //   backgroundColor: '#23272e',
+  //   padding: '1% 0% 1% 0%',
+  //   zIndex: 999999,
+  //   display: 'flex',
+  //   justifyContent: 'center'
+  // }
 
+  const { isLightTheme, toggleTheme } = useTheme()
+  
   const toggleRecording = e => {
     if (!isRecording) {
       setIsPlaying(true)
@@ -101,7 +135,7 @@ export const Toolbar = props => {
   }
   
   return (
-    <div style={styles}>
+    <ToolbarBody>
       <IconButton
         aria-label="play/pause"
         size="small"
@@ -119,7 +153,13 @@ export const Toolbar = props => {
       <IconButton aria-label="record" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleRecording}>
         <RecordIcon />
       </IconButton>
-      <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/>
-    </div>
+      <FormControlLabel
+        control={<Switch name="theme" checked={isLightTheme} onChange={toggleTheme} inputProps={{ 'aria-label': 'secondary checkbox' }}/>}
+        label={isLightTheme ? <LightIcon/> : <DarkIcon/>}
+        classes={classes.theme}
+      />
+      
+      {/* <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/> */}
+    </ToolbarBody>
   )
 }

@@ -20,7 +20,9 @@ import { audioContext } from './context/audio'
  */
 
 export class Scheduler {
-  constructor(ast, symbolTable, bpm = 128) {
+  constructor(ast, symbolTable, theme, bpm = 128) {
+    this.theme = theme
+    
     this.audioContext = audioContext
     this.bpm = bpm
     this.tmpBpm = bpm
@@ -41,10 +43,17 @@ export class Scheduler {
     this.filename = 'untitled'
   }
 
+  updateTheme(theme) {
+    this.theme = theme
+    for (const sequence of this.sequences) {
+      sequence.updateTheme(theme)
+    }
+  }
+  
   setAST(ast) {
     this.ast = ast
     this.sequences = this.ast.map(
-      s => new Sequence(s, this.symbolTable, this.audioContext, this.mediaStreamDestination, this.tmpBpm)
+      s => new Sequence(s, this.symbolTable, this.audioContext, this.mediaStreamDestination, this.theme, this.tmpBpm)
     )
   }
   setSymbols(symbols) { this.symbolTable = symbols }
@@ -149,9 +158,11 @@ export class Scheduler {
 
 
 class Sequence {
-  constructor(ast, symbolTable, audioContext, mediaStreamDestination, bpm = 128) {
+  constructor(ast, symbolTable, audioContext, mediaStreamDestination, theme, bpm = 128) {
     this.ast = ast
     this.symbolTable = symbolTable
+
+    this.theme = theme
     
     this.audioContext = audioContext
     this.mediaStreamDestination = mediaStreamDestination
@@ -169,6 +180,10 @@ class Sequence {
     
   }
 
+  updateTheme(theme) {
+    this.theme = theme
+  }
+  
   setBpm(bpm) { this.bpm = bpm }
   setSoundMap(soundMap) {
     this.soundMap = soundMap
@@ -204,12 +219,12 @@ class Sequence {
     const stepElements = document.getElementsByClassName(this.ast.current().id)
     setTimeout(() => {
       for (const el of stepElements) {
-        el.classList.add('current-step')
+        el.classList.add(this.theme.classes.currentStep)
       }
     }, (time - this.audioContext.currentTime) * 1000)
     setTimeout(() => {
       for (const el of stepElements) {
-        el.classList.remove('current-step')
+        el.classList.remove(this.theme.classes.currentStep)
       }
     }, (endTime - this.audioContext.currentTime) * 1000) 
     

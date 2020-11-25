@@ -1,4 +1,4 @@
-import { filter } from 'lodash'
+import { filter, flatMap, uniq, keys, values, intersection, xor } from 'lodash'
 
 import { audioContext } from '../context/audio'
 
@@ -22,10 +22,40 @@ const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 //   }
 // }
 export class SymbolTable {
-  constructor() {
+  constructor(theme) {
+    this.theme = theme
     this.symbols = {}
+    this.activeIdentifiersByBlock = {}
+    this.fetchWaitInterval = 1000  // in ms
   }
 
+  updateTheme(theme) {
+    this.theme = theme
+  }
+  
+  /**
+   * updates by-block record of active identifiers and prunes dangling identifiers.
+   *
+   * @param {string} blockKey the key of the block being updated
+   * @param {LexicalAnalysisResults} lexicon the results of lexical analysis.
+   */
+  updateActiveIdentifiers(blockKey, lexicon) {
+    this.activeIdentifiersByBlock[blockKey] = uniq([
+      ...lexicon.tokens.filter(t => t.type === 'IDENTIFIER').map(t => t.value),
+      ...flatMap(lexicon.errors, e => e.tokens).filter(t => t.type === 'IDENTIFIER').map(t => t.value)
+    ])
+
+    const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
+    const identifiersInSymbolTable = keys(this.symbols)
+
+    const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
+
+    // remove dangling identifiers
+    for (const danglingIdentifier of danglingIdentifiers) {
+      this.remove(danglingIdentifier)
+    }
+  }
+  
   // {
   //   identifier: <identifier>,
   //   type: <type>,
@@ -33,6 +63,8 @@ export class SymbolTable {
   //   value: <value>
   // }
   merge(symbol) {
+    
+    
     // is this a new symbol?
     const exists = symbol.identifier in this.symbols
           
@@ -49,7 +81,7 @@ export class SymbolTable {
 
     if (!exists && symbol.type && symbol.type === 'sound')
       // this identifier is a new sound, we need to resolve it
-      this._fetchNewSound(symbol)
+      setTimeout(() => this._fetchNewSound(symbol), this.fetchWaitInterval)
   }
 
   get(identifier) {
@@ -63,6 +95,9 @@ export class SymbolTable {
   }
 
   async _fetchNewSound(symbol) {
+    // if the identifier no longer exists, do not fetch
+    if (!(symbol.identifier in this.symbols)) return
+    
     // deal with "_" keyword
 
     // TODO dispatch status info for this sound
@@ -98,19 +133,6 @@ export class SymbolTable {
     this.merge( {identifier: symbol.identifier, status: 'downloading'} )
     this.updateVisualStatus(symbol.identifier, 'downloading')
     
-    // ======== DEBUGGING================
-    switch (symbol.identifier) {
-    case 'c':
-      previewUrl = "https://freesound.org/data/previews/505/505410_3327701-hq.mp3"
-      break
-    case 'a':
-      previewUrl = "https://freesound.org/data/previews/95/95326_1579599-hq.mp3"
-      break
-    case 'f':
-      previewUrl = "https://freesound.org/data/previews/56/56123_692344-hq.mp3"
-      break      
-    }
-
     // console.debug(`Fetching MP3 For: ${result.name}`)
     // fetch Array Buffer of Mp3
     const buffer = await fetch(previewUrl)
@@ -130,7 +152,7 @@ export class SymbolTable {
   updateVisualStatus(identifier, status) {
     const elements = document.getElementsByClassName(`token-${identifier.replace(/\s+/g, '')}`)
     for (const el of elements) {
-      el.classList.add(status)
+      el.classList.add(this.theme.classes[status])
     }
   }
 }

@@ -332,20 +332,24 @@ export class Lexer {
         }
       }
       if (!overlappingRegion)
-        errorRegions.push({ type: 'ERROR', start: error.start, length: error.length, reasons: [error.reason] })
+        errorRegions.push({ type: 'ERROR', start: error.start, length: error.length, reasons: [error.reason], tokens: [] })
     }
 
     this.errorRegions = errorRegions
   }
 
+  /**
+   * removes tokens that occur in error regions, but preserves their existence in the errors.
+   */
   removeErrorTokens() {
     const tokens = []
     for (const token of this.tokens) {
       let inErrorRegion = false
-      for (const error of this.errorRegions) {
-        const r = this.rangeOverlaps(token, error)
+      for (let i = 0; i < this.errorRegions.length; i++) {
+        const r = this.rangeOverlaps(token, this.errorRegions[i])
         if (r.overlaps) {
           inErrorRegion = true
+          this.errorRegions[i].tokens.push(token)
           break
         }
       }
