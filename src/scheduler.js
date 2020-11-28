@@ -198,7 +198,10 @@ class Sequence {
   
   async scheduleNote(time) {
     const sample = this.audioContext.createBufferSource()
-    const audioBuffer = this.symbolTable.get(this.ast.current().value).value
+
+    const symbol = this.symbolTable.get(this.ast.current().value)
+    if (!symbol) return // in case this symbol has been removed from the symbol table
+    const audioBuffer = symbol.value
     
     // ignore steps with no sounds (maybe still loading)
     if (!audioBuffer) return
@@ -231,16 +234,14 @@ class Sequence {
     // console.log({bpm: this.bpm, ppqn: this.ast.current().ppqn, sound: this.ast.current().value})
   }
 
-  nextNote() {
-    
-    // console.log(this.sequence[this.currentStep])
+  nextNote() {    
     this.nextNoteTime += (1/this.ast.current().ppqn) * (60.0 / this.bpm) // add seconds / beat (scaled by ppqn)
     this.ast.advance()
-    //this.currentStep = ( (this.currentStep + 1 ) % this.sequence.length + this.sequence.length) % this.sequence.length
-
   }
 
   async schedule() {
+    if (!this.ast) return // in case the ast is null
+    
     while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
       await this.scheduleNote(this.nextNoteTime)
       this.nextNote()

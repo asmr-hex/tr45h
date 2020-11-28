@@ -347,7 +347,7 @@ export class Lexer {
       let inErrorRegion = false
       for (let i = 0; i < this.errorRegions.length; i++) {
         const r = this.rangeOverlaps(token, this.errorRegions[i])
-        if (r.overlaps) {
+        if (r.overlap) {
           inErrorRegion = true
           this.errorRegions[i].tokens.push(token)
           break

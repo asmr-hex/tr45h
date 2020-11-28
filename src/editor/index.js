@@ -8,8 +8,10 @@ import {
   CompositeDecorator,
   Modifier,
   getDefaultKeyBinding,
+  DefaultDraftBlockRenderMap,
 } from 'draft-js'
 import 'draft-js/dist/Draft.css'
+import { Map } from 'immutable'
 import { useTheme, makeStyles } from "@material-ui/core/styles"
 import { intersection, reduce, uniq, xor } from 'lodash'
 
@@ -37,6 +39,34 @@ const useStyles = makeStyles(theme => ({
     borderBottom: `2px ${theme.palette.divider} solid`,
   },
 }))
+
+
+const StatementBlock = props => {
+  const { interpreter, theme } = props
+  return (
+    <div>
+      {
+        props.children.map(editorBlock => {
+          // get ContentBlock for this editorBlock
+          const contentBlock = editorBlock.props.children.props.block
+          const text = contentBlock.getText()
+          const key = contentBlock.getKey()
+
+          // TODO lookup color of this editor block in symbol table
+          const isEmpty = text.trim() === ''
+          
+
+          const style = {
+            borderLeft: `3px ${isEmpty ? '#ffffff00' : interpreter.ast.getStatementMetaData(key).color} solid`,
+            paddingLeft: '10px',
+          }        
+
+          return <div style={style}>{editorBlock}</div>
+        })
+      }
+    </div>
+  )
+}
 
 /**
  * MusicEditor is the main editor for writing sound-phrase music
@@ -117,13 +147,24 @@ export const MusicEditor = props => {
     
     setEditorState(newEditorState)
   }
-  
+
+  // 
+  const blockRenderMap = DefaultDraftBlockRenderMap.merge(
+    Map({
+      'unstyled': {
+        element: 'div',
+        wrapper: <StatementBlock interpreter={interpreter} theme={theme}/>
+      }
+    })
+  )
+
   return (
     <div style={{width: '50%', height: '50%'}}>
       <Editor
         ref={editorRef}
         editorState={editorState}
         onChange={onChange}
+        blockRenderMap={blockRenderMap}
       />
     </div>
   )

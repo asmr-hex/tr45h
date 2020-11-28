@@ -1,3 +1,4 @@
+import randomColor from 'randomcolor'
 
 
 /**
@@ -21,6 +22,9 @@ export class AST {
     // index must be sorted against all indices stored in here to get the index
     // corresponding to the program array index.
     this.statementKeyToIndex = {}
+
+    //
+    this.statementKeyToMetaData = {}
   }
 
   /**
@@ -60,6 +64,12 @@ export class AST {
     
   }
 
+  getStatementMetaData(key) {
+    return key in this.statementKeyToMetaData
+      ? this.statementKeyToMetaData[key]
+      : this._createStatementMetaData(key)
+  }
+  
   /**
    * returns the program array index.
    *
@@ -73,5 +83,16 @@ export class AST {
       .sort((a, b) => a[1] - b[1])
       .map(e => e[0])
       .indexOf(blockKey)
+  }
+
+  _createStatementMetaData(key) {
+    const metaData = {
+      color: randomColor({ luminosity: 'light' })
+    }
+    
+    // pick random color that is different from surrounding colors
+    this.statementKeyToMetaData[key] = metaData
+
+    return metaData
   }
 }

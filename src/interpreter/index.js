@@ -29,7 +29,8 @@ export class Interpreter {
     this.scheduler = new Scheduler(this.ast.program, this.symbols, theme, 80)
     this.scheduler.start()
 
-    this.debouncedParse = debounce(this.parseBlock, 1000)
+    //this.debouncedParse = debounce(this.parseBlock, 1000)
+    this.memoizedParse = {}
   }
 
   updateTheme(theme) {
@@ -105,6 +106,20 @@ export class Interpreter {
     return lexicon
   }
 
+  // basically memoize it too based on block (statement)
+  debouncedParse(lexicon, blockKey, blockIndex) {
+    if (!(blockKey in this.memoizedParse))
+      this.memoizedParse[blockKey] = debounce(
+        (l, k, i) => {
+          this.parseBlock(l, k , i)
+          delete this.memoizedParse[k]
+        },
+        1000,
+      )
+      
+    this.memoizedParse[blockKey](lexicon, blockKey, blockIndex)
+  }
+  
   // this is for debouncing
   parseBlock(lexicon, blockKey, blockIndex) {
     // perform semantic analysis
@@ -116,7 +131,7 @@ export class Interpreter {
     // signal to scheduler (evaluator) that symbol table and ast have changed!
     // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
     this.scheduler.setSymbols(this.symbols)
-    this.scheduler.setAST(this.ast.program)    
+    this.scheduler.setAST(this.ast.program)
   }
   
   parse(blockArray) {
