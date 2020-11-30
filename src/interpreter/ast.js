@@ -49,7 +49,7 @@ export class AST {
     }
     
     // replace the statement at this index
-    this.program[this._normalizeIndex(blockKey)] = statement
+    this.program[this._normalizeIndex(blockKey)] = statement.tree
   }
   
   diff() {

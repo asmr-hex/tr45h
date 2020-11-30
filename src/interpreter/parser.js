@@ -30,7 +30,7 @@ import {
  * from lexical errors (such as parentheses balancing/mismatches), it is the role of the parser to
  * handle and recover from semantic errors by analyzing the arrangement of the provided tokens. In
  * particular, the usage and placement of identifiers (is it a function or sound word literal or a 
- * number?)
+ * number?).
  * 
  */
 export class Parser {
@@ -51,54 +51,85 @@ export class Parser {
     this.tokenIndex = 0
   }
 
-  peek() {
-    return this.tokens[this.tokenIndex]
-  }
+  peek() { return this.tokens[this.tokenIndex] }
   consume() { return this.tokens[this.tokenIndex++] }
   
   /**
-   * recursive descent parser
+   * analyzes an entire program.
+   *
+   * @description takes all tokenized statements which constitute a program
+   * and analyze them. (see cfg.md for details on grammar).
+   *
+   * @param {Array<Tokens>} tokenizedStatements an array of tokens corresponding to each statement.
+   *
+   * @return {ParseResult} a parse result containing detected errors and thre resulting tree.
    */
-  analyze(tokenizedBlocks) {
-    return this.program(tokenizedBlocks)
-  }
-
-  analyzeStatement(tokenizedBlock) {
-    return this.statement(tokenizedBlock)
+  analyze(tokenizedStatements) {
+    return this.program(tokenizedStatements)
   }
 
   /**
-   * program is the RD parser function for the <program> nonterminal.
+   * analyzes one statement of a program.
    *
-   * @param {Array<Array<token>>} input an array of arrays of tokens (corresponding to each line of code).
-   * @return {?} the parse tree for th entire program.
+   * @description takes one tokenized statement and analyzes it. (see cfg.md for details on grammar).
+   *
+   * @param {Tokens} statementTokens tokens of the statement.
+   *
+   * @return {ParseResult} a parse result containing detected errors and thre resulting tree.
    */
-  program(tokenizedBlocks) {
-    return this.statements(tokenizedBlocks)
+  analyzeStatement(statementTokens) {
+    return this.statement(statementTokens)
   }
 
   /**
-   * statements is the RD parser function for the <stmts> nonterminal.
+   * analyzes an entire program.
    *
-   * @param {Array<Array<token>>} input an array of arrays of tokens (corresponding to each line of code).
-   * @return {?} the parse tree for all statements.
+   * @description takes all tokenized statements which constitute a program
+   * and analyze them. (see cfg.md for details on grammar).
+   *
+   * @param {Array<Tokens>} tokenizedStatements an array of tokens corresponding to each statement.
+   *
+   * @return {ParseResult} a parse result containing detected errors and thre resulting tree.
    */
-  statements(tokenizedBlocks) {
-    return map(
-      tokenizedBlocks,
-      tokens => {
-        return this.statement(tokens)
-      }
-    ).filter(s => s !== null)
+  program(tokenizedStatements) {
+    return this.statements(tokenizedStatements)
   }
 
   /**
-   * statements is the RD parser function for the <stmt> nonterminal.
+   * analyzes an array of statements in a program.
    *
-   * @return {?} the parse tree for a statement.
+   * @description takes a list of tokenized statements of a program and analyze them.
+   * (see cfg.md for details on grammar).
+   *
+   * @param {Array<Tokens>} tokenizedStatements an array of tokens corresponding to each statement.
+   *
+   * @return {ParseResult} a parse result containing detected errors and thre resulting tree.
    */
-  statement(tokens) {
-    this.setTokens(tokens)
+  statements(tokenizedStatements) {
+    return reduce(
+      tokenizedStatements,
+      (acc, tokens) => {
+        const parseResult = this.statement(tokens)
+        return {
+          tree: [...acc.tree, parseResult.tree],
+          errors: [parseResult.errors]
+        }
+      },
+      { tree: [], errors: [] },
+    )
+  }
+
+  /**
+   * analyzes one statement of a program.
+   *
+   * @description takes one tokenized statement and analyzes it. (see cfg.md for details on grammar).
+   *
+   * @param {Tokens} statementTokens tokens of the statement.
+   *
+   * @return {ParseResult} a parse result containing detected errors and thre resulting tree.
+   */
+  statement(statementTokens) {
+    this.setTokens(statementTokens)
     return this.sequence()
   }
 
@@ -109,57 +140,87 @@ export class Parser {
    */
   sequence() {
     const steps = this.steps()
-    return steps.length !== 0 ? new Sequence(steps) : null
+    console.log(steps)
+    const sequence = steps.tree.length !== 0 ? new Sequence(steps.tree) : null
+    return {
+      tree: sequence,
+      errors: steps.errors
+    }
   }
 
   subbeat() {
     const steps = this.steps()
-    return steps.length !== 0 ? new SubBeatSequence(steps) : null
+    const subbeat = steps.tree.length !== 0 ? new SubBeatSequence(steps.tree) : null
+    return {
+      tree: subbeat,
+      errors: steps.errors
+    }
   }
 
   steps(limit = 0) {
     let steps = []
+    let errors = []
     try {
       while (this.peek()) {
 
         // optionally limit the number of steps we parse
         if (limit > 0) {
-          if (steps.length === limit) return steps
+          if (steps.length === limit) return { tree: steps, errors }
         }
-        
+
+        let result
         switch(this.peek().type) {
         case 'IDENTIFIER':
-          steps.push(this.sound())
+          result = this.sound()
+          steps.push(result.tree)
+          errors = [...errors, ...result.errors]
           break
         case 'SEPARATOR':
-          const v = this.separator()
-          if (v !== null) steps.push(v)
+          result = this.separator()
+          errors = [...errors, ...result.errors]
+          if (result.tree !== null) steps.push(result.tree)
           break
         case 'OPERATOR':
-          if (steps.length === 0) throw new SyntaxError(`Unexpected '${this.peek().value}' operator placement!`)
-          steps.push(this.operator(steps.pop()))
+          if (steps.length === 0) {
+            // TODO fill in error more...
+            errors = [...errors, { reason: new SyntaxError(`Unexpected '${this.peek().value}' operator placement!`) }]
+
+            // TODO how do we recover from this error? how do we proceed?
+          }
+          result = this.operator(steps.pop())
+          if (result.errors.length === 0) {
+            steps.push(result.tree)    
+          } else {
+            errors = [...errors, ...result.errors]    
+          }
           break
         case 'COMMENT':
           this.consume()
           break
         default:
-          throw new SyntaxError(`Unkown Symbol '${this.peek().type}'`)
+          // TODO fill in error more...
+          errors = [...errors, { reason: new SyntaxError(`Unkown Symbol '${this.peek().type}'`) }]
+
+          // TODO how do we recover from this error? how do we proceed?
         }
       } 
     } catch (e) {
-      if (e instanceof EndOfSequence) return steps
+      if (e instanceof EndOfSequence) return { tree: steps, errors }
       throw e
     }
     
-    return steps
+    return { tree: steps, errors }
   }
 
   choice(lhs) {
     let choices = [lhs]
     let probabilities = []
+    let errors = []
     try {
       while (this.peek()) {
-        choices.push(...this.steps(1))
+        const result = this.steps(1)
+        choices.push(...result.tree)
+        errors = [...errors, ...result.errors]
         if (this.peek().value === '|') { this.consume() }
         else { throw new EndOfSequence() }
       }
@@ -170,19 +231,30 @@ export class Parser {
     // TODO calculate probabilities
     probabilities = map(choices, i => 1/choices.length)
     
-    return new Choice(choices, probabilities, this.options.choiceFn)
+    return {
+      tree: new Choice(choices, probabilities, this.options.choiceFn),
+      errors,
+    }
   }
   
   operator(lhs) {
-    switch (this.peek().value) {
+    const token = this.peek().value
+    switch (token) {
     case '|':
       this.consume()
       return this.choice(lhs)
+    default:
+      this.consume()
+      return {
+        tree: null,
+        errors: [ new SyntaxError(`We dont' support '${token}' operators yet`) ],
+      }
     }
   }
   
   separator() {
-    switch(this.peek().value) {
+    const token = this.peek().value
+    switch(token) {
     case '(':
       this.consume()
       return this.sequence()
@@ -193,6 +265,12 @@ export class Parser {
     case ']':
       this.consume()
       throw new EndOfSequence()
+    default:
+      this.consume()
+      return {
+        tree: null,
+        errors: [ new SyntaxError(`We dont' support '${token}' operators yet`) ],
+      }
     }
   }
 
@@ -201,7 +279,10 @@ export class Parser {
     case 'IDENTIFIER':
       const token = this.consume()
       this.symbolTable.merge({identifier: token.value, type: 'sound'})
-      return new Terminal({type: 'sound', value: token.value, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` })
+      return {
+        tree: new Terminal({type: 'sound', value: token.value, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` }),
+        errors: [],
+      }
     default:
       throw new Error("aaaaa")
     }

@@ -197,7 +197,7 @@ export class Lexer {
             this.errorRegions.push({start, length: multiWordIdentifier.length + 1, reason: e})
             
             // dedupe error regions and remove tokens from error regions
-            this.dedupeErrorRegions()
+            this.dedupeErrorRegions(blockKey)
             this.removeErrorTokens()
             
             return { errors: this.errorRegions, tokens: this.tokens }
@@ -304,7 +304,7 @@ export class Lexer {
     }
 
     // dedupe error regions and remove tokens from error regions
-    this.dedupeErrorRegions()
+    this.dedupeErrorRegions(blockKey)
     this.removeErrorTokens()
     
     return {
@@ -313,7 +313,7 @@ export class Lexer {
     }
   }
 
-  dedupeErrorRegions() {
+  dedupeErrorRegions(blockKey) {
     const errorRegions = []
     
     for (const error of this.errorRegions) {
@@ -326,13 +326,20 @@ export class Lexer {
           errorRegions[i] = {
             start: r.min,
             length: (r.max + 1) - r.min,
-            reasons: [...errorRegions[i].reasons, error.reason]
+            reasons: [...errorRegions[i].reasons, error.reason],
           }
           break
         }
       }
       if (!overlappingRegion)
-        errorRegions.push({ type: 'ERROR', start: error.start, length: error.length, reasons: [error.reason], tokens: [] })
+        errorRegions.push({
+          type: 'ERROR',
+          start: error.start,
+          length: error.length,
+          reasons: [error.reason],
+          tokens: [],
+          block: blockKey,
+        })
     }
 
     this.errorRegions = errorRegions
