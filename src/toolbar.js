@@ -18,8 +18,8 @@ import StopIcon from '@material-ui/icons/Stop'
 import DarkIcon from '@material-ui/icons/Brightness3'
 import LightIcon from '@material-ui/icons/WbSunny';
 
+import { useTransportContext } from './context/transport'
 import { Theme, useTheme } from './themes'
-
 
 
 const useStyles = makeStyles(theme => ({
@@ -93,7 +93,7 @@ export const Toolbar = props => {
     setIsPaused,
     bpm,
     setBpm
-  } = props
+  } = useTransportContext()
   const classes = useStyles()
   // const styles = {
   //   position: 'fixed',
@@ -106,6 +106,8 @@ export const Toolbar = props => {
   //   justifyContent: 'center'
   // }
 
+  
+  
   const { isLightTheme, toggleTheme } = useTheme()
   
   const toggleRecording = e => {
@@ -144,7 +146,7 @@ export const Toolbar = props => {
         {
           isPaused
             ? <PlayIcon/>
-            : <PauseIcon/>
+            : isPlaying ? <PauseIcon/> : <PlayIcon/>
         }
       </IconButton>
        <IconButton aria-label="stop" size="small" className={isPlaying ? classes.buttonNotStopped : classes.buttonStopped } onClick={stopPlayback}>

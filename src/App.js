@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   makeStyles,
   withTheme,
   styled
 } from "@material-ui/core/styles"
 
+import { TransportProvider } from './context/transport'
 import { SequenceProvider } from './context/sequence'
+
 import { MusicEditor } from './editor/index'
-import { Sequencer } from './sequencer'
-import { SequenceVisualizer } from './visualizer'
 import { Toolbar } from  './toolbar'
 
 
@@ -27,31 +27,17 @@ const AppBody = withTheme(styled('header')({
 }))
 
 
-const App = () => {
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
-  const [bpm, setBpm] = useState(128)
-  const playback = {
-    isPlaying,
-    isPaused,
-    isRecording,
-    setIsPlaying,
-    setIsPaused,
-    setIsRecording,
-    bpm,
-    setBpm,
-  }
-  
+const App = () => {  
   return (
     <AppContainer>
-      <Toolbar {...playback}/>
-      <AppBody>
-           <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
+      <TransportProvider>
+        <Toolbar/>
+        <AppBody>
+          <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
             <MusicEditor/>
           </div>
-          {/* <Sequencer isRecording={isRecording} isPlaying={isPlaying} isPaused={isPaused} bpm={bpm}/> */}
-      </AppBody>
+        </AppBody>
+      </TransportProvider>
     </AppContainer>
   );
 }

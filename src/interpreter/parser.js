@@ -140,7 +140,6 @@ export class Parser {
    */
   sequence() {
     const steps = this.steps()
-    console.log(steps)
     const sequence = steps.tree.length !== 0 ? new Sequence(steps.tree) : null
     return {
       tree: sequence,

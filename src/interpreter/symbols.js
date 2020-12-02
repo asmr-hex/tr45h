@@ -111,7 +111,7 @@ export class SymbolTable {
     ).then(res => res.json())
 
 
-    if (results.length === 0) {
+    if (!results || results.length === 0) {
       // darn. no results found. mark this as unavailable.
 
       // mark as unavailable in symbol table

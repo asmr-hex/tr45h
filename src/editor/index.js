@@ -15,6 +15,8 @@ import { Map } from 'immutable'
 import { useTheme, makeStyles } from "@material-ui/core/styles"
 import { intersection, reduce, uniq, xor } from 'lodash'
 
+import { useTransportContext } from '../context/transport'
+
 import { SyntaxHighlightDecorator } from './decorator'
 import { Interpreter } from '../interpreter'
 import '../interpreter/grammar.css'
@@ -82,14 +84,11 @@ const StatementBlock = props => {
  *  * what data shape will be most helpful for the syntax highlighting?
  */
 export const MusicEditor = props => {
-  // const {
-  //   sequenceState,
-  //   fetchNewSounds,
-  //   sequenceDispatch,
-  //   currentSteps
-  // } = useSequenceContext()
   const theme = useTheme()
   const styleClasses = useStyles()
+
+  // get playback observables to pass to the interpreter
+  const transport = useTransportContext()
   
   // declare interpreter & decorator
   const [interpreter, setInterpreter] = useState(null)
@@ -108,7 +107,10 @@ export const MusicEditor = props => {
   // API (e.g. on initial component mount)
   useEffect(() => {
     const themeMap = {styles: theme, classes: styleClasses}
-    const interpreter = new Interpreter(themeMap)
+    const interpreter = new Interpreter({
+      transport: transport.observables,
+      theme: themeMap,
+    })
     const decorator = new SyntaxHighlightDecorator(interpreter, themeMap)
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)

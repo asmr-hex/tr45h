@@ -1,3 +1,4 @@
+import { BehaviorSubject } from 'rxjs'
 import { debounce, map } from 'lodash'
 
 import { Scheduler } from '../scheduler'
@@ -17,16 +18,17 @@ import { AST } from './ast'
  * text to interpret and transmitting information about syntax highlighting.
  */
 export class Interpreter {
-  constructor(theme) {
-    this.theme = theme
+  constructor(observables) {
+    // this.theme = new BehaviorSubject(theme)
+    this.theme = observables.theme
     
-    this.symbols = new SymbolTable(theme)
+    this.symbols = new SymbolTable(this.theme)
     this.lexer = new Lexer()
     this.parser = new Parser(this.symbols)
     this.text = null
     this.ast = new AST()
 
-    this.scheduler = new Scheduler(this.ast.program, this.symbols, theme, 80)
+    this.scheduler = new Scheduler(this.ast.program, this.symbols, observables.transport, this.theme)
     this.scheduler.start()
 
     //this.debouncedParse = debounce(this.parseBlock, 1000)
