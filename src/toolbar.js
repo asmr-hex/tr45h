@@ -15,6 +15,8 @@ import RecordIcon from '@material-ui/icons/FiberManualRecord'
 import PlayIcon from '@material-ui/icons/PlayArrow'
 import PauseIcon from '@material-ui/icons/Pause'
 import StopIcon from '@material-ui/icons/Stop'
+import SoundOnIcon from '@material-ui/icons/VolumeUp'
+import SoundOffIcon from '@material-ui/icons/VolumeOff'
 import DarkIcon from '@material-ui/icons/Brightness3'
 import LightIcon from '@material-ui/icons/WbSunny';
 import SettingsIcon from '@material-ui/icons/Settings';
@@ -130,6 +132,8 @@ export const Toolbar = props => {
     setIsPlaying,
     isPaused,
     setIsPaused,
+    isMuted,
+    setIsMuted,
     bpm,
     setBpm
   } = useTransportContext()
@@ -171,6 +175,10 @@ export const Toolbar = props => {
     setIsRecording(false)
   }
 
+  const toggleMute = e => {
+    setIsMuted(!isMuted)
+  }
+  
   const changeBpm = (e, newBpm) => {
     setBpm(newBpm)
   }
@@ -204,6 +212,13 @@ export const Toolbar = props => {
         </IconButton>
         <IconButton aria-label="record" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleRecording}>
           <RecordIcon />
+        </IconButton>
+        <IconButton aria-label="mute" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleMute}>
+          {
+            isMuted
+              ? <SoundOffIcon/>
+              : <SoundOnIcon/>
+          }
         </IconButton>
         <FormControlLabel
           control={<Switch name="theme" checked={isLightTheme} onChange={toggleTheme} inputProps={{ 'aria-label': 'secondary checkbox' }}/>}

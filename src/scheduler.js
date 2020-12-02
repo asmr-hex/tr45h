@@ -13,12 +13,19 @@ export class Scheduler {
   constructor(ast, symbolTable, transport, theme) {
     this.theme = theme
 
+    this.audioContext = audioContext
+    this.volume = this.audioContext.createGain()
+    this.volume.connect(this.audioContext.destination)
+    this.output = this.volume
+    
+    
     ////////////////////
     //                //
     // playback state //
     //                //
     ////////////////////
 
+    this.transport = transport
     this.isPlaying   = true
     this.isPaused    = false
     this.isRecording = false
@@ -43,15 +50,16 @@ export class Scheduler {
       if (isRecording) { this.startRecording(); return }             // if now recording, start recording and return
       this.stopRecording()                                           // if not recording, stop recording
     })
+    transport.isMuted.subscribe(isMuted => {
+      this.toggleMute(isMuted)
+    })
     transport.bpm.subscribe(bpm => {
       this.bpm.next = bpm                                            // set the next bpm
     })
-
+    
 
     
-    this.audioContext = audioContext
 
-    
     this.ast = ast
     this.symbolTable = symbolTable
     this.sequences = []
@@ -78,7 +86,7 @@ export class Scheduler {
   setAST(ast) {
     this.ast = ast
     this.sequences = this.ast.map(
-      s => new Sequence(s, this.symbolTable, this.audioContext, this.mediaStreamDestination, this.theme, this.tmpBpm)
+      s => new Sequence(s, this.symbolTable, this.audioContext, this.output, this.mediaStreamDestination, this.theme, this.transport, this.bpm.next)
     )
   }
   setSymbols(symbols) { this.symbolTable = symbols }
@@ -88,17 +96,23 @@ export class Scheduler {
     this.tmpBpm = bpm
   }
 
+  toggleMute(isMuted) {
+    this.volume.gain.value = isMuted ? 0 : 1
+  }
+  
   stop() {
     clearInterval(this.timerFn)
     this.timerFn = null
     for (const sequence of values(this.sequences)) {
       sequence.resetReadHead()
     }
+    this.audioContext.suspend()
   }
 
   pause() {
     clearInterval(this.timerFn)
     this.timerFn = null
+    this.audioContext.suspend()
   }
   
   startRecording() {
@@ -131,7 +145,7 @@ export class Scheduler {
       for (const sequence of this.sequences) {
         sequence.schedule()
       }
-      this.bpm = this.tmpBpm
+      this.bpm.current = this.bpm.next
       
     }, this.lookAheadInterval)
   }
@@ -139,11 +153,22 @@ export class Scheduler {
 
 
 class Sequence {
-  constructor(ast, symbolTable, audioContext, mediaStreamDestination, theme, bpm = 128) {
+  constructor(ast, symbolTable, audioContext, output, mediaStreamDestination, theme, transport, bpm = 128) {
     this.ast = ast
     this.symbolTable = symbolTable
 
     this.theme = theme
+
+    this.isPaused = false
+    transport.isPaused.subscribe(v => {
+      this.isPaused = v
+      if (this.isPaused) return
+      // if unpaused, remove all underlines now
+      const stepElements = document.getElementsByClassName(this.ast.current().id)
+      for (const el of stepElements) {
+        el.classList.remove(this.theme.classes.currentStep)
+      }
+    })
     
     this.audioContext = audioContext
     this.mediaStreamDestination = mediaStreamDestination
@@ -156,7 +181,7 @@ class Sequence {
 
     // experimental effects
     this.delay = audioContext.createDelay()
-    this.delay.connect(this.audioContext.destination)
+    this.delay.connect(output)
     this.delay.connect(this.mediaStreamDestination)
     
   }
@@ -207,6 +232,7 @@ class Sequence {
       }
     }, (time - this.audioContext.currentTime) * 1000)
     setTimeout(() => {
+      if (this.isPaused) return // do not remove the underline if paused
       for (const el of stepElements) {
         el.classList.remove(this.theme.classes.currentStep)
       }

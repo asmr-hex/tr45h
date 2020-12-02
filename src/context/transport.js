@@ -38,6 +38,12 @@ export const TransportProvider = props => {
   const isRecordingSubjectRef = useRef(new BehaviorSubject(isRecording))
   useEffect(() => { isRecordingSubjectRef.current.next(isRecording) }, [isRecording])
 
+  // mute state
+  const [isMuted, setIsMuted] = useState(false)
+  const isMutedSubjectRef = useRef(new BehaviorSubject(isMuted))
+  useEffect(() => { isMutedSubjectRef.current.next(isMuted) }, [isMuted])
+
+  
   // bpm state
   const [bpm, setBpm] = useState(128)
   const bpmSubjectRef = useRef(new BehaviorSubject(bpm))
@@ -50,12 +56,15 @@ export const TransportProvider = props => {
     setIsPaused,
     isRecording,
     setIsRecording,
+    isMuted,
+    setIsMuted,
     bpm,
     setBpm,
     observables: {
       isPlaying: isPlayingSubjectRef.current,
       isPaused: isPausedSubjectRef.current,
       isRecording: isRecordingSubjectRef.current,
+      isMuted: isMutedSubjectRef.current,
       bpm: bpmSubjectRef.current,
     }
   }
