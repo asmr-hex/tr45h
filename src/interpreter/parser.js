@@ -273,6 +273,15 @@ export class Parser {
     }
   }
 
+  /**
+   * parses an identifier token.
+   *
+   * @description could 
+   */
+  identifier() {
+    
+  }
+  
   sound() {
     switch (this.peek().type) {
     case 'IDENTIFIER':
