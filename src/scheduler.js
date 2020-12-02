@@ -164,6 +164,7 @@ class Sequence {
       this.isPaused = v
       if (this.isPaused) return
       // if unpaused, remove all underlines now
+      if (!this.ast || !this.ast.current()) return
       const stepElements = document.getElementsByClassName(this.ast.current().id)
       for (const el of stepElements) {
         el.classList.remove(this.theme.classes.currentStep)

@@ -1,4 +1,5 @@
 import React from  'react'
+import { Tooltip } from '@material-ui/core'
 import { convertToRaw } from 'draft-js'
 import { List } from 'immutable'
 
@@ -125,7 +126,7 @@ export class SyntaxHighlightDecorator {
       ].join(' ')
 
       return (
-        <span className={classes}>{props.children}</span>
+          <span className={classes}>{props.children}</span>
       ) 
     }
   }

@@ -13,12 +13,14 @@ const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 //   'apple': {
 //     type: 'sound',
 //     status: 'downloading',
-//     value: <bytes>
+//     value: <bytes>,
+//     meta: {...}
 //   },
 //   'reverb': {
 //     type: 'fx',
 //     status: 'ready',
-//     value: <fn>
+//     value: <fn>,
+//     meta: {...},
 //   }
 // }
 export class SymbolTable {
@@ -61,6 +63,7 @@ export class SymbolTable {
   //   type: <type>,
   //   status: <status>,
   //   value: <value>
+  //   meta: <metadata>
   // }
   merge(symbol) {
     
@@ -71,7 +74,7 @@ export class SymbolTable {
     // get existing or default fields
     const fields = exists
           ? this.symbols[symbol.identifier]
-          : { type: null, status: null, value: null }
+          : { type: null, status: null, value: null, meta: null}
 
     // merge symbol
     this.symbols[symbol.identifier] = {
@@ -94,6 +97,15 @@ export class SymbolTable {
     delete this.symbols[identifier]
   }
 
+  // metadata for sounds
+  // {
+  //   meta: {
+  //     id: <freesound-sound-id>,
+  //     user: <freesound-uploader>,
+  //     
+  //   }
+  // }
+  
   async _fetchNewSound(symbol) {
     // if the identifier no longer exists, do not fetch
     if (!(symbol.identifier in this.symbols)) return
@@ -101,6 +113,32 @@ export class SymbolTable {
     // deal with "_" keyword
 
     // TODO dispatch status info for this sound
+
+    const filters = {
+      singleEvent: true,
+      tonality: {
+        root: 'C#',      // “A”, “A#”, “B”, “C”, “C#”, “D”, “D#”, “E”, “F”, “F#”, “G”, “G#”
+        scale: 'major',  // can be 'minor'
+      },
+      midiNote: 74,      // numeric midi note number
+      noteName: 'A#4',   // note name string
+      loopable: true,
+      noteFrequency: 440, // note frequency in hertz
+    }
+    
+    // compile filters
+    const queryFilters = [
+      `ac_single_event:${filters.singleEvent}`,  // whether the clip is one distinct sound event,
+      `ac_tonality:"${filters.tonality.rootNote} ${filters.tonality.scale}"`,  // the key the sound is in
+      `ac_note_midi:${filters.midiNote}`,
+      `ac_note_name:"${filters.noteName}"`,
+      `ac_loop:${filters.loopable}`,
+      `ac_note_frequency:${filters.noteFrequency}`,
+      `ac_note_confidence:${0.95}`,
+    ]
+    
+    // compile search fields
+    const returnFields = ['id', 'name', 'previews', 'license', 'description', 'username', 'similar_sounds', 'ac_analysis'].join(',')
     
     // console.debug(`Fetching Sounds Related to: ${symbol.identifier}`)
     this.merge( {identifier: symbol.identifier, status: 'searching'} )
