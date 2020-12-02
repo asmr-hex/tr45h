@@ -44,6 +44,14 @@ const theme = () => createMuiTheme({
         unavailable: '#ff6b6b',
       },
     },
+    logo: [
+      '#fddeff',
+      '#d6efff',
+      '#dbffd6',
+      '#f4edff',
+      '#fffded',
+      '#dde3ed',
+    ],
     background: {
       default: '#282c34',
       secondary: '#23272e',

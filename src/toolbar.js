@@ -17,6 +17,7 @@ import PauseIcon from '@material-ui/icons/Pause'
 import StopIcon from '@material-ui/icons/Stop'
 import DarkIcon from '@material-ui/icons/Brightness3'
 import LightIcon from '@material-ui/icons/WbSunny';
+import SettingsIcon from '@material-ui/icons/Settings';
 
 import { useTransportContext } from './context/transport'
 import { Theme, useTheme } from './themes'
@@ -72,6 +73,18 @@ const useStyles = makeStyles(theme => ({
 }))
 
 const ToolbarBody = withTheme(styled('div')({
+  // position: 'fixed',
+  // top: 0,
+  // width: '100%',
+  // backgroundColor: p => p.theme.palette.background.secondary, //'#23272e',
+  // padding: '1% 0% 1% 0%',
+  // zIndex: 999999,
+  display: 'flex',
+  justifyContent: 'space-around',
+  
+}))
+
+const HeaderBody = withTheme(styled('div')({
   position: 'fixed',
   top: 0,
   width: '100%',
@@ -79,9 +92,35 @@ const ToolbarBody = withTheme(styled('div')({
   padding: '1% 0% 1% 0%',
   zIndex: 999999,
   display: 'flex',
-  justifyContent: 'center',
-  
+  justifyContent: 'space-between',
+  boxShadow: '0px -3px 8px',
 }))
+
+const Logo = withTheme(styled('div')({
+  marginLeft: '2%',
+  fontFamily: 'gilbert',
+  fontSize: '1.8rem',
+  letterSpacing: '0.3rem',
+  color: p => p.theme.palette.background.default,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  userSelect: 'none',
+}))
+
+const Settings = withTheme(styled('div')({
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  marginRight: '2%',
+}))
+
+const LogoLetter0 = withTheme(styled('span')({ color: p => p.theme.palette.logo[0] }))
+const LogoLetter1 = withTheme(styled('span')({ color: p => p.theme.palette.logo[1] }))
+const LogoLetter2 = withTheme(styled('span')({ color: p => p.theme.palette.logo[2] }))
+const LogoLetter3 = withTheme(styled('span')({ color: p => p.theme.palette.logo[3] }))
+const LogoLetter4 = withTheme(styled('span')({ color: p => p.theme.palette.logo[4] }))
+const LogoLetter5 = withTheme(styled('span')({ color: p => p.theme.palette.logo[5] }))
 
 export const Toolbar = props => {
   const {
@@ -137,31 +176,48 @@ export const Toolbar = props => {
   }
   
   return (
-    <ToolbarBody>
-      <IconButton
-        aria-label="play/pause"
-        size="small"
-        className={isPlaying ? classes.buttonPlaying : classes.buttonNotPlaying}
-        onClick={togglePlayPause}>
-        {
-          isPaused
-            ? <PlayIcon/>
-            : isPlaying ? <PauseIcon/> : <PlayIcon/>
-        }
-      </IconButton>
-       <IconButton aria-label="stop" size="small" className={isPlaying ? classes.buttonNotStopped : classes.buttonStopped } onClick={stopPlayback}>
-        <StopIcon />
-      </IconButton>
-      <IconButton aria-label="record" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleRecording}>
-        <RecordIcon />
-      </IconButton>
-      <FormControlLabel
-        control={<Switch name="theme" checked={isLightTheme} onChange={toggleTheme} inputProps={{ 'aria-label': 'secondary checkbox' }}/>}
-        label={isLightTheme ? <LightIcon/> : <DarkIcon/>}
-        classes={classes.theme}
-      />
-      
-      {/* <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/> */}
-    </ToolbarBody>
+    <HeaderBody>
+      <Logo>
+        <div>
+          <LogoLetter0>A</LogoLetter0>
+          <LogoLetter1>L</LogoLetter1>
+          <LogoLetter2>E</LogoLetter2>
+          <LogoLetter3>A</LogoLetter3>
+          <LogoLetter4>-</LogoLetter4>
+          <LogoLetter5>0</LogoLetter5>
+        </div>
+      </Logo>
+      <ToolbarBody>
+        <IconButton
+          aria-label="play/pause"
+          size="small"
+          className={isPlaying ? classes.buttonPlaying : classes.buttonNotPlaying}
+          onClick={togglePlayPause}>
+          {
+            isPaused
+              ? <PlayIcon/>
+              : isPlaying ? <PauseIcon/> : <PlayIcon/>
+          }
+        </IconButton>
+        <IconButton aria-label="stop" size="small" className={isPlaying ? classes.buttonNotStopped : classes.buttonStopped } onClick={stopPlayback}>
+          <StopIcon />
+        </IconButton>
+        <IconButton aria-label="record" size="small" className={isRecording? classes.buttonRecording : classes.buttonNotRecording} onClick={toggleRecording}>
+          <RecordIcon />
+        </IconButton>
+        <FormControlLabel
+          control={<Switch name="theme" checked={isLightTheme} onChange={toggleTheme} inputProps={{ 'aria-label': 'secondary checkbox' }}/>}
+          label={isLightTheme ? <LightIcon/> : <DarkIcon/>}
+          classes={classes.theme}
+        />
+        
+        {/* <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/> */}
+      </ToolbarBody>
+      <Settings>
+        <IconButton aria-label="settings" size="small" onClick={() => {console.log("hi")}}>
+          <SettingsIcon />
+        </IconButton>        
+      </Settings>
+    </HeaderBody>
   )
 }
