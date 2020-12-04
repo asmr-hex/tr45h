@@ -307,17 +307,26 @@ export class Parser {
     // does it have query parameters?
     // TODO make return type of fnArgs correct! (tree and errors)
     const parameters = hasQueryParameters ? this.fnArgs('_soundFn') : {}
-    
-    this.symbolTable.merge({
-      identifier: token.value,
+
+    // convert parameters into unique string
+    const paraStr = reduce(
+      parameters.parameters,
+      (acc, v, k) => `${acc}${k}:${v}::`,
+      '::'
+    )
+
+    const symbol = {
+      id: `${token.value}${paraStr}`,
+      identifier: `${token.value}`,
       type: 'sound',
       meta: {
         parameters: parameters.parameters,
       }
-    })
+    }
+    this.symbolTable.merge(symbol)
     
     return {
-      tree: new Terminal({type: 'sound', value: token.value, parameters, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` }),
+      tree: new Terminal({type: 'sound', value: symbol.id, parameters, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` }),
       errors: [],
     }
   }
@@ -359,13 +368,17 @@ export class Parser {
           ...parameters,
           ...fnDetails.meta.parameters[paramName.value].translate()  
         }
+
+        // if there is a comma, pop that off!
+        if (this.peek() && this.peek().value === ',') this.consume()
+        
         continue
       }
 
       // okay this must be a keyword parameter with a value
 
       // is there a colon separator?
-      if (this.peek() && this.peek().value === ':') {
+      if (this.peek() && this.peek().value !== ':') {
         errors.push(new Error("expected a ':' for keyword argument"))
         continue
       }
@@ -394,6 +407,10 @@ export class Parser {
     // pop off right-parenthesis
     this.consume()
 
+    console.log("====")
+    console.log(errors)
+    console.log(parameters)
+    
     return {
       errors,
       parameters,

@@ -53,10 +53,13 @@ export class SymbolTable {
 
     const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
 
+    // TODO DEBUGGING BECAUSE WE NEED TO FIGURE OUT HOW TO DEAL WITH REMOVING
+    // DANGLING IDENTIFIERS NOW THAT SOUNDS UNIQUENESS IS DEPENDENT ON PARAMETERS
+    
     // remove dangling identifiers
-    for (const danglingIdentifier of danglingIdentifiers) {
-      this.remove(danglingIdentifier)
-    }
+    // for (const danglingIdentifier of danglingIdentifiers) {
+    //   this.remove(danglingIdentifier)
+    // }
   }
   
   // {
@@ -70,15 +73,15 @@ export class SymbolTable {
     
     
     // is this a new symbol?
-    const exists = symbol.identifier in this.symbols
+    const exists = symbol.id in this.symbols
           
     // get existing or default fields
     const fields = exists
-          ? this.symbols[symbol.identifier]
-          : { type: null, status: null, value: null, meta: null}
+          ? this.symbols[symbol.id]
+          : { id: symbol.id, type: null, identifier: symbol.identifier, status: null, value: null, meta: null}
 
     // merge symbol
-    this.symbols[symbol.identifier] = {
+    this.symbols[symbol.id] = {
       ...fields,
       ...symbol,
     }
@@ -88,15 +91,15 @@ export class SymbolTable {
       setTimeout(() => this._fetchNewSound(symbol), this.fetchWaitInterval)
   }
 
-  get(identifier) {
-    return identifier in this.symbols
-      ? this.symbols[identifier]
+  get(id) {
+    return id in this.symbols
+      ? this.symbols[id]
       : null
   }
   
-  remove(identifier) {
-    if (this.symbols[identifier].status !== 'static')
-      delete this.symbols[identifier]
+  remove(id) {
+    if (this.symbols[id].status !== 'static')
+      delete this.symbols[id]
   }
 
   /**
@@ -117,7 +120,7 @@ export class SymbolTable {
   
   async _fetchNewSound(symbol) {
     // if the identifier no longer exists, do not fetch
-    if (!(symbol.identifier in this.symbols)) return
+    if (!(symbol.id in this.symbols)) return
 
 
     console.log(symbol)
@@ -150,6 +153,7 @@ export class SymbolTable {
     // ]
 
     // compile filters
+    console.log(symbol.meta.parameters)
     const filters = reduce(
       symbol.meta.parameters,
       (acc, v, k) => `${acc}${k}:${v} `,
@@ -159,9 +163,9 @@ export class SymbolTable {
     // compile search fields
     const returnFields = ['id', 'name', 'previews', 'license', 'description', 'username', 'similar_sounds', 'ac_analysis'].join(',')
     
-    // console.debug(`Fetching Sounds Related to: ${symbol.identifier}`)
-    this.merge( {identifier: symbol.identifier, status: 'searching'} )
-    this.updateVisualStatus(symbol.identifier, 'searching')
+    console.debug(`Fetching Sounds Related to: ${symbol.id}`)
+    this.merge( {id: symbol.id, status: 'searching'} )
+    this.updateVisualStatus(symbol.id, 'searching')
     const { results } = await fetch(
       `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=${returnFields}&${filter}&page_size=150`,
       {headers: {Authorization: `Token ${API_TOKEN}`}}
@@ -172,23 +176,23 @@ export class SymbolTable {
       // darn. no results found. mark this as unavailable.
 
       // mark as unavailable in symbol table
-      this.merge( {identifier: symbol.identifier, status: 'unavailable'} )
-      this.updateVisualStatus(symbol.identifier, 'unavailable')
+      this.merge( {id: symbol.id, status: 'unavailable'} )
+      this.updateVisualStatus(symbol.id, 'unavailable')
       
       return
     }
 
     // we found results, lets start downloading the sound.
     // TODO dispatch status info for this sound
-    // console.debug(`Found Sounds Related to: ${symbol.identifier}`)
+    console.debug(`Found Sounds Related to: ${symbol.id}`)
     
     
     // randomly select a result from array of results
     const result = results[Math.floor(Math.random() * results.length)]
     let previewUrl = result.previews["preview-hq-mp3"]
 
-    this.merge( {identifier: symbol.identifier, status: 'downloading'} )
-    this.updateVisualStatus(symbol.identifier, 'downloading')
+    this.merge( {id: symbol.id, status: 'downloading'} )
+    this.updateVisualStatus(symbol.id, 'downloading')
     
     // console.debug(`Fetching MP3 For: ${result.name}`)
     // fetch Array Buffer of Mp3
@@ -196,14 +200,14 @@ export class SymbolTable {
           .then(res => res.arrayBuffer())
 
     this.merge({
-      identifier: symbol.identifier,
+      id: symbol.id,
       value: await audioContext.decodeAudioData(buffer.slice(0), () => {}),
       status: 'available'
     })
 
     // TODO dispatch status info for this sound
-    // console.debug(`Downloaded MP3 For: ${result.name}`)
-    this.updateVisualStatus(symbol.identifier, 'available')
+    console.debug(`Downloaded MP3 For: ${result.name}`)
+    this.updateVisualStatus(symbol.id, 'available')
   }
 
   updateVisualStatus(identifier, status) {
@@ -213,3 +217,6 @@ export class SymbolTable {
     }
   }
 }
+
+// TEST
+// piano(note:'C4') piano(note:'D4') piano(note:'E4') piano(note:'F4') piano(note:'G4')
