@@ -237,11 +237,11 @@ export class Lexer {
       }
 
 
-      ///////////////
-      //           //
-      //  NUMBERS  //
-      //           //
-      ///////////////
+      ////////////////////
+      //                //
+      //  NUMBERS & HZ  //
+      //                //
+      ////////////////////
       
       else if (this.isDigit(this.char)) {
         let num = this.char
@@ -252,14 +252,29 @@ export class Lexer {
           num += this.char
           while (this.isDigit(this.advance())) num += this.char
         }
+
         num = parseFloat(num)
+        const isInHz = this.isHzUnit(this.char, this.peek(1))
+
         this.addToken({
-          type: 'NUMBER',
+          type: isInHz ? 'HZ' : 'NUMBER',
           value: num,
           start,
           length: this.index - start,
           block: blockKey,
         })
+
+        if (isInHz) {
+          this.addToken({
+            type: 'HZ_UNIT',
+            value: this.char + this.advance(),
+            start: this.index - 1,
+            length: 2,
+            block: blockKey,
+          })
+
+          this.advance()
+        }
       }
 
       
@@ -321,9 +336,10 @@ export class Lexer {
       // does this error overlap with any of the previous error regions?
       for (let i = 0; i < errorRegions.length; i++) {
         const r = this.rangeOverlaps(error, errorRegions[i])
-        if (r.overlaps) {
+        if (r.overlap) {
           overlappingRegion = true
           errorRegions[i] = {
+            ...errorRegions[i],
             start: r.min,
             length: (r.max + 1) - r.min,
             reasons: [...errorRegions[i].reasons, error.reason],
@@ -372,7 +388,10 @@ export class Lexer {
     const a = [ x.start, x.start + x.length - 1 ]
     const b = [ y.start, y.start + y.length - 1 ]
     let overlap = false
-    if ( (a[0] >= b[0] && a[0] <= b[1]) || (a[1] >= b[0] && a[1] <= b[1]) )
+    if ( (a[0] >= b[0] && a[0] <= b[1]) ||
+         (a[1] >= b[0] && a[1] <= b[1]) ||
+         (b[0] >= a[0] && b[0] <= a[1]) ||
+         (b[1] >= a[0] && b[1] <= a[1]) )
       overlap = true
     
     return {
@@ -383,14 +402,19 @@ export class Lexer {
   }
   
   advance() { return this.char = this.input[++this.index] }
+  peek(skip=0) {
+    if (skip + this.index < this.input.length) return this.input[this.index + skip]
+    return null
+  }
   addToken(token) { this.tokens.push(token) }
-
+  
   isWhiteSpace(c) { return /\s/.test(c) }
-  isSeparator(c) { return /[[\](){},]/.test(c) }
+  isSeparator(c) { return /[[\](){},:]/.test(c) }
   isQuote(c) { return /['"]/.test(c) }
   isOperator(c) { return /[|.=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
   isComment(c) { return /[#]/.test(c) }
   isDigit(c) { return /[0-9]/.test(c) }
+  isHzUnit(c0, c1) { return c0 && c0.toLowerCase() === 'h' && c1 && c1.toLowerCase() === 'z'}
   // since identifiers can have digits in the name, we don't check for non-digitness
   isIdentifier(c) {
     return typeof c === 'string'

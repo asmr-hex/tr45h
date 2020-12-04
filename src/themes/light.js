@@ -21,6 +21,8 @@ const theme = () => createMuiTheme({
       tokens: {
         identifier: '#282c34',
         number: '#8e7dbe',
+        hz: '#17b322',
+        unit: '#cf0eab',
         separator: '#364958',
         operator: '#662e9b',
         error: '#ea3546',

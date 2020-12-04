@@ -1,6 +1,7 @@
-import { filter, flatMap, uniq, keys, values, intersection, xor } from 'lodash'
+import { filter, flatMap, uniq, reduce, keys, values, intersection, xor } from 'lodash'
 
 import { audioContext } from '../context/audio'
+import { getNativeSymbols } from './nativeSymbols'
 
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -26,7 +27,7 @@ const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 export class SymbolTable {
   constructor(theme) {
     this.theme = theme
-    this.symbols = {}
+    this.symbols = getNativeSymbols()
     this.activeIdentifiersByBlock = {}
     this.fetchWaitInterval = 1000  // in ms
   }
@@ -94,9 +95,17 @@ export class SymbolTable {
   }
   
   remove(identifier) {
-    delete this.symbols[identifier]
+    if (this.symbols[identifier].status !== 'static')
+      delete this.symbols[identifier]
   }
 
+  /**
+   * returns true if this is a valid query parameter for a sound
+   */
+  isQueryParameter(token) {
+    return token in this.symbols['_soundFn'].meta.parameters
+  }
+  
   // metadata for sounds
   // {
   //   meta: {
@@ -109,34 +118,44 @@ export class SymbolTable {
   async _fetchNewSound(symbol) {
     // if the identifier no longer exists, do not fetch
     if (!(symbol.identifier in this.symbols)) return
+
+
+    console.log(symbol)
     
     // deal with "_" keyword
 
     // TODO dispatch status info for this sound
 
-    const filters = {
-      singleEvent: true,
-      tonality: {
-        root: 'C#',      // “A”, “A#”, “B”, “C”, “C#”, “D”, “D#”, “E”, “F”, “F#”, “G”, “G#”
-        scale: 'major',  // can be 'minor'
-      },
-      midiNote: 74,      // numeric midi note number
-      noteName: 'A#4',   // note name string
-      loopable: true,
-      noteFrequency: 440, // note frequency in hertz
-    }
+    // const filters = {
+    //   singleEvent: true,
+    //   tonality: {
+    //     root: 'C#',      // “A”, “A#”, “B”, “C”, “C#”, “D”, “D#”, “E”, “F”, “F#”, “G”, “G#”
+    //     scale: 'major',  // can be 'minor'
+    //   },
+    //   midiNote: 74,      // numeric midi note number
+    //   noteName: 'A#4',   // note name string
+    //   loopable: true,
+    //   noteFrequency: 440, // note frequency in hertz
+    // }
     
     // compile filters
-    const queryFilters = [
-      `ac_single_event:${filters.singleEvent}`,  // whether the clip is one distinct sound event,
-      `ac_tonality:"${filters.tonality.rootNote} ${filters.tonality.scale}"`,  // the key the sound is in
-      `ac_note_midi:${filters.midiNote}`,
-      `ac_note_name:"${filters.noteName}"`,
-      `ac_loop:${filters.loopable}`,
-      `ac_note_frequency:${filters.noteFrequency}`,
-      `ac_note_confidence:${0.95}`,
-    ]
-    
+    // const queryFilters = [
+    //   `ac_single_event:${filters.singleEvent}`,  // whether the clip is one distinct sound event,
+    //   `ac_tonality:"${filters.tonality.rootNote} ${filters.tonality.scale}"`,  // the key the sound is in
+    //   `ac_note_midi:${filters.midiNote}`,
+    //   `ac_note_name:"${filters.noteName}"`,
+    //   `ac_loop:${filters.loopable}`,
+    //   `ac_note_frequency:${filters.noteFrequency}`,
+    //   `ac_note_confidence:${0.95}`,
+    // ]
+
+    // compile filters
+    const filters = reduce(
+      symbol.meta.parameters,
+      (acc, v, k) => `${acc}${k}:${v} `,
+      ''
+    )
+    const filter = filters === '' ? '' : `filter=${filters}`
     // compile search fields
     const returnFields = ['id', 'name', 'previews', 'license', 'description', 'username', 'similar_sounds', 'ac_analysis'].join(',')
     
@@ -144,7 +163,7 @@ export class SymbolTable {
     this.merge( {identifier: symbol.identifier, status: 'searching'} )
     this.updateVisualStatus(symbol.identifier, 'searching')
     const { results } = await fetch(
-      `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=name,previews&page_size=150`,
+      `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=${returnFields}&${filter}&page_size=150`,
       {headers: {Authorization: `Token ${API_TOKEN}`}}
     ).then(res => res.json())
 

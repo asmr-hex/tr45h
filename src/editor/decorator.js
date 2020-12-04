@@ -121,7 +121,7 @@ export class SyntaxHighlightDecorator {
         key,                                                                        // individual token class
         this.theme.classes[props.token.type.toLowerCase()],                         // token type class
         symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
-        props.token.value ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
+        props.token.value && props.token.type === 'IDENTIFIER' ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
         isCurrentStep ? this.theme.classes.currentStep : '',                        // current step class
       ].join(' ')
 

@@ -26,6 +26,8 @@ import '../interpreter/grammar.css'
 const useStyles = makeStyles(theme => ({
   identifier: { color: theme.palette.text.tokens.identifier },
   number: { color: theme.palette.text.tokens.number },
+  hz: { color: theme.palette.text.tokens.hz },
+  'hz_unit': { color: theme.palette.text.tokens.unit },
   separator: { color: theme.palette.text.tokens.separator },
   operator: { color: theme.palette.text.tokens.operator },
   comment: { color: theme.palette.text.tokens.comment },

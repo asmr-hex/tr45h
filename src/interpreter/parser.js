@@ -51,7 +51,11 @@ export class Parser {
     this.tokenIndex = 0
   }
 
-  peek() { return this.tokens[this.tokenIndex] }
+  peek(skip=0) {
+    return this.tokenIndex + skip <= this.tokens.length
+      ? this.tokens[this.tokenIndex + skip]
+      : null
+  }
   consume() { return this.tokens[this.tokenIndex++] }
   
   /**
@@ -159,6 +163,7 @@ export class Parser {
   steps(limit = 0) {
     let steps = []
     let errors = []
+
     try {
       while (this.peek()) {
 
@@ -170,7 +175,7 @@ export class Parser {
         let result
         switch(this.peek().type) {
         case 'IDENTIFIER':
-          result = this.sound()
+          result = this.identifier()
           steps.push(result.tree)
           errors = [...errors, ...result.errors]
           break
@@ -201,6 +206,7 @@ export class Parser {
           errors = [...errors, { reason: new SyntaxError(`Unkown Symbol '${this.peek().type}'`) }]
 
           // TODO how do we recover from this error? how do we proceed?
+          this.consume()
         }
       } 
     } catch (e) {
@@ -276,23 +282,121 @@ export class Parser {
   /**
    * parses an identifier token.
    *
-   * @description could 
+   * @description could be a sound or a variable
    */
   identifier() {
-    
+    // we know this is an identifier. we need to figure out if this is a
+    // variable or a sound
+
+    // okay assume this is a sound for now
+    return this.sound()
   }
-  
+
+  // we need to figure out if the sound has query parameters
   sound() {
-    switch (this.peek().type) {
-    case 'IDENTIFIER':
-      const token = this.consume()
-      this.symbolTable.merge({identifier: token.value, type: 'sound'})
-      return {
-        tree: new Terminal({type: 'sound', value: token.value, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` }),
-        errors: [],
+    // capture the sound token
+    const token = this.consume()
+
+    const hasQueryParameters =
+          this.peek() &&
+          this.peek().value === '(' &&
+          this.peek(1) &&
+          this.peek(1).type === 'IDENTIFIER' &&
+          this.symbolTable.isQueryParameter(this.peek(1).value)
+          
+    // does it have query parameters?
+    // TODO make return type of fnArgs correct! (tree and errors)
+    const parameters = hasQueryParameters ? this.fnArgs('_soundFn') : {}
+    
+    this.symbolTable.merge({
+      identifier: token.value,
+      type: 'sound',
+      meta: {
+        parameters: parameters.parameters,
       }
-    default:
-      throw new Error("aaaaa")
+    })
+    
+    return {
+      tree: new Terminal({type: 'sound', value: token.value, parameters, fx: [], ppqn: 1, id: `${token.block}-token${token.start}` }),
+      errors: [],
+    }
+  }
+
+  fnArgs(fnName) {
+    // create a parameter map
+    let parameters = {}
+
+    // get available parameters from symbol table
+    const fnDetails = this.symbolTable.get(fnName)
+    
+    // pop off the left-parenthesis
+    this.consume()
+
+    // get starting position
+    const start = this.peek().start
+
+    let errors = []
+    let errorTokens = []
+
+    // loop over all parameters until we can't no more
+    while (this.peek() && this.peek().value !== ')') {
+      // get the next parameter in the list
+      const paramName = this.consume()
+
+      if (errors.length !== 0) continue
+      
+      // is this a supported parameter name?
+      if (!(paramName.value in fnDetails.meta.parameters) ) {
+        errors.push(new Error("unsupported parameter"))
+        continue
+      }
+      
+      // okay this is a valid argument
+
+      // is this a boolean flag parameter?
+      if (fnDetails.meta.parameters[paramName.value].isFlag) {
+        parameters = {
+          ...parameters,
+          ...fnDetails.meta.parameters[paramName.value].translate()  
+        }
+        continue
+      }
+
+      // okay this must be a keyword parameter with a value
+
+      // is there a colon separator?
+      if (this.peek() && this.peek().value === ':') {
+        errors.push(new Error("expected a ':' for keyword argument"))
+        continue
+      }
+      
+      // pop off :
+      this.consume()
+
+      // okay lets get the value (can be multiple tokens)
+      let valueTokens = []
+      while (this.peek() && this.peek().value !== ',' && this.peek().value !== ')') {
+        valueTokens.push(this.consume())
+      }
+
+      // yo, lets translate this shit
+      parameters = {
+        ...parameters,
+        ...fnDetails.meta.parameters[paramName.value].translate(valueTokens)  
+      }
+
+      // if there is a comma, pop that off!
+      if (this.peek() && this.peek().value === ',') this.consume()
+    }
+
+    const end = start + this.peek().length
+    
+    // pop off right-parenthesis
+    this.consume()
+
+    return {
+      errors,
+      parameters,
     }
   }
 }
