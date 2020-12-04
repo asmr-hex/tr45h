@@ -220,3 +220,4 @@ export class SymbolTable {
 
 // TEST
 // piano(note:'C4') piano(note:'D4') piano(note:'E4') piano(note:'F4') piano(note:'G4')
+// violin(note:'C4')  cello(note:'D4') trumpet(note:'E4') gong(note:'F4') bell(note:'G4') sing(note:'A4') honk(note:'B4') china(note:'C5')
