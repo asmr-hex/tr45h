@@ -71,7 +71,7 @@ export class SyntaxHighlightDecorator {
 
     // we simply create a decoratorKey for each character?
     // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
-    const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
+    const { errors, tokens } = this.interpreter.analyzeBlockSyntax(blockKey, blockIndex, blockText)
 
     // create ids for valid tokens
     for (const token of tokens) {

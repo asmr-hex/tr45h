@@ -18,7 +18,8 @@
     "react-scripts": "3.4.3",
     "react-wave-stream": "^1.0.0",
     "recorder-js": "^1.0.7",
-    "rxjs": "^6.6.3"
+    "rxjs": "^6.6.3",
+    "uuid": "^8.3.1"
   },
   "scripts": {
     "start": "react-scripts start",

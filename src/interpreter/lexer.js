@@ -411,7 +411,8 @@ export class Lexer {
   isWhiteSpace(c) { return /\s/.test(c) }
   isSeparator(c) { return /[[\](){},:]/.test(c) }
   isQuote(c) { return /['"]/.test(c) }
-  isOperator(c) { return /[|.=]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
+  isRest(c) { return /[\-]/.test(c)}
+  isOperator(c) { return /[|.=*]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
   isComment(c) { return /[#]/.test(c) }
   isDigit(c) { return /[0-9]/.test(c) }
   isHzUnit(c0, c1) { return c0 && c0.toLowerCase() === 'h' && c1 && c1.toLowerCase() === 'z'}

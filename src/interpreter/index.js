@@ -5,6 +5,7 @@ import { Scheduler } from '../scheduler'
 
 import { Lexer } from './lexer'
 import { Parser } from './parser'
+import { SyntaxHighlighter } from './highlight'
 import { SymbolTable } from './symbols'
 import { AST } from './ast'
 
@@ -25,6 +26,7 @@ export class Interpreter {
     this.symbols = new SymbolTable(this.theme)
     this.lexer = new Lexer()
     this.parser = new Parser(this.symbols)
+    this.highlighter = new SyntaxHighlighter(this.symbols)
     this.text = null
     this.ast = new AST()
 
@@ -108,6 +110,27 @@ export class Interpreter {
     return lexicon
   }
 
+  /**
+   * analyzes a single block of text. results are merged into the existing AST.
+   *
+   * @param {string} blockKey the key of the block to be interpreted.
+   * @param {int} blockIndex the index of the block to be interpreted.
+   * @param {string} blockText the text of the block to be interpreted.
+   *
+   * @return {LexicalAnlysisResults} used for syntax highlighting in the caller.
+   * TODO when we introduce more language features, we will need to be returning
+   * SemanticAnalysisResults since more advanced features will rely on semantic
+   * analysis to return the proper error regions.
+   */
+  analyzeBlockSyntax(blockKey, blockIndex, blockText) {
+    // perform lexical analysis
+    const lexicon = this.lexer.tokenize(blockText, blockKey)
+
+    const semantics = this.highlighter.parseStatementTokens(lexicon, blockKey, blockIndex)
+    
+    return semantics
+  }
+  
   // basically memoize it too based on block (statement)
   debouncedParse(lexicon, blockKey, blockIndex) {
     if (!(blockKey in this.memoizedParse))
