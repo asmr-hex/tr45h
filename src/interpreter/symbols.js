@@ -2,6 +2,7 @@ import { filter, flatMap, uniq, reduce, keys, values, intersection, xor } from '
 
 import { audioContext } from '../context/audio'
 import { getNativeSymbols } from './nativeSymbols'
+import { SemanticTokenType } from './types/tokens'
 
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -102,15 +103,35 @@ export class SymbolTable {
       delete this.symbols[id]
   }
 
+  isFn(identifier) {
+    return this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Fn
+  }
+
+  isVariable(identifier) {
+    return this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Variable
+  }
+  
   /**
    * returns true if this is a valid query parameter for a sound
    */
-  isQueryParameter(token) {
-    return token in this.symbols['_soundFn'].meta.parameters
+  isQueryParameter(paramName) {
+    return this.isFnParameter('_soundFn', paramName)
   }
 
-  isFnParameter(fnName, token) {
-    return token in this.symbols[fnName].meta.parameters
+  isFnParameter(fnName, paramName) {
+    return paramName in this.symbols[fnName].meta.parameters
+  }
+
+  isFnFlagParameter(fnName, paramName) {
+    return !!this.symbols[fnName].meta.parameters[paramName].isFlag
+  }
+
+  isValidFnArg(fnName, paramName, argToken) {
+    return this.symbols[fnName].meta.parameters[paramName].types.includes(argToken.type)
+  }
+
+  translateFnArgs(fnName, paramName, argTokens) {
+    return this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
   }
   
   // metadata for sounds

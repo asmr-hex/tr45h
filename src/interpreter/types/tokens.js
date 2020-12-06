@@ -54,13 +54,29 @@ export const SemanticTokenType = {
 }
 
 export const newSemanticToken = fields => ({
-  id:       null,  // for identifier uniqueness (keys for identifiers in symbol table)
-  instance: null,  // for token uniquenes (`<block>-<startIdx>`)
+  id:       fields.value,                       // for identifier uniqueness (keys for identifiers in symbol table)
+  instance: `${fields.block}-${fields.start}`,  // for token uniquenes (`<block>-<startIdx>`)
   type:     null,
   value:    null,
   start:    null,
   length:   null,
   block:    null,
   ...fields,
-  instance: `${fields.block}-${fields.start}`
+})
+
+
+////////////////////
+//                //
+//  ERROR TOKENS  //
+//                //
+////////////////////
+
+export const newErrorToken = fields => ({
+  type: LexicalTokenType.Error,
+  reasons: [],
+  tokens: [],
+  start: null,
+  length: null,
+  block: null,
+  ...fields
 })

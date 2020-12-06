@@ -5,6 +5,7 @@ import {
   LexicalTokenType,
   SemanticTokenType,
   newSemanticToken,
+  newErrorToken,
 } from '../types/tokens'
 
 
@@ -16,14 +17,18 @@ import {
  * @description
  */
 export class FirstPassParser {
-  constructor(symbols) {
-    this.symbols = symbols
+  constructor(symbolTable) {
+    this.symbolTable = symbolTable
 
+    // initialize internal state
     this.token = { stream: [], index: null }
     this.block = { key: null, index: null }
     this.result = { tokens: [], errors: [] }
   }
 
+  /**
+   * resets/hydrates internal state with output from lexical analysis.
+   */
   reset({ tokens, errors }, key, index) {
     this.token = { stream: tokens, index: 0}
     this.block = { key, index }
@@ -48,8 +53,8 @@ export class FirstPassParser {
   
   advance() { return this.token.stream[++this.token.index] }
   consume() { return this.token.stream[this.token.index++] }
-  pushToken(token) { this.result.tokens.push(token) }
-  pushError(error) { this.result.errors.push(error) }
+  pushToken(token) { this.result.tokens.push(newSemanticToken(token)) }
+  pushError(error) { this.result.errors.push(newErrorToken(error)) }
 
   
   ////////////////////
@@ -61,39 +66,39 @@ export class FirstPassParser {
   // determine the beginnings of expression types
   isAssignment() {
     return this.peek() &&
-      this.peek().type === 'IDENTIFIER' &&
+      this.peek().type === LexicalTokenType.Identifier &&
       this.peek(1) &&
-      this.peek(1).type === 'OPERATOR' &&
+      this.peek(1).type === LexicalTokenType.Operator &&
       this.peek(1).value === '='
   }
   isSequence() {
     return this.peek() &&
-      ( this.peek().type === 'IDENTIFIER' ||
+      ( this.peek().type === LexicalTokenType.Identifier ||
         /[\(\[]/.test(this.peek().value) )
   }
   isComment() {
     return this.peek() &&
-    this.peek().type === 'COMMENT'
+    this.peek().type === LexicalTokenType.Comment
   }
   isNumber() {
     return this.peek() &&
-      this.peek().type === 'NUMBER'
+      this.peek().type === LexicalTokenType.Number
   }
   isHz() {
     return this.peek() &&
-      this.peek().type === 'HZ' &&
+      this.peek().type === LexicalTokenType.Hz &&
       this.peek(1) &&
-      this.peek(1).type === 'HZ_UNIT'
+      this.peek(1).type === LexicalTokenType.HzUnit
   }
   isChoice() {
     return this.peek() &&
       this.peek().value === '|' &&
       this.peek(-1) &&
-      ( this.peek(-1).type === 'IDENTIFIER' ||
+      ( this.peek(-1).type === LexicalTokenType.Identifier ||
         /[\)\]]/.test(this.peek(-1))
       ) &&
       this.peek(1) &&
-      ( this.peek(1).type === 'IDENTIFIER' ||
+      ( this.peek(1).type === LexicalTokenType.Identifier ||
         /[\(\[]/.test(this.peek(1))
       )
   }
@@ -101,20 +106,20 @@ export class FirstPassParser {
     return this.peek() &&
       this.peek().value === '(' &&
       this.peek(1) &&
-      this.peek(1).type === 'NUMBER' &&
+      this.peek(1).type === LexicalTokenType.Number &&
       this.peek(2) &&
       this.peek(2).value === ')'
   }
   isChainOperator() {
     return this.peek() &&
-      this.peek().type === 'OPERATOR' &&
+      this.peek().type === LexicalTokenType.Operator &&
       this.peek().value === '.' &&
       this.peek(-1) &&
       ( /[\)\]]/.test(this.peek(-1).value) ||
-        this.peek(-1).type === 'IDENTIFIER'
+        this.peek(-1).type === LexicalTokenType.Identifier
       ) &&
       this.peek(1) &&
-      this.peek(1).type === 'IDENTIFIER' &&
+      this.peek(1).type === LexicalTokenType.Identifier &&
       this.isFn(this.peek(1).value)
   }
   isRepetitionOperator() {
@@ -126,7 +131,7 @@ export class FirstPassParser {
         this.peek(1).type === LexicalTokenType.Number &&
         this.peek(-1) &&  // LHS is a sequence or identifier
         ( /[\)\]]/.test(this.peek(-1).value) ||
-          this.peek(-1).type === 'IDENTIFIER'
+          this.peek(-1).type === LexicalTokenType.Identifier
         )
       ) ||
       // or <NUMBER> * ( [ <IDENTIFIER>
@@ -136,33 +141,33 @@ export class FirstPassParser {
         this.peek(1).value === '*' &&
         this.peek(2) &&  // RHS is a sequence or identifier
         ( /[\(\[]/.test(this.peek(2).value) ||
-          ( this.peek(1).type === 'IDENTIFIER' &&
+          ( this.peek(1).type === LexicalTokenType.Identifier &&
             !this.isFn(this.peek(1).value) )
         )
       )
   }
   isVariable(identifier) {
-    // check symbol table to see if this is a valid static function.
-    return true    
+    // check symbol table to see if this is a valid variable.
+    return this.symbolTable.isVariable(identifier)
   }
   isFn(identifier) {
     // check symbol table to see if this is a valid static function.
-    return true
+    return this.symbolTable.isFn(identifier)
   }
   isSoundLiteral(identifier) {
     return !this.isFn(identifier) && !this.isVariable(identifier)
   }
   hasQueryParameters() {
-    return this.peek() &&
-      this.peek().type === 'IDENTIFIER' &&
-      this.isSoundLiteral(this.peek().value) &&
+    return this.peek(-1) &&
+      this.peek(-1).type === LexicalTokenType.Identifier &&
+      this.isSoundLiteral(this.peek(-1).value) &&
       this.hasFnParameters('_soundFn')
   }
   hasFnParameters(fnName) {
-    return this.peek(1) &&
-      this.peek(1).value === '(' &&
-      this.peek(2) &&
-      this.symbols.isFnParameter(fnName, this.peek(2).value)
+    return this.peek() &&
+      this.peek().value === '(' &&
+      this.peek(1) &&
+      this.symbolTable.isFnParameter(fnName, this.peek(1).value)
   }
 
 
@@ -174,14 +179,14 @@ export class FirstPassParser {
   
   parseEndOfStatement() {
     if (this.peek() !== null) {
-      if (this.peek().type === 'COMMENT') {
+      if (this.peek().type === LexicalTokenType.Comment) {
         this.pushToken(this.consume())
         return
       }
       
       const endToken = this.token.stream[this.token.stream.length - 1]
       const end = endToken.start + endToken.length
-      this.pushError({ type: 'ERROR', start: this.peek().start, length: end - this.peek().start, reasons: [], block: this.block.key})
+      this.pushError({ start: this.peek().start, length: end - this.peek().start, reasons: [], block: this.block.key})
     }
   }
   
@@ -189,8 +194,8 @@ export class FirstPassParser {
     const start = this.peek().start
     
     // we know the structure is <VARIABLE_DECL> =
-    this.pushToken({ ...this.consume(), type: 'VARIABLE_DECL' })
-    this.pushToken(this.consume())
+    this.pushToken({ ...this.consume(), type: SemanticTokenType.VariableDecl })
+    this.pushToken({...this.consume(), type: SemanticTokenType.AssignmentOp})
 
     // we can assign sequences or function chains or numbers
     if (this.isNumber()) {
@@ -198,18 +203,90 @@ export class FirstPassParser {
 
       this.parseEndOfStatement()
     } else if (this.isHz()) {
-      this.pushToken(this.consume())
-      this.pushToken(this.consume())
+      this.pushToken(this.consume()) // Hz
+      this.pushToken(this.consume()) // HzUnit
       
       this.parseEndOfStatement()
     } else if (this.isSequence()) {
       this.parseSequence()
     } else {
       const end = this.getLastTokenEnd()
-      this.pushError({ type: 'ERROR', start, length: end - start, reasons: [], block: this.block.key})
+      this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
     }
   }
 
+  parseErrorUntilEndOfScope() {
+    const start = this.peek().start
+    while (this.peek() && !/[\),]/.test(this.peek().value)) this.advance()
+
+    if (/[,]/.test(this.peek().value)) this.advance()
+    
+    const end = this.peek(-1).start + this.peek(-1).length
+
+    this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
+  }
+  
+  parseFnParameters(fnName) {
+    // we know the structure so far is
+    // ( <FnParam>
+
+    // pop off fn bracket
+    this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket})
+
+    let parameters = {}
+
+    while (this.peek() && !/[\)]/.test(this.peek().value)) {
+      if (!this.symbolTable.isFnParameter(fnName, this.peek().value)) {
+        this.parseErrorUntilEndOfScope()
+        continue
+      }
+      
+      // is this parameter a flag parameter?
+      if (this.symbolTable.isFnFlagParameter(fnName, this.peek().value)) {
+        parameters = {...parameters, ...this.symbolTable.translateFnArgs(fnName, this.peek().value, [])}
+        this.pushToken({...this.consume(), type: SemanticTokenType.FnParameter})
+        
+        // is there a comma param delimiter?
+        if (/[,]/.test(this.peek().value))
+          this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
+        continue
+      }
+
+      // okay this must be a key-value parameter
+
+      // make sure that there is a kv delimiter
+      if (this.peek(1) && !/[:]/.test(this.peek(1).value)) {
+        this.parseErrorUntilEndOfScope()
+        continue
+      }
+
+      // make sure that the value type is correct
+      if (this.peek(2) && !this.symbolTable.isValidFnArg(fnName, this.peek().value, this.peek(2))) {
+        this.parseErrorUntilEndOfScope()
+        continue
+      }
+
+      const paramName = {...this.consume(), type: SemanticTokenType.FnParameter}           // pop off the parameter name
+      const kvDelimiter = {...this.consume(), type: SemanticTokenType.FnParamKvDelimiter}  // pop off the parameter kv delimiter
+      let args = []
+      while (this.peek() && !/[,\)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
+
+      // push all tokens
+      this.pushToken(paramName)
+      this.pushToken(kvDelimiter)
+      args.forEach(a => this.pushToken(a))
+      
+      // we should be good, add to parameter mapping
+      parameters = {...parameters, ...this.symbolTable.translateFnArgs(fnName, paramName.value, args)}
+
+      // is there a comma param delimiter?
+      if (/[,]/.test(this.peek().value))
+        this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
+    }
+    
+    return parameters
+  }
+  
   parseIdentifier() {
     // so this could be a
     // * variable
@@ -219,13 +296,15 @@ export class FirstPassParser {
     if (this.isVariable(this.peek().value)) {
       // assign instance id to variable
       this.pushToken({
-        ...this.peek(),
-        instance: this.getInstanceId(this.consume()),
+        ...this.consume(),
+        type: SemanticTokenType.Variable,
       })
     } else if (this.isSoundLiteral(this.peek().value)) {
+      const soundLiteral = this.consume()
       let params = ''
       // check for query parameters
       if (this.hasQueryParameters()) {
+        console.log("HAS QUERY PARAMETERS")
         // parse query parameters
         params = reduce(
           this.parseFnParameters(`_soundFn`),
@@ -235,10 +314,9 @@ export class FirstPassParser {
       }
 
       this.pushToken({
-        ...this.peek(),
-        type: `SOUND_LITERAL`,
-        id: `${this.peek().value.replace(/\s+/g, '_')}__${params}`,  // assign sound literal id (combo of value and query parameters)
-        instance: this.getInstanceId(this.consume())                 // assign sound literal instance id
+        ...soundLiteral,
+        type: SemanticTokenType.SoundLiteral,
+        id: `${soundLiteral.value.replace(/\s+/g, '_')}__${params}`,  // assign sound literal id (combo of value and query parameters)
       })
 
       // TODO merge into symbol table?
@@ -246,8 +324,7 @@ export class FirstPassParser {
     } else {
       // error?
     }
-    
-    this.pushToken(this.consume())
+
   }
 
   parseChoice() {
@@ -256,13 +333,13 @@ export class FirstPassParser {
 
     while (this.peek() && this.isChoice()) {
       // pop off the choice operator
-      this.pushToken(this.consume())
+      this.pushToken({...this.consume(), type: SemanticTokenType.ChoiceOp })
 
       if (this.isChoiceParameter()) {
         // pop off left paren, number, & right paren
-        this.pushToken(this.consume()) // left paren
+        this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket}) // left paren
         this.pushToken(this.consume()) // number
-        this.pushToken(this.consume()) // right paren
+        this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket}) // right paren
       }
 
       if (this.isSequence()) {
@@ -280,11 +357,15 @@ export class FirstPassParser {
     // <IDENTIFIER> or ( or [
 
     // if ( or [, lets pop them off (synce lexical analysis ensures they are balanced properly)
-    if (/[\(\[]/.test(this.peek().value)) this.pushToken(this.consume())
+    if (/[\(]/.test(this.peek().value)) {
+      this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
+    } else if (/[\[]/.test(this.peek().value)) {
+      this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
+    }
 
     // iterate over steps
     while(this.peek() && !/[\)\]]/.test(this.peek().value)) {
-      if (this.peek().type === 'IDENTIFIER') {
+      if (this.peek().type === LexicalTokenType.Identifier) {
         this.parseIdentifier()
       } else if (this.isSequence()) {
         this.parseSequence()
@@ -300,8 +381,12 @@ export class FirstPassParser {
       }
     }
 
-    // pop off right separator if necessary
-    if (this.peek() && /[\)\]]/.test(this.peek().value)) this.pushToken(this.consume())
+    // pop off right bracket if necessary
+    if (this.peek() && /[\)]/.test(this.peek().value)) {
+      this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
+    } else if (this.peek() && /[\]]/.test(this.peek().value)) {
+      this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
+    }
   }
 
   // the point of this isn't to create a parse tree, but rather augment tokens from

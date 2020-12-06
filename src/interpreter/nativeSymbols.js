@@ -1,3 +1,5 @@
+import { LexicalTokenType } from './types/tokens'
+
 
 // make into classes
 const paramTypes = {
@@ -18,21 +20,19 @@ const nativeSymbols = {
         unique: {
           // makes a sound unique
           isFlag: true,
-          types: ['bool'],
           translate: () => ({ unique: true })
         },
         loop: {
           isFlag: true,
-          types: ['bool'],
           translate: () => ({ ac_loop: true })
         },
         isolated: {
           isFlag: true,
-          types: ['bool'],
           translate: () => ({ ac_single_event: true })
         },
         note: {
-          types: ['key', 'hz', 'midi', 'name'],
+          types: [LexicalTokenType.Identifier, LexicalTokenType.Hz, LexicalTokenType.Number],
+          //types: ['key', 'hz', 'midi', 'name'],
           translate: tokens => {
             switch (tokens[0].type) {
             case 'IDENTIFIER':
@@ -55,7 +55,7 @@ const nativeSymbols = {
     },
   },
   reverb: {
-    type: 'fx',
+    type: 'fn',
     status: 'static',
     value: (audioContext) => { /* create new reverb node? */ }, // constructor
     meta: {
