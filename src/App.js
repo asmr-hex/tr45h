@@ -10,6 +10,7 @@ import { SequenceProvider } from './context/sequence'
 
 import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
+import { Details } from './details'
 
 
 const AppContainer = withTheme(styled('div')({
@@ -37,6 +38,7 @@ const App = () => {
             <MusicEditor/>
           </div>
         </AppBody>
+        <Details/>
       </TransportProvider>
     </AppContainer>
   );

@@ -4,7 +4,7 @@ import { debounce, map } from 'lodash'
 import { Scheduler } from '../scheduler'
 
 import { Lexer } from './lexer'
-import { Parser } from './parser'
+import { Parser } from './parser/index'
 import { SyntaxHighlighter } from './highlight'
 import { SymbolTable } from './symbols'
 import { AST } from './ast'
@@ -126,7 +126,7 @@ export class Interpreter {
     // perform lexical analysis
     const lexicon = this.lexer.tokenize(blockText, blockKey)
 
-    const semantics = this.highlighter.parseStatementTokens(lexicon, blockKey, blockIndex)
+    const semantics = this.parser.firstPass(lexicon, blockKey, blockIndex)
     
     return semantics
   }

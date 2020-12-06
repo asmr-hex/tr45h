@@ -1,10 +1,21 @@
 import { v4 as uuid } from 'uuid'
 import { reduce } from 'lodash'
 
-import { LexicalTokenType } from './types/tokens'
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+  newSemanticToken,
+} from '../types/tokens'
 
 
-export class SyntaxHighlighter {
+
+/**
+ *
+ * Performs a first-pass parse over a stream of lexical tokens.
+ *
+ * @description
+ */
+export class FirstPassParser {
   constructor(symbols) {
     this.symbols = symbols
 
@@ -296,7 +307,7 @@ export class SyntaxHighlighter {
   // the point of this isn't to create a parse tree, but rather augment tokens from
   // lexical analysis with more specific types and report semantic/type errors.
   // in other words, this needs to be fast and not concerned with creating a tree.
-  parseStatementTokens(tokens, blockKey, blockIndex) {
+  analyze(tokens, blockKey, blockIndex) {
     this.reset(tokens, blockKey, blockIndex)
 
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments

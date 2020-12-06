@@ -108,6 +108,10 @@ export class SymbolTable {
   isQueryParameter(token) {
     return token in this.symbols['_soundFn'].meta.parameters
   }
+
+  isFnParameter(fnName, token) {
+    return token in this.symbols[fnName].meta.parameters
+  }
   
   // metadata for sounds
   // {

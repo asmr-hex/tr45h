@@ -18,6 +18,7 @@ const theme = () => createMuiTheme({
     },
     text: {
       primary: '#23272e',
+      tertiary: '#ffffff',
       tokens: {
         identifier: '#282c34',
         number: '#8e7dbe',
@@ -46,6 +47,7 @@ const theme = () => createMuiTheme({
     background: {
       default: '#ffffff',
       secondary: '#ffd23f',
+      tertiary: '#39323d',
       error: '#ffe66d',
     },
     divider: '#292f36',
