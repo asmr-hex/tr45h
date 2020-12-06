@@ -39,7 +39,7 @@ export const LexicalTokenType = {
 export const SemanticTokenType = {
   Variable:           'VARIABLE',
   VariableDecl:       'VARIABLE_DECL',
-  AssignmentOp:       'ASSIGNEMENT_OP',
+  AssignmentOp:       'ASSIGNMENT_OP',
   Fn:                 'FN',
   FnBracket:          'FN_BRACKET',
   FnParameter:        'FN_PARAMETER',

@@ -31,6 +31,20 @@ const useStyles = makeStyles(theme => ({
   separator: { color: theme.palette.text.tokens.separator },
   operator: { color: theme.palette.text.tokens.operator },
   comment: { color: theme.palette.text.tokens.comment },
+
+  variable: { color: theme.palette.text.tokens.variable },
+  'variable_decl': { color: theme.palette.text.tokens.variableDecl },
+  'assignment_op': { color: theme.palette.text.tokens.assignmentOp },
+  fn: { color: theme.palette.text.tokens.fn },
+  'fn_bracket': { color: theme.palette.text.tokens.fnBracket },
+  'fn_parameter': { color: theme.palette.text.tokens.fnParameter },
+  'fn_param_kv_delimiter': { color: theme.palette.text.tokens.fnParamKvDelimiter },
+  'fn_param_delimiter': { color: theme.palette.text.tokens.fnParamDelimiter },
+  'sound_literal': { color: theme.palette.text.tokens.soundLiteral },
+  'beat_div_bracket': { color: theme.palette.text.tokens.beatDivBracket },
+  'sequence_bracket': { color: theme.palette.text.tokens.sequenceBracket },
+  'choice_op': { color: theme.palette.text.tokens.choiceOp },
+  
   error: {
     color: theme.palette.text.tokens.error,
     backgroundColor: theme.palette.background.error,

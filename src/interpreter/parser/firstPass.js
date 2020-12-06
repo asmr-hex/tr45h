@@ -304,7 +304,6 @@ export class FirstPassParser {
       let params = ''
       // check for query parameters
       if (this.hasQueryParameters()) {
-        console.log("HAS QUERY PARAMETERS")
         // parse query parameters
         params = reduce(
           this.parseFnParameters(`_soundFn`),
