@@ -207,6 +207,9 @@ export class FirstPassParser {
       this.pushToken(this.consume()) // HzUnit
       
       this.parseEndOfStatement()
+      
+    } else if(this.isFn(this.peek().value)) {
+      this.parseFn()
     } else if (this.isSequence()) {
       this.parseSequence()
     } else {
@@ -215,7 +218,7 @@ export class FirstPassParser {
     }
   }
 
-  parseErrorUntilEndOfScope() {
+  parseErrorUntilEndOfParamScope() {
     const start = this.peek().start
     while (this.peek() && !/[\),]/.test(this.peek().value)) this.advance()
 
@@ -237,7 +240,7 @@ export class FirstPassParser {
 
     while (this.peek() && !/[\)]/.test(this.peek().value)) {
       if (!this.symbolTable.isFnParameter(fnName, this.peek().value)) {
-        this.parseErrorUntilEndOfScope()
+        this.parseErrorUntilEndOfParamScope()
         continue
       }
       
@@ -256,13 +259,13 @@ export class FirstPassParser {
 
       // make sure that there is a kv delimiter
       if (this.peek(1) && !/[:]/.test(this.peek(1).value)) {
-        this.parseErrorUntilEndOfScope()
+        this.parseErrorUntilEndOfParamScope()
         continue
       }
 
       // make sure that the value type is correct
       if (this.peek(2) && !this.symbolTable.isValidFnArg(fnName, this.peek().value, this.peek(2))) {
-        this.parseErrorUntilEndOfScope()
+        this.parseErrorUntilEndOfParamScope()
         continue
       }
 
@@ -283,8 +286,29 @@ export class FirstPassParser {
       if (/[,]/.test(this.peek().value))
         this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
     }
+
+    // pop off fn bracket
+    this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket})
     
     return parameters
+  }
+
+  parseFn() {
+    while (this.peek() && this.isFn(this.peek().value)) {
+      const fnToken = this.consume()
+
+      // parse parameters if necessary
+      let parameters = {}
+      if (this.hasFnParameters(fnToken.value)) {
+        parameters = this.parseFnParameters(fnToken.value)
+      }
+
+      // push fn token
+      this.pushToken({...fnToken, type: SemanticTokenType.Fn, parameters})
+
+      // TODO CHECK FOR CHAINED FUNCTIONS! (RINSE AND REPEAT)
+      
+    }
   }
   
   parseIdentifier() {
@@ -301,21 +325,23 @@ export class FirstPassParser {
       })
     } else if (this.isSoundLiteral(this.peek().value)) {
       const soundLiteral = this.consume()
-      let params = ''
+      let parameters = {}
       // check for query parameters
       if (this.hasQueryParameters()) {
-        // parse query parameters
-        params = reduce(
-          this.parseFnParameters(`_soundFn`),
-          (acc, v, k) => `${acc}${acc === '' ? '' : '_'}${k}-${v}`,
-          ''
-        )
+        parameters = this.parseFnParameters(`_soundFn`)
       }
 
+      const paramStr = reduce(
+        parameters,
+        (acc, v, k) => `${acc}${acc === '' ? '' : '_'}${k}-${v}`,
+        ''
+      )
+      
       this.pushToken({
         ...soundLiteral,
         type: SemanticTokenType.SoundLiteral,
-        id: `${soundLiteral.value.replace(/\s+/g, '_')}__${params}`,  // assign sound literal id (combo of value and query parameters)
+        id: `${soundLiteral.value.replace(/\s+/g, '_')}__${paramStr}`,  // assign sound literal id (combo of value and query parameters)
+        parameters,                                                     // include parameters so we don't have to reparse later
       })
 
       // TODO merge into symbol table?
