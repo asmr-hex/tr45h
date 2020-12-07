@@ -1,4 +1,7 @@
-import { LexicalTokenType } from './types/tokens'
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+} from './types/tokens'
 
 
 // make into classes
@@ -12,7 +15,7 @@ const paramTypes = {
 
 const nativeSymbols = {
   _soundFn: {
-    type: 'fn',
+    type: SemanticTokenType.Fn,
     status: 'static',
     value: null,
     meta: {
@@ -54,12 +57,55 @@ const nativeSymbols = {
       },
     },
   },
+  
   reverb: {
-    type: 'fn',
+    type: SemanticTokenType.Fn,
     status: 'static',
     value: (audioContext) => { /* create new reverb node? */ }, // constructor
     meta: {
-      parameters: {},
+      parameters: {
+        time: {
+          types: [LexicalTokenType.Number],
+          translate: tokens => {
+            switch (tokens[0].type) {
+            case LexicalTokenType.Number:
+              return { time: tokens[0].value }
+            default:
+              throw new Error('unsupported arg but we should never get here')
+            }
+          },
+        },
+      },
+    },
+  },
+
+  reverse: {
+    type: SemanticTokenType.Fn,
+    status: 'static',
+    value: (audioContext) => { /* create new reverb node? */ }, // constructor
+    meta: {
+      parameters: {}
+    },
+  },
+
+  pan: {
+    type: SemanticTokenType.Fn,
+    status: 'static',
+    value: (audioContext) => { /* create new reverb node? */ }, // constructor
+    meta: {
+      parameters: {
+        left: { // ?
+          types: [LexicalTokenType.Number],
+          translate: tokens => {
+            switch (tokens[0].type) {
+            case LexicalTokenType.Number:
+              return { time: tokens[0].value }
+            default:
+              throw new Error('unsupported arg but we should never get here')
+            }
+          },
+        },
+      },
     },
   },
 }

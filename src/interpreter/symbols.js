@@ -104,11 +104,11 @@ export class SymbolTable {
   }
 
   isFn(identifier) {
-    return this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Fn
+    return !!this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Fn
   }
 
   isVariable(identifier) {
-    return this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Variable
+    return !!this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Variable
   }
   
   /**

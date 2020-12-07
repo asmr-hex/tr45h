@@ -111,14 +111,20 @@ export class FirstPassParser {
       this.peek(2).value === ')'
   }
   isChainOperator() {
-    return this.peek() &&
+    console.log("=====")
+    console.log("IS CHAING OPERATOR?")
+    console.log(this.peek(-1))
+    console.log(this.peek())
+    console.log(this.peek(1))
+    if (this.peek(1)) console.log(this.isFn(this.peek(1).value))
+    return this.peek() &&  // if current token is chaining operator
       this.peek().type === LexicalTokenType.Operator &&
       this.peek().value === '.' &&
-      this.peek(-1) &&
+      this.peek(-1) &&     // and previous token is identifier or ) ]
       ( /[\)\]]/.test(this.peek(-1).value) ||
         this.peek(-1).type === LexicalTokenType.Identifier
       ) &&
-      this.peek(1) &&
+      this.peek(1) &&     // and next token is a function name
       this.peek(1).type === LexicalTokenType.Identifier &&
       this.isFn(this.peek(1).value)
   }
@@ -189,6 +195,11 @@ export class FirstPassParser {
       this.pushError({ start: this.peek().start, length: end - this.peek().start, reasons: [], block: this.block.key})
     }
   }
+
+  parseComment() {
+    if (this.peek() && this.peek().type === LexicalTokenType.Comment)
+      this.pushToken(this.consume())
+  }
   
   parseAssignment() {
     const start = this.peek().start
@@ -208,10 +219,12 @@ export class FirstPassParser {
       
       this.parseEndOfStatement()
       
-    } else if(this.isFn(this.peek().value)) {
+    } else if(this.peek() && this.isFn(this.peek().value)) {
       this.parseFn()
+      this.parseEndOfStatement()
     } else if (this.isSequence()) {
       this.parseSequence()
+      this.parseComment()
     } else {
       const end = this.getLastTokenEnd()
       this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
@@ -293,22 +306,34 @@ export class FirstPassParser {
     return parameters
   }
 
+  parseFnChain() {
+    // we know that the structure so far is . <FN>
+    console.log("PARSING FN CHAIN")
+
+    // consume the chaining operator
+    this.pushToken({...this.consume(), type: SemanticTokenType.ChainingOp})
+
+    // now lets parse the function
+    this.parseFn()
+  }
+  
   parseFn() {
-    while (this.peek() && this.isFn(this.peek().value)) {
-      const fnToken = this.consume()
-
-      // parse parameters if necessary
-      let parameters = {}
-      if (this.hasFnParameters(fnToken.value)) {
-        parameters = this.parseFnParameters(fnToken.value)
-      }
-
-      // push fn token
-      this.pushToken({...fnToken, type: SemanticTokenType.Fn, parameters})
-
-      // TODO CHECK FOR CHAINED FUNCTIONS! (RINSE AND REPEAT)
-      
+    // we know the current token is a function name
+    
+    const fnToken = this.consume()
+    
+    // parse parameters if necessary
+    let parameters = {}
+    if (this.hasFnParameters(fnToken.value)) {
+      parameters = this.parseFnParameters(fnToken.value)
     }
+    
+    // push fn token
+    this.pushToken({...fnToken, type: SemanticTokenType.Fn, parameters})
+    
+    // check for chaining
+    if (this.isChainOperator())
+      this.parseFnChain()
   }
   
   parseIdentifier() {
@@ -378,6 +403,8 @@ export class FirstPassParser {
   
   parseSequence() {
 
+    // TODO BUG FIX: if a sequence starts with () or [], it will not properly parse remaining steps at the end!
+    
     // we know the structure should be either
     // <IDENTIFIER> or ( or [
 
@@ -397,7 +424,7 @@ export class FirstPassParser {
       } else if (this.isChoice()) {
         this.parseChoice()
       } else if (this.isChainOperator()) {
-        this.parseChainOperator()
+        this.parseFnChain()
       } else if (this.isRepetitionOperator()) {
         this.parseRepetitionOperator()
       } else {
