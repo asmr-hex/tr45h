@@ -73,8 +73,10 @@ export class FirstPassParser {
   }
   isSequence() {
     return this.peek() &&
-      ( this.peek().type === LexicalTokenType.Identifier ||
-        /[\(\[]/.test(this.peek().value) )
+      ( this.peek().type === LexicalTokenType.Identifier || // maybe this should check if it is not a function
+        /^[\(\[]/.test(this.peek().value) ||
+        this.isRepetitionOperator()
+      )
   }
   isComment() {
     return this.peek() &&
@@ -95,11 +97,11 @@ export class FirstPassParser {
       this.peek().value === '|' &&
       this.peek(-1) &&
       ( this.peek(-1).type === LexicalTokenType.Identifier ||
-        /[\)\]]/.test(this.peek(-1))
+        /^[\)\]]/.test(this.peek(-1))
       ) &&
       this.peek(1) &&
       ( this.peek(1).type === LexicalTokenType.Identifier ||
-        /[\(\[]/.test(this.peek(1))
+        /^[\(\[]/.test(this.peek(1))
       )
   }
   isChoiceParameter() {
@@ -111,17 +113,11 @@ export class FirstPassParser {
       this.peek(2).value === ')'
   }
   isChainOperator() {
-    console.log("=====")
-    console.log("IS CHAING OPERATOR?")
-    console.log(this.peek(-1))
-    console.log(this.peek())
-    console.log(this.peek(1))
-    if (this.peek(1)) console.log(this.isFn(this.peek(1).value))
     return this.peek() &&  // if current token is chaining operator
       this.peek().type === LexicalTokenType.Operator &&
       this.peek().value === '.' &&
       this.peek(-1) &&     // and previous token is identifier or ) ]
-      ( /[\)\]]/.test(this.peek(-1).value) ||
+      ( /^[\)\]]/.test(this.peek(-1).value) ||
         this.peek(-1).type === LexicalTokenType.Identifier
       ) &&
       this.peek(1) &&     // and next token is a function name
@@ -136,7 +132,7 @@ export class FirstPassParser {
         this.peek(1) &&
         this.peek(1).type === LexicalTokenType.Number &&
         this.peek(-1) &&  // LHS is a sequence or identifier
-        ( /[\)\]]/.test(this.peek(-1).value) ||
+        ( /^[\)\]]/.test(this.peek(-1).value) ||
           this.peek(-1).type === LexicalTokenType.Identifier
         )
       ) ||
@@ -146,9 +142,9 @@ export class FirstPassParser {
         this.peek(1).type === LexicalTokenType.Operator &&
         this.peek(1).value === '*' &&
         this.peek(2) &&  // RHS is a sequence or identifier
-        ( /[\(\[]/.test(this.peek(2).value) ||
-          ( this.peek(1).type === LexicalTokenType.Identifier &&
-            !this.isFn(this.peek(1).value) )
+        ( /^[\(\[]/.test(this.peek(2).value) ||
+          ( this.peek(2).type === LexicalTokenType.Identifier &&
+            !this.isFn(this.peek(2).value) )
         )
       )
   }
@@ -223,19 +219,20 @@ export class FirstPassParser {
       this.parseFn()
       this.parseEndOfStatement()
     } else if (this.isSequence()) {
-      this.parseSequence()
-      this.parseComment()
+      this.parseSequenceStatement()
     } else {
       const end = this.getLastTokenEnd()
       this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
+
+      this.parseEndOfStatement()
     }
   }
 
   parseErrorUntilEndOfParamScope() {
     const start = this.peek().start
-    while (this.peek() && !/[\),]/.test(this.peek().value)) this.advance()
+    while (this.peek() && !/^[\),]/.test(this.peek().value)) this.advance()
 
-    if (/[,]/.test(this.peek().value)) this.advance()
+    if (/^[,]/.test(this.peek().value)) this.advance()
     
     const end = this.peek(-1).start + this.peek(-1).length
 
@@ -251,7 +248,7 @@ export class FirstPassParser {
 
     let parameters = {}
 
-    while (this.peek() && !/[\)]/.test(this.peek().value)) {
+    while (this.peek() && !/^[\)]/.test(this.peek().value)) {
       if (!this.symbolTable.isFnParameter(fnName, this.peek().value)) {
         this.parseErrorUntilEndOfParamScope()
         continue
@@ -263,7 +260,7 @@ export class FirstPassParser {
         this.pushToken({...this.consume(), type: SemanticTokenType.FnParameter})
         
         // is there a comma param delimiter?
-        if (/[,]/.test(this.peek().value))
+        if (/^[,]/.test(this.peek().value))
           this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
         continue
       }
@@ -271,7 +268,7 @@ export class FirstPassParser {
       // okay this must be a key-value parameter
 
       // make sure that there is a kv delimiter
-      if (this.peek(1) && !/[:]/.test(this.peek(1).value)) {
+      if (this.peek(1) && !/^[:]/.test(this.peek(1).value)) {
         this.parseErrorUntilEndOfParamScope()
         continue
       }
@@ -285,7 +282,7 @@ export class FirstPassParser {
       const paramName = {...this.consume(), type: SemanticTokenType.FnParameter}           // pop off the parameter name
       const kvDelimiter = {...this.consume(), type: SemanticTokenType.FnParamKvDelimiter}  // pop off the parameter kv delimiter
       let args = []
-      while (this.peek() && !/[,\)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
+      while (this.peek() && !/^[,\)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
 
       // push all tokens
       this.pushToken(paramName)
@@ -296,7 +293,7 @@ export class FirstPassParser {
       parameters = {...parameters, ...this.symbolTable.translateFnArgs(fnName, paramName.value, args)}
 
       // is there a comma param delimiter?
-      if (/[,]/.test(this.peek().value))
+      if (/^[,]/.test(this.peek().value))
         this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
     }
 
@@ -308,7 +305,6 @@ export class FirstPassParser {
 
   parseFnChain() {
     // we know that the structure so far is . <FN>
-    console.log("PARSING FN CHAIN")
 
     // consume the chaining operator
     this.pushToken({...this.consume(), type: SemanticTokenType.ChainingOp})
@@ -375,6 +371,9 @@ export class FirstPassParser {
       // error?
     }
 
+    // check for chaining
+    if (this.isChainOperator())
+      this.parseFnChain()
   }
 
   parseChoice() {
@@ -409,24 +408,23 @@ export class FirstPassParser {
     // <IDENTIFIER> or ( or [
 
     // if ( or [, lets pop them off (synce lexical analysis ensures they are balanced properly)
-    if (/[\(]/.test(this.peek().value)) {
+    if (/^[\(]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
-    } else if (/[\[]/.test(this.peek().value)) {
+    } else if (/^[\[]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
     }
 
     // iterate over steps
-    while(this.peek() && !/[\)\]]/.test(this.peek().value)) {
+    while(this.peek() && this.isSequence()) {
       if (this.peek().type === LexicalTokenType.Identifier) {
         this.parseIdentifier()
+      } else if (this.isRepetitionOperator()) {
+        console.log("YES")
+        this.parseRepetitionOperator() // TODO FINISH WRITING THIS!
       } else if (this.isSequence()) {
         this.parseSequence()
       } else if (this.isChoice()) {
         this.parseChoice()
-      } else if (this.isChainOperator()) {
-        this.parseFnChain()
-      } else if (this.isRepetitionOperator()) {
-        this.parseRepetitionOperator()
       } else {
         this.parseEndOfStatement()
         return
@@ -434,24 +432,38 @@ export class FirstPassParser {
     }
 
     // pop off right bracket if necessary
-    if (this.peek() && /[\)]/.test(this.peek().value)) {
+    if (this.peek() && /^[\)]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
-    } else if (this.peek() && /[\]]/.test(this.peek().value)) {
+    } else if (this.peek() && /^[\]]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
     }
+
+    // check for chaining
+    if (this.isChainOperator())
+      this.parseFnChain()
   }
 
+  parseSequenceStatement() {
+    // this handles the case in which the entire line is a sequence
+    while (this.peek() && this.isSequence()) {
+      this.parseSequence()
+    }
+
+    this.parseEndOfStatement()
+  }
+  
   // the point of this isn't to create a parse tree, but rather augment tokens from
   // lexical analysis with more specific types and report semantic/type errors.
   // in other words, this needs to be fast and not concerned with creating a tree.
   analyze(tokens, blockKey, blockIndex) {
     this.reset(tokens, blockKey, blockIndex)
 
+    
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments
     if (this.isAssignment()) {
       this.parseAssignment()
     } else if (this.isSequence()) {
-      this.parseSequence()
+      this.parseSequenceStatement()
     } else {
       this.parseEndOfStatement()
     }
