@@ -136,7 +136,7 @@ export class FirstPassParser {
       this.isFn(this.peek(1).value)
   }
   isRepetitionOperator() {
-    return this.peek() &&
+    return this.peek() && (
       // either <IDENTIFIER> ) ] * <NUMBER>
       ( this.peek().type === LexicalTokenType.Operator &&
         this.peek().value === '*' &&
@@ -157,7 +157,7 @@ export class FirstPassParser {
           ( this.peek(2).type === LexicalTokenType.Identifier &&
             !this.isFn(this.peek(2).value) )
         )
-      )
+      ) )
   }
   isVariable(identifier) {
     // check symbol table to see if this is a valid variable.
@@ -168,7 +168,7 @@ export class FirstPassParser {
     return this.symbolTable.isFn(identifier)
   }
   isSoundLiteral(identifier) {
-    return !this.isFn(identifier) && !this.isVariable(identifier)
+    return !!identifier && !this.isFn(identifier) && !this.isVariable(identifier)
   }
   hasQueryParameters() {
     return this.peek(-1) &&
