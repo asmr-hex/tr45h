@@ -9,6 +9,12 @@ import {
 } from '../types/tokens'
 
 
+// TODO
+// * we may need to introduce a STRING lexical token type. the reason is that,
+//   if we want to be able to use keywords as sound literals (e.g. "reverb"), we
+//   need to make a distinction between IDENTIFIERS surrounded by quotes and not
+//   surrounded by quotes.
+
 
 /**
  *
@@ -73,7 +79,10 @@ export class FirstPassParser {
   }
   isSequence() {
     return this.peek() &&
-      ( this.peek().type === LexicalTokenType.Identifier || // maybe this should check if it is not a function
+      ( ( this.peek().type === LexicalTokenType.Identifier &&
+          ( this.isVariable(this.peek().value) ||
+            this.isSoundLiteral(this.peek().value)
+         )) || // maybe this should check if it is not a function
         /^[\(\[]/.test(this.peek().value) ||
         this.isRepetitionOperator()
       )
@@ -399,6 +408,22 @@ export class FirstPassParser {
       }
     }
   }
+
+  parseRepetitionOperator() {
+    // so the structure is either:
+    // (1) <NUMBER> * ( [ <IDENTIFIER>
+    // or
+    // (2) * <NUMBER>
+
+    // (1)
+    if (this.peek() && this.peek().type === LexicalTokenType.Number) {
+      this.pushToken(this.consume())                                            // parse number
+      this.pushToken({...this.consume(), type: SemanticTokenType.RepetitionOp}) // parse repetition operator
+    } else {
+      this.pushToken({...this.consume(), type: SemanticTokenType.RepetitionOp}) // parse repetition operator
+      this.pushToken(this.consume())                                            // parse number
+    }
+  }
   
   parseSequence() {
 
@@ -413,14 +438,13 @@ export class FirstPassParser {
     } else if (/^[\[]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
     }
-
+    
     // iterate over steps
-    while(this.peek() && this.isSequence()) {
-      if (this.peek().type === LexicalTokenType.Identifier) {
+    while(this.peek() && !/^[\)\]]/.test(this.peek().value)) {
+      if (this.isVariable(this.peek().value) || this.isSoundLiteral(this.peek().value)) {
         this.parseIdentifier()
       } else if (this.isRepetitionOperator()) {
-        console.log("YES")
-        this.parseRepetitionOperator() // TODO FINISH WRITING THIS!
+        this.parseRepetitionOperator()
       } else if (this.isSequence()) {
         this.parseSequence()
       } else if (this.isChoice()) {
