@@ -206,169 +206,499 @@ describe('The First Pass Parser', () => {
 
   describe('isAssignment()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
+      const tokens = [
+        newLexicalToken({type: LexicalTokenType.Identifier, value: 'mySound'}),
+      ]
+      const parser = newTestParser(tokens)
+      
       it('returns false', () => {
-        expect().toBeTruthy()
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at valid assignments', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
+      it(`returns true, given 'A = B'`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
+      })
+      it(`returns true, given 'A = <function>'`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
+      })
+      it(`returns true, given 'A = <function> #comment'`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+          newLexicalToken({type: LexicalTokenType.Comment, value: '#comment'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
+      })
+      it(`returns true, given 'A =' (even with no bound value)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
+      })
+      it(`returns true, given 'A = .' (even with invalid bound value)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '.'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
+      })
+      it(`returns true, given '"A" = ' (with a string as the binding variable)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: '"A"'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeTruthy()
       })
     })
     describe('when at invalid assignments', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it(`returns false, given '= A' (no binding variable)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeFalsy()
+      })
+      it(`returns false, given 'A B =' (multiple leading identifiers)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeFalsy()
+      })
+      it(`returns false, given '[A B] =' (leading brackets)`, () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '['}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
   })
 
   describe('isSequence()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
-      })
-    })
-    describe('when at the final token', () => {
-      it('returns false', () => {
-        expect().toBeTruthy()
+        expect(parser.isSequence()).toBeFalsy()
       })
     })
     describe('when at valid sequence', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns true, given [ ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '['}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeTruthy()
+      })
+      it('returns true, given ( ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeTruthy()
+      })
+      it('returns true, given A ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeTruthy()
+      })
+      it('returns true, given "string literal" ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'string literal'}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeTruthy()
+      })
+      describe('given a repetition operator', () => {
+        it('returns true, given 3 * A', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSequence()).toBeTruthy()
+        })
+        it('returns true, given A * 3', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.token.index = 1
+          expect(parser.isSequence()).toBeTruthy()
+        })
+        it('returns true, given 3 * [', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '['}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSequence()).toBeTruthy()
+        })
+        it('returns true, given ] * 3', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Bracket, value: ']'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.token.index = 1
+          expect(parser.isSequence()).toBeTruthy()
+        })
+        it('returns true, given 3 * (', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSequence()).toBeTruthy()
+        })
+        it('returns true, given ) * 3', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.token.index = 1
+          expect(parser.isSequence()).toBeTruthy()
+        })
       })
     })
     describe('when at invalid sequence', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns false, given <function> ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeFalsy()
+      })
+      it('returns false, given 3 * 3 ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+          newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+        ]
+        const parser = newTestParser(tokens)
+        expect(parser.isSequence()).toBeFalsy()
+      })
+      it('returns false, given ) * ( ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+        expect(parser.isSequence()).toBeFalsy()
+      })
+      it('returns false, given ] * [ ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '['}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+        expect(parser.isSequence()).toBeFalsy()
       })
     })
   })
 
   describe('isComment()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
-      })
-    })
-    describe('when at the final token', () => {
-      it('returns false', () => {
-        expect().toBeTruthy()
+        expect(parser.isComment()).toBeFalsy()
       })
     })
     describe('when at valid comment', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
-      })
-    })
-    describe('when at invalid comment', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns true, given # cool comment ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Comment, value: '# cool comment'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isComment()).toBeTruthy()
       })
     })
   })
 
   describe('isNumber()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
-      })
-    })
-    describe('when at the final token', () => {
-      it('returns false', () => {
-        expect().toBeTruthy()
+        expect(parser.isNumber()).toBeFalsy()
       })
     })
     describe('when at valid number', () => {
       it('returns true, given __ ', () => {
-        expect().toBeTruthy()
-      })
-    })
-    describe('when at invalid number', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Number, value: 3.45}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isNumber()).toBeTruthy()
       })
     })
   })
   
   describe('isHz()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
-      })
-    })
-    describe('when at the final token', () => {
-      it('returns false', () => {
-        expect().toBeTruthy()
+        expect(parser.isHz()).toBeFalsy()
       })
     })
     describe('when at valid hz number', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns true, given 3.45hz ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Hz, value: 3.45}),
+          newLexicalToken({type: LexicalTokenType.HzUnit, value: 'hz'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isHz()).toBeTruthy()
       })
     })
     describe('when at invalid hz number', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns false, given 3.45 (missing Hz Unit) ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Hz, value: 3.45}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isHz()).toBeFalsy()
       })
     })
   })
 
   describe('isChoice()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isChoice()).toBeFalsy()
       })
     })
-    describe('when at the final token', () => {
+    describe('when at the final token with no preceeding token', () => {
       it('returns false', () => {
-        expect().toBeTruthy()
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isChoice()).toBeFalsy()
+      })
+    })
+    describe('when at the final token with preceeding token', () => {
+      it('returns false', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isChoice()).toBeFalsy()
       })
     })
     describe('when at valid choice', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns true, given A | B ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeTruthy()        
+      })
+      it('returns true, given ) | B ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeTruthy()        
+      })
+      it('returns true, given ] | B ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeTruthy()        
+      })
+      it('returns true, given A | ( ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeTruthy()
+      })
+      it('returns true, given A | [ ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '['}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeTruthy()        
       })
     })
     describe('when at invalid choice', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns false, given <function> | A ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeFalsy()        
+      })
+      it('returns false, given A | <function> ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeFalsy()
+      })
+      it('returns false, given A | 3.3 ', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({type: LexicalTokenType.Number, value: 3.3}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+
+        expect(parser.isChoice()).toBeFalsy()
       })
     })
   })
 
   describe('isChoiceParameter()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isChoiceParameter()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
       it('returns false', () => {
-        expect().toBeTruthy()
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isChoiceParameter()).toBeFalsy()
       })
     })
     describe('when at valid choice parameter', () => {
-      it('returns true, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns true, given (3.3)', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({type: LexicalTokenType.Number, value: 3.3}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isChoiceParameter()).toBeTruthy()
       })
     })
     describe('when at invalid choice parameter', () => {
-      it('returns false, given __ ', () => {
-        expect().toBeTruthy()
+      it('returns false, given ( A )', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+        ]
+        const parser = newTestParser(tokens)
+
+        expect(parser.isChoiceParameter()).toBeFalsy()
       })
     })
   })
 
   describe('isChainOperator()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -390,8 +720,10 @@ describe('The First Pass Parser', () => {
 
   describe('isRepetitionOperator()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -413,8 +745,10 @@ describe('The First Pass Parser', () => {
 
   describe('isVariable()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -436,8 +770,10 @@ describe('The First Pass Parser', () => {
 
   describe('isFn()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -459,8 +795,10 @@ describe('The First Pass Parser', () => {
 
   describe('isSoundLiteral()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -482,8 +820,10 @@ describe('The First Pass Parser', () => {
 
   describe('isQueryParameters()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -505,8 +845,10 @@ describe('The First Pass Parser', () => {
 
   describe('isFnParameters()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {
@@ -528,8 +870,10 @@ describe('The First Pass Parser', () => {
 
   describe('isFnParameters()', () => {
     describe('when at the end of a token stream', () => {
+      const parser = newTestParser([])
+      
       it('returns false', () => {
-        expect().toBeTruthy()  
+        expect(parser.isAssignment()).toBeFalsy()
       })
     })
     describe('when at the final token', () => {

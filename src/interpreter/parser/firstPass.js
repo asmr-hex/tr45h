@@ -75,10 +75,10 @@ export class FirstPassParser {
   }
   isSequence() {
     return this.peek() &&
-      ( ( this.peek().type === LexicalTokenType.Identifier &&
+      ( ( this.peek().type === LexicalTokenType.Identifier && // non function identifier
           ( this.isVariable(this.peek().value) ||
             this.isSoundLiteral(this.peek().value)
-         )) || // maybe this should check if it is not a function
+         )) ||
         /^[\(\[]/.test(this.peek().value) ||
         this.isRepetitionOperator()
       )
@@ -101,12 +101,18 @@ export class FirstPassParser {
     return this.peek() &&
       this.peek().value === '|' &&
       this.peek(-1) &&
-      ( this.peek(-1).type === LexicalTokenType.Identifier ||
-        /^[\)\]]/.test(this.peek(-1))
+      (
+        ( this.peek(-1).type === LexicalTokenType.Identifier &&
+          !this.isFn(this.peek(-1).value)
+        ) ||
+        /^[\)\]]/.test(this.peek(-1).value)
       ) &&
       this.peek(1) &&
-      ( this.peek(1).type === LexicalTokenType.Identifier ||
-        /^[\(\[]/.test(this.peek(1))
+      (
+        ( this.peek(1).type === LexicalTokenType.Identifier &&
+          !this.isFn(this.peek(1).value)
+        ) ||
+        /^[\(\[]/.test(this.peek(1).value)
       )
   }
   isChoiceParameter() {
