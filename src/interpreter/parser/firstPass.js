@@ -53,10 +53,6 @@ export class FirstPassParser {
     return last.start + last.length
   }
 
-  getInstanceId(token) {
-    return `${token.block}-${token.start}`
-  }
-  
   advance() { return this.token.stream[++this.token.index] }
   consume() { return this.token.stream[this.token.index++] }
   pushToken(token) { this.result.tokens.push(newSemanticToken(token)) }
