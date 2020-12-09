@@ -925,7 +925,7 @@ describe('The First Pass Parser', () => {
           ]
           const parser = newTestParser(tokens)
 
-          expect(parser.isVariable()).toBeTruthy()
+          expect(parser.isVariable(tokens[0])).toBeTruthy()
         })
       })
       describe('when at invalid variable', () => {
@@ -935,7 +935,7 @@ describe('The First Pass Parser', () => {
           ]
           const parser = newTestParser(tokens)
 
-          expect(parser.isVariable()).toBeFalsy()
+          expect(parser.isVariable(tokens[0])).toBeFalsy()
         })
         it('returns false, given sound literal ', () => {
           const tokens = [
@@ -943,7 +943,7 @@ describe('The First Pass Parser', () => {
           ]
           const parser = newTestParser(tokens)
 
-          expect(parser.isVariable()).toBeFalsy()
+          expect(parser.isVariable(tokens[0])).toBeFalsy()
         })
       })
     })
@@ -988,19 +988,28 @@ describe('The First Pass Parser', () => {
       })
       describe('when at valid sound literal', () => {
         it('returns true, given sound literal ', () => {
-          const parser = newTestParser([])
-          expect(parser.isSoundLiteral("piano")).toBeTruthy()
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'piano'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSoundLiteral(tokens[0])).toBeTruthy()
         })
       })
       describe('when at invalid sound literal', () => {
         it('returns false, given <variable>', () => {
           // TODO register "myVar" as a variable for this test setup!
-          const parser = newTestParser([])
-          expect(parser.isSoundLiteral("myVar")).toBeFalsy()
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVar'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSoundLiteral(tokens[0])).toBeFalsy()
         })
         it('returns false, given <function>', () => {
-          const parser = newTestParser([])
-          expect(parser.isSoundLiteral("reverb")).toBeFalsy()
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSoundLiteral(tokens[0])).toBeFalsy()
         })
       })
     })
@@ -1132,9 +1141,39 @@ describe('The First Pass Parser', () => {
   ////////////////////
 
   describe('parsing parse methods', () => {
+    
     describe('parseEndOfStatement()', () => {
       it('parses a comment if that is the current token type', () => {
+        const tokens = [
+          newLexicalToken({type: LexicalTokenType.Comment, value: '# some comment'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseEndOfStatement()
         
+        const expectations = {
+          tokens: [
+            newSemanticToken(tokens[0])
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it('parses an error until the end of the statement', () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseEndOfStatement()
+        
+        const expectations = {
+          tokens: [
+          ],
+          errors: [newErrorToken({start: 0, length: 2, block: testBlockKey})],
+        }
+        
+        expect(parser.result).toEqual(expectations)
       })
     })
 
@@ -1167,6 +1206,11 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseChoice()', () => {
+      // TODO test these situations
+      // A | A | A
+      // A | (A) | B | [A]
+      // (A) | A  CURRENTLY NOT WORKING
+      // [A] | A  CURRENTLY NOT WORKING
       expect().toBeTruthy()
     })
 
@@ -1174,14 +1218,59 @@ describe('The First Pass Parser', () => {
       expect().toBeTruthy()
     })
 
-    describe('parseSequence()', () => {
+    describe('parseTokenAsError()', () => {
       expect().toBeTruthy()
+    })
+    
+    describe('parseSequence()', () => {
+      it(`parses trailing comments: 'A B C # some comment'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+          newLexicalToken({start: 3, length: 14, type: LexicalTokenType.Comment, value: '# some comment'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseSequence()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
+            newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+            newSemanticToken(tokens[3])
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it(`parses erroring steps to end of scope: '( 3.4 )' (only 3.4 is an error region)`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({start: 2, length: 3, type: LexicalTokenType.Number, value: 3.4}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Bracket, value: ')'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseSequence()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.SequenceBracket}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SequenceBracket}),
+          ],
+          errors: [
+            newErrorToken({start: 2, length:3, block: testBlockKey})
+          ],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
     })
 
     describe('parseSequenceStatement()', () => {
       expect().toBeTruthy()
-    })
-    
+    })    
   })
 
   ///////////////

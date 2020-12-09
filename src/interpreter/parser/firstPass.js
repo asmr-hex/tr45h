@@ -76,8 +76,8 @@ export class FirstPassParser {
   isSequence() {
     return this.peek() &&
       ( ( this.peek().type === LexicalTokenType.Identifier && // non function identifier
-          ( this.isVariable(this.peek().value) ||
-            this.isSoundLiteral(this.peek().value)
+          ( this.isVariable(this.peek()) ||
+            this.isSoundLiteral(this.peek())
          )) ||
         /^[\(\[]/.test(this.peek().value) ||
         this.isRepetitionOperator()
@@ -159,21 +159,26 @@ export class FirstPassParser {
         )
       ) )
   }
-  isVariable(identifier) {
+  isVariable(token) {
     // check symbol table to see if this is a valid variable.
-    return this.symbolTable.isVariable(identifier)
+    return !!token &&
+      token.type === LexicalTokenType.Identifier &&
+      this.symbolTable.isVariable(token.value)
   }
   isFn(identifier) {
     // check symbol table to see if this is a valid static function.
     return this.symbolTable.isFn(identifier)
   }
-  isSoundLiteral(identifier) {
-    return !!identifier && !this.isFn(identifier) && !this.isVariable(identifier)
+  isSoundLiteral(token) {
+    return !!token &&
+      token.type === LexicalTokenType.Identifier &&
+      !this.isFn(token.value) &&
+      !this.isVariable(token)
   }
   hasQueryParameters() {
     return this.peek(-1) &&
       this.peek(-1).type === LexicalTokenType.Identifier &&
-      this.isSoundLiteral(this.peek(-1).value) &&
+      this.isSoundLiteral(this.peek(-1)) &&
       this.hasFnParameters('_soundFn')
   }
   hasFnParameters(fnName) {
@@ -349,13 +354,13 @@ export class FirstPassParser {
     // * a sound literal
     // * a sound literal with query parameters
 
-    if (this.isVariable(this.peek().value)) {
+    if (this.isVariable(this.peek())) {
       // assign instance id to variable
       this.pushToken({
         ...this.consume(),
         type: SemanticTokenType.Variable,
       })
-    } else if (this.isSoundLiteral(this.peek().value)) {
+    } else if (this.isSoundLiteral(this.peek())) {
       const soundLiteral = this.consume()
       let parameters = {}
       // check for query parameters
@@ -426,10 +431,13 @@ export class FirstPassParser {
       this.pushToken(this.consume())                                            // parse number
     }
   }
+
+  parseTokenAsError() {
+    this.pushError({ start: this.peek().start, length: this.peek().length, reasons: [], block: this.block.key})
+    this.advance()
+  }
   
   parseSequence() {
-
-    // TODO BUG FIX: if a sequence starts with () or [], it will not properly parse remaining steps at the end!
     
     // we know the structure should be either
     // <IDENTIFIER> or ( or [
@@ -443,7 +451,7 @@ export class FirstPassParser {
     
     // iterate over steps
     while(this.peek() && !/^[\)\]]/.test(this.peek().value)) {
-      if (this.isVariable(this.peek().value) || this.isSoundLiteral(this.peek().value)) {
+      if (this.isVariable(this.peek()) || this.isSoundLiteral(this.peek())) {
         this.parseIdentifier()
       } else if (this.isRepetitionOperator()) {
         this.parseRepetitionOperator()
@@ -451,9 +459,10 @@ export class FirstPassParser {
         this.parseSequence()
       } else if (this.isChoice()) {
         this.parseChoice()
+      } else if (this.isComment()) {
+        this.parseComment()
       } else {
-        this.parseEndOfStatement()
-        return
+        this.parseTokenAsError()
       }
     }
 
