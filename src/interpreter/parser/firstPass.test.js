@@ -25,7 +25,8 @@ const resetTestParser = (parser, tokens, errors=[]) => {
 }
 
 const newTestParser = (tokens, errors=[]) => {
-  const parser = new FirstPassParser(testSymbolTable)
+  const symbolTable = new SymbolTable(getTheme(Theme.Light))
+  const parser = new FirstPassParser(symbolTable)
   resetTestParser(parser, tokens, errors)
   return parser
 }
@@ -215,6 +216,31 @@ describe('The First Pass Parser', () => {
   ////////////////////
 
   describe('parsing test methods', () => {
+    
+    describe('isLeftBracket()', () => {
+      it.todo('write tests')
+    })
+
+    describe('isRightBracket()', () => {
+      it.todo('write tests')
+    })
+
+    describe('isLeftSequenceBracket()', () => {
+      it.todo('write tests')
+    })
+
+    describe('isRightSequenceBracket()', () => {
+      it.todo('write tests')
+    })
+
+    describe('isLeftBeatDivBracket()', () => {
+      it.todo('write tests')
+    })
+
+    describe('isRightBeatDivBracket()', () => {
+      it.todo('write tests')
+    })
+    
     describe('isAssignment()', () => {
       describe('when at the end of a token stream', () => {
         const parser = newTestParser([])
@@ -247,6 +273,26 @@ describe('The First Pass Parser', () => {
         it(`returns true, given 'A = <function>'`, () => {
           const tokens = [
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isAssignment()).toBeTruthy()
+        })
+        it(`returns true, given '"a multiword string" = '`, () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.String, value: 'a multiword string'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isAssignment()).toBeTruthy()
+        })
+        it(`returns true, given '"reverb" = ' (variable name is a string sharing a name with a function)`, () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.String, value: 'reverb'}),
             newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
           ]
@@ -297,6 +343,27 @@ describe('The First Pass Parser', () => {
       describe('when at invalid assignments', () => {
         it(`returns false, given '= A' (no binding variable)`, () => {
           const tokens = [
+            newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isAssignment()).toBeFalsy()
+        })
+        it(`returns false, given 'aVariable = A' (attempt to bind an existing variable)`, () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'aVariable'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+
+          expect(parser.isAssignment()).toBeFalsy()
+        })
+        it(`returns false, given '<function> = A' (attempt to bind an existing function name)`, () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'reverb'}),
             newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
           ]
@@ -1011,6 +1078,15 @@ describe('The First Pass Parser', () => {
 
           expect(parser.isVariable(tokens[0])).toBeTruthy()
         })
+        it('returns true, given a variable thats a string ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.String, value: 'my multiword variable'}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+
+          expect(parser.isVariable(tokens[0])).toBeTruthy()
+        })
       })
       describe('when at invalid variable', () => {
         it('returns false, given <function> ', () => {
@@ -1074,6 +1150,20 @@ describe('The First Pass Parser', () => {
         it('returns true, given sound literal ', () => {
           const tokens = [
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'piano'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSoundLiteral(tokens[0])).toBeTruthy()
+        })
+        it('returns true, given sound literal that is a string ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.String, value: 'piano with violin'}),
+          ]
+          const parser = newTestParser(tokens)
+          expect(parser.isSoundLiteral(tokens[0])).toBeTruthy()
+        })
+        it('returns true, given sound literal that is a string that is the name of a function', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.String, value: 'reverb'}),
           ]
           const parser = newTestParser(tokens)
           expect(parser.isSoundLiteral(tokens[0])).toBeTruthy()
@@ -1456,6 +1546,22 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseSequenceStatement()', () => {
+      it(`parses sequence statements with a leading string '"my string"'`, () => {
+        const tokens = [
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.String, value: 'my string'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseSequenceStatement()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'my_string__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
       it(`parses sequence statements with a leading sequence followed by choices: '(A)|B|C'`, () => {
         const tokens = [
           newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '('}),

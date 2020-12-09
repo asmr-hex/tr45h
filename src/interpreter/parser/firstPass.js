@@ -69,12 +69,41 @@ export class FirstPassParser {
   //  TEST METHODS  //
   //                //
   ////////////////////
-  
-  // determine the beginnings of expression types
+
+  isLeftBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      ( /^[\(\[]/.test(token.value) )
+  }
+  isRightBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      ( /^[\)\]]/.test(token.value) )
+  }
+  isLeftSequenceBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      token.value === '('
+  }
+  isRightSequenceBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      token.value === ')'
+  }
+  isLeftBeatDivBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      token.value === '['
+  }
+  isRightBeatDivBracket(token) {
+    return !!token                            &&
+      token.type === LexicalTokenType.Bracket &&
+      token.value === ']'
+  }
   isAssignment() {
-    return this.peek() &&
-      this.peek().type === LexicalTokenType.Identifier &&
-      this.peek(1) &&
+    return this.peek()                                &&
+      this.isSoundLiteral(this.peek())                &&  // is not a function or variable
+      this.peek(1)                                    &&
       this.peek(1).type === LexicalTokenType.Operator &&
       this.peek(1).value === '='
   }
@@ -174,10 +203,13 @@ export class FirstPassParser {
         )
       ) )
   }
+  
   isVariable(token) {
     // check symbol table to see if this is a valid variable.
     return !!token &&
-      token.type === LexicalTokenType.Identifier &&
+      ( token.type === LexicalTokenType.Identifier ||
+        token.type === LexicalTokenType.String
+      ) &&
       this.symbolTable.isVariable(token.value)
   }
   isFn(identifier) {
@@ -186,13 +218,14 @@ export class FirstPassParser {
   }
   isSoundLiteral(token) {
     return !!token &&
-      token.type === LexicalTokenType.Identifier &&
-      !this.isFn(token.value) &&
-      !this.isVariable(token)
+      (( token.type === LexicalTokenType.Identifier &&
+          !this.isFn(token.value) &&
+          !this.isVariable(token)
+        ) ||
+        token.type === LexicalTokenType.String)
   }
   hasQueryParameters() {
     return this.peek(-1) &&
-      this.peek(-1).type === LexicalTokenType.Identifier &&
       this.isSoundLiteral(this.peek(-1)) &&
       this.hasFnParameters('_soundFn')
   }

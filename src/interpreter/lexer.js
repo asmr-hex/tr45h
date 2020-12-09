@@ -1,6 +1,10 @@
 import { min, max } from 'lodash'
 
 import {
+  newLexicalToken,
+  LexicalTokenType,
+} from './types/tokens'
+import {
   SeparatorBalanceError,
   SeparatorMismatchError,
   QuoteMissingError,
@@ -53,12 +57,13 @@ export class Lexer {
    * reset sets all appropriate variables to their 0-values to
    * prepare for another lexing pass.
    */
-  reset() {
+  reset(blockKey) {
     this.input  = ''
     this.tokens = []
     this.char   = null
     this.index  = 0
     this.errorRegions = []
+    this.block = blockKey
   }
 
   /**
@@ -68,7 +73,7 @@ export class Lexer {
    * @return {Array<token>} an array of tokens
    */
   tokenize(input, blockKey='') {
-    this.reset()
+    this.reset(blockKey)
     this.input = input
     let sepStack = []
     const lSeps =`([`
@@ -176,10 +181,10 @@ export class Lexer {
       //////////////
       
       else if (this.isQuote(this.char)) {
-        // arguably, we could be doing the 'collection' of quoted identifiers during
-        // parsing, but since multi-word identifiers can not be recursive, then it
-        // is probably easier to tokenize them immediately here.
-        let multiWordIdentifier = ``
+        // arguably, we could be doing the 'collection' of quoted strings during
+        // parsing, but since strings can not be recursive, then it is probably
+        //easier to tokenize them immediately here.
+        let stringToken = ``
         const quoteType = this.char
         const start = this.index
         const isValidQuoteBody = c => {
@@ -189,12 +194,12 @@ export class Lexer {
         
         // handle potential errors
         try {
-          while (isValidQuoteBody(this.advance())) multiWordIdentifier += this.char  
+          while (isValidQuoteBody(this.advance())) stringToken += this.char  
         } catch(e) {
           if (e instanceof QuoteMissingError) {
             // since a missing quote can only happen at the end of a line,
             // we will package up the error and return from here
-            this.errorRegions.push({start, length: multiWordIdentifier.length + 1, reason: e})
+            this.errorRegions.push({start, length: stringToken.length + 1, reason: e})
             
             // dedupe error regions and remove tokens from error regions
             this.dedupeErrorRegions(blockKey)
@@ -204,13 +209,13 @@ export class Lexer {
           }
         }
 
-        // only add the token if the multiWordIdentifier is not just whitespace
-        if (multiWordIdentifier.trim() !== "") {
+        // only add the token if the stringToken is not just whitespace
+        if (stringToken.trim() !== "") {
           this.addToken({
-            type: 'IDENTIFIER',
-            value: multiWordIdentifier,
+            type: LexicalTokenType.String,//'IDENTIFIER',
+            value: stringToken,
             start: start,
-            length: multiWordIdentifier.length + 2, // add 2 for open/close quotes
+            length: stringToken.length + 2, // add 2 for open/close quotes
             block: blockKey,
           })
         }
@@ -406,7 +411,7 @@ export class Lexer {
     if (skip + this.index < this.input.length) return this.input[this.index + skip]
     return null
   }
-  addToken(token) { this.tokens.push(token) }
+  addToken(token) { this.tokens.push(newLexicalToken({...token, block: this.block})) }
   
   isWhiteSpace(c) { return /\s/.test(c) }
   isSeparator(c) { return /[[\](){},:]/.test(c) }

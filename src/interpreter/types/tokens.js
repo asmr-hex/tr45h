@@ -19,6 +19,7 @@ export const LexicalTokenType = {
   Bracket:    'BRACKET',
   Delimiter:  'DELIMITER',
   Quote:      'QUOTE',
+  String:     'STRING',
   Rest:       'REST',
   Operator:   'OPERATOR',
   Comment:    'COMMENT',

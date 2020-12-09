@@ -1,4 +1,5 @@
 import { Lexer } from './lexer'
+import { LexicalTokenType } from './types/tokens'
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
@@ -94,8 +95,8 @@ describe('Lexer', () => {
     it('detects function chaining  (.)', () => {
       expect(lexer.isOperator('.')).toBeTruthy()
     })
-    it('does not detects a non operator (*)', () => {
-      expect(lexer.isOperator('*')).toBeFalsy()
+    it('does multiplication operator (*)', () => {
+      expect(lexer.isOperator('*')).toBeTruthy()
     })
   })
 
@@ -248,8 +249,8 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'IDENTIFIER', value: 'one two ', start: 0, length: 10, block: ''},
-          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5, block: ''},
+          {type: LexicalTokenType.String, value: 'one two ', start: 0, length: 10, block: ''},
+          {type: LexicalTokenType.Identifier, value: 'three', start: 10, length: 5, block: ''},
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -259,8 +260,8 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'IDENTIFIER', value: 'one two ', start: 0, length: 10, block: ''},
-          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5, block: ''},
+          {type: LexicalTokenType.String, value: 'one two ', start: 0, length: 10, block: ''},
+          {type: LexicalTokenType.Identifier, value: 'three', start: 10, length: 5, block: ''},
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
