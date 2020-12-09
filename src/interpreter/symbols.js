@@ -103,6 +103,10 @@ export class SymbolTable {
       delete this.symbols[id]
   }
 
+  addVariable(variable) {
+    this.merge(variable)
+  }
+  
   isFn(identifier) {
     return !!this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Fn
   }

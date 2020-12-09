@@ -113,9 +113,16 @@ describe('The First Pass Parser', () => {
       })
     })
 
-    describe('getLastTokenEnd()', () => {
-      it('needs a better name...', () => {
-        expect().toBeTruthy()
+    describe('getEndIndexOfLastResultToken()', () => {
+      it('returns the index of the last result token', () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({start: 1, length: 7, type: LexicalTokenType.Identifier, value: 'mySound'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.result.tokens = tokens.map(t => newSemanticToken(t))
+        
+        expect(parser.getEndIndexOfLastResultToken()).toEqual(8)
       })
     })
 
@@ -459,6 +466,83 @@ describe('The First Pass Parser', () => {
       })
     })
 
+    describe('isValidSequenceStep()', () => {
+      describe('when at the end of a token stream', () => {
+        const parser = newTestParser([])
+        
+        it('returns false', () => {
+          expect(parser.isValidSequenceStep()).toBeFalsy()
+        })
+      })
+      describe('when at valid sequence (empty)', () => {
+        it('returns true, given () ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: ')'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+      describe('when at valid variable', () => {
+        it('returns true, given myVar ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVar'}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+      describe('when at valid sound literal', () => {
+        it('returns true, given A ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+      describe('when at valid repetition operator', () => {
+        it('returns true, given 3 * A ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Number, value: 3}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '*'}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+      describe('when at valid choice', () => {
+        it('returns true, given A | B ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '|'}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.token.index = 1
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+      describe('when at valid comment', () => {
+        it('returns true, given # cool comment ', () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Comment, value: '# cool comment'}),
+          ]
+          const parser = newTestParser(tokens)
+
+          expect(parser.isValidSequenceStep()).toBeTruthy()
+        })
+      })
+    })
+    
     describe('isComment()', () => {
       describe('when at the end of a token stream', () => {
         const parser = newTestParser([])
@@ -919,11 +1003,11 @@ describe('The First Pass Parser', () => {
       })
       describe('when at valid variable', () => {
         it('returns true, given a variable ', () => {
-          // TODO need to add a variable to the symbol table for this test setup
           const tokens = [
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVariable'}),
           ]
           const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
 
           expect(parser.isVariable(tokens[0])).toBeTruthy()
         })
@@ -997,11 +1081,12 @@ describe('The First Pass Parser', () => {
       })
       describe('when at invalid sound literal', () => {
         it('returns false, given <variable>', () => {
-          // TODO register "myVar" as a variable for this test setup!
           const tokens = [
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVar'}),
           ]
           const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+          
           expect(parser.isSoundLiteral(tokens[0])).toBeFalsy()
         })
         it('returns false, given <function>', () => {
@@ -1071,13 +1156,13 @@ describe('The First Pass Parser', () => {
           expect(parser.hasQueryParameters()).toBeFalsy()
         })
         it('returns false, given <variable> ( note ', () => {
-          // TODO register 'myVariable' in symbolTable for test setup
           const tokens = [
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVariable'}),
             newLexicalToken({type: LexicalTokenType.Bracket, value: '('}),
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'note'}),
           ]
           const parser = newTestParser(tokens)
+          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
           parser.token.index = 1
 
           expect(parser.hasQueryParameters()).toBeFalsy()
@@ -1206,12 +1291,114 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseChoice()', () => {
-      // TODO test these situations
-      // A | A | A
-      // A | (A) | B | [A]
-      // (A) | A  CURRENTLY NOT WORKING
-      // [A] | A  CURRENTLY NOT WORKING
-      expect().toBeTruthy()
+      it(`parses multiple sound literals: 'A|B|C'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+        parser.parseChoice()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[1], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it(`parses multiple sound literals and sequences: 'A|(B)|[C]'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Bracket, value: ')'}),
+          newLexicalToken({start: 5, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Bracket, value: '['}),
+          newLexicalToken({start: 7, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+          newLexicalToken({start: 8, length: 1, type: LexicalTokenType.Bracket, value: ']'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 1
+        parser.parseChoice()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[1], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SequenceBracket}),
+            newSemanticToken({...tokens[3], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SequenceBracket}),
+            newSemanticToken({...tokens[5], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[6], type: SemanticTokenType.BeatDivBracket}),
+            newSemanticToken({...tokens[7], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+            newSemanticToken({...tokens[8], type: SemanticTokenType.BeatDivBracket}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it(`parses choices with a leading sequence: '(A)|B|C'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Bracket, value: ')'}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 5, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 3
+        parser.parseChoice()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[5], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[6], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it(`parses choices with a leading beat division: '[A]|B|C'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '['}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Bracket, value: ']'}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 5, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.token.index = 3
+        parser.parseChoice()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[5], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[6], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
     })
 
     describe('parseRepetitionOperator()', () => {
@@ -1269,8 +1456,64 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseSequenceStatement()', () => {
-      expect().toBeTruthy()
-    })    
+      it(`parses sequence statements with a leading sequence followed by choices: '(A)|B|C'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '('}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Bracket, value: ')'}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 5, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseSequenceStatement()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.SequenceBracket}),
+            newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SequenceBracket}),
+            newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[5], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[6], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+      it(`parses sequence statements with a leading beat division followed by choices: '[A]|B|C'`, () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 1, type: LexicalTokenType.Bracket, value: '['}),
+          newLexicalToken({start: 1, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 2, length: 1, type: LexicalTokenType.Bracket, value: ']'}),
+          newLexicalToken({start: 3, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 4, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+          newLexicalToken({start: 5, length: 1, type: LexicalTokenType.Operator, value: '|'}),
+          newLexicalToken({start: 6, length: 1, type: LexicalTokenType.Identifier, value: 'C'}),
+        ]
+        const parser = newTestParser(tokens)
+        parser.parseSequenceStatement()
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.BeatDivBracket}),
+            newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.BeatDivBracket}),            
+            newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+            newSemanticToken({...tokens[5], type: SemanticTokenType.ChoiceOp}),
+            newSemanticToken({...tokens[6], type: SemanticTokenType.SoundLiteral, id: 'C__', parameters: {}}),
+          ],
+          errors: [],
+        }
+        
+        expect(parser.result).toEqual(expectations)
+      })
+    })
+    
   })
 
   ///////////////

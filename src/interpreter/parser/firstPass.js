@@ -48,7 +48,7 @@ export class FirstPassParser {
       : null
   }
 
-  getLastTokenEnd() {
+  getEndIndexOfLastResultToken() {
     const last = this.result.tokens[this.result.tokens.length - 1]
     return last.start + last.length
   }
@@ -57,6 +57,11 @@ export class FirstPassParser {
   consume() { return this.token.stream[this.token.index++] || null }
   pushToken(token) { this.result.tokens.push(newSemanticToken(token)) }
   pushError(error) { this.result.errors.push(newErrorToken(error)) }
+
+  pushVariableDeclToken(token) {
+    this.pushToken({...token, type: SemanticTokenType.VariableDecl})
+    this.symbolTable.addVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
+  }
 
   
   ////////////////////
@@ -73,7 +78,7 @@ export class FirstPassParser {
       this.peek(1).type === LexicalTokenType.Operator &&
       this.peek(1).value === '='
   }
-  isSequence() {
+  isSequence() { // TODO replace this with "isValidSequenceStep?"
     return this.peek() &&
       ( ( this.peek().type === LexicalTokenType.Identifier && // non function identifier
           ( this.isVariable(this.peek()) ||
@@ -81,6 +86,16 @@ export class FirstPassParser {
          )) ||
         /^[\(\[]/.test(this.peek().value) ||
         this.isRepetitionOperator()
+      )
+  }
+  isValidSequenceStep() {
+    return this.peek() &&
+      ( /^[\(\[]/.test(this.peek().value) ||
+        this.isVariable(this.peek())      ||
+        this.isSoundLiteral(this.peek())  ||
+        this.isRepetitionOperator()       ||
+        this.isChoice()                   ||
+        this.isComment()
       )
   }
   isComment() {
@@ -217,8 +232,9 @@ export class FirstPassParser {
     const start = this.peek().start
     
     // we know the structure is <VARIABLE_DECL> =
-    this.pushToken({ ...this.consume(), type: SemanticTokenType.VariableDecl })
+    this.pushVariableDeclToken(this.consume())
     this.pushToken({...this.consume(), type: SemanticTokenType.AssignmentOp})
+
 
     // we can assign sequences or function chains or numbers
     if (this.isNumber()) {
@@ -237,7 +253,7 @@ export class FirstPassParser {
     } else if (this.isSequence()) {
       this.parseSequenceStatement()
     } else {
-      const end = this.getLastTokenEnd()
+      const end = this.getEndIndexOfLastResultToken()
       this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
 
       this.parseEndOfStatement()
@@ -477,14 +493,16 @@ export class FirstPassParser {
     if (this.isChainOperator())
       this.parseFnChain()
   }
-
+  
   parseSequenceStatement() {
     // this handles the case in which the entire line is a sequence
-    while (this.peek() && this.isSequence()) {
-      this.parseSequence()
+    while (this.peek()) {
+      if (this.isValidSequenceStep) {
+        this.parseSequence() 
+      } else {
+        this.parseTokenAsError()
+      }
     }
-
-    this.parseEndOfStatement()
   }
   
   // the point of this isn't to create a parse tree, but rather augment tokens from
