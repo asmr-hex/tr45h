@@ -1263,31 +1263,31 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseComment()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseAssignment()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseErrorUntilEndOfParamScope()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseFnParameters()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseFnChain()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseFn()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseIdentifier()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseChoice()', () => {
@@ -1402,11 +1402,11 @@ describe('The First Pass Parser', () => {
     })
 
     describe('parseRepetitionOperator()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
 
     describe('parseTokenAsError()', () => {
-      expect().toBeTruthy()
+      it.todo('write tests')
     })
     
     describe('parseSequence()', () => {
@@ -1523,6 +1523,6 @@ describe('The First Pass Parser', () => {
   ///////////////
 
   describe('analyze()', () => {
-    expect().toBeTruthy()
+    it.todo('integration style testing')
   })
 })
