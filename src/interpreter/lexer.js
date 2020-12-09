@@ -11,6 +11,9 @@ import {
 } from './error'
 
 
+// TODO refactor all try/catch statements in the tokenize statements to just directly
+// push the errors to the error stack.
+
 /**
  * Lexer tokenizes an input string.
  *
@@ -171,7 +174,8 @@ export class Lexer {
       //  BRACKETS  //
       //            //
       ////////////////
-      
+
+      // TODO refactor this monstrosity.
       else if (this.isBracket(this.char)) {
         // perform balanced separator check
         const separator = {value: this.char, location: this.index}
