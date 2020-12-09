@@ -57,7 +57,7 @@ export class Lexer {
    * reset sets all appropriate variables to their 0-values to
    * prepare for another lexing pass.
    */
-  reset(blockKey) {
+  reset(blockKey='') {
     this.input  = ''
     this.tokens = []
     this.char   = null
@@ -75,7 +75,7 @@ export class Lexer {
   tokenize(input, blockKey='') {
     this.reset(blockKey)
     this.input = input
-    let sepStack = []
+    let sepStack = []  // TODO rename to brackStack ;)
     const lSeps =`([`
     const rSeps = `)]`
 
@@ -99,6 +99,37 @@ export class Lexer {
         this.advance()
       }
 
+      /////////////////////
+      //                 //
+      //  MUTE OPERATOR  //
+      //                 //
+      /////////////////////
+
+      else if (this.isMuteOperator(this.char)) {
+        this.addToken({
+          type: LexicalTokenType.MuteOp,
+          value: this.char,
+          start: this.index,
+          length: 1,
+        })
+        this.advance()        
+      }
+
+      /////////////////////
+      //                 //
+      //  SOLO OPERATOR  //
+      //                 //
+      /////////////////////
+
+      else if (this.isSoloOperator(this.char)) {
+        this.addToken({
+          type: LexicalTokenType.SoloOp,
+          value: this.char,
+          start: this.index,
+          length: 1,
+        })
+        this.advance()        
+      }
       
       ////////////////
       //            //
@@ -125,8 +156,23 @@ export class Lexer {
       //  SEPARATORS  //
       //              //
       //////////////////
-      
       else if (this.isSeparator(this.char)) {
+        this.addToken({
+          type: LexicalTokenType.Separator,
+          value: this.char,
+          start: this.index,
+          length: 1,
+        })
+        this.advance()        
+      }
+
+      ////////////////
+      //            //
+      //  BRACKETS  //
+      //            //
+      ////////////////
+      
+      else if (this.isBracket(this.char)) {
         // perform balanced separator check
         const separator = {value: this.char, location: this.index}
         if (/[([]/.test(this.char)) {
@@ -164,11 +210,10 @@ export class Lexer {
 
         }
         this.addToken({
-          type: 'SEPARATOR',
+          type: LexicalTokenType.Bracket,
           value: this.char,
           start: this.index,
           length: 1,
-          block: blockKey,
         })
         this.advance()
       }
@@ -412,20 +457,30 @@ export class Lexer {
     return null
   }
   addToken(token) { this.tokens.push(newLexicalToken({...token, block: this.block})) }
+
+  ////////////////////
+  //                //
+  //  TEST METHODS  //
+  //                //
+  ////////////////////
   
-  isWhiteSpace(c) { return /\s/.test(c) }
-  isSeparator(c) { return /[[\](){},:]/.test(c) }
-  isQuote(c) { return /['"]/.test(c) }
-  isRest(c) { return /[\-]/.test(c)}
-  isOperator(c) { return /[|.=*]/.test(c) } // MAYBE the chaining operator should be '->' so it doesn't conflict with punctuation
-  isComment(c) { return /[#]/.test(c) }
-  isDigit(c) { return /[0-9]/.test(c) }
-  isHzUnit(c0, c1) { return c0 && c0.toLowerCase() === 'h' && c1 && c1.toLowerCase() === 'z'}
+  isMuteOperator(c) { return this.tokens.length === 0 && /[\~]/.test(c)}  // must be the first character
+  isSoloOperator(c) { return this.tokens.length === 0 && /[\$]/.test(c)}  // must be the first character
+  isWhiteSpace(c)   { return /\s/.test(c) }
+  isBracket(c)      { return /[[\](){}]/.test(c) }
+  isSeparator(c)    { return /[,:]/.test(c) }
+  isQuote(c)        { return /['"]/.test(c) }
+  isRest(c)         { return /[\-]/.test(c)}
+  isOperator(c)     { return /[|.=*]/.test(c) }
+  isComment(c)      { return /[#]/.test(c) }
+  isDigit(c)        { return /[0-9]/.test(c) }
+  isHzUnit(c0, c1)  { return c0 && c0.toLowerCase() === 'h' && c1 && c1.toLowerCase() === 'z'}
   // since identifiers can have digits in the name, we don't check for non-digitness
   isIdentifier(c) {
     return typeof c === 'string'
       && !this.isWhiteSpace(c)
       && !this.isSeparator(c)
+      && !this.isBracket(c)
       && !this.isQuote(c)
       && !this.isOperator(c)
   }

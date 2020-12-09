@@ -119,7 +119,7 @@ export class FirstPassParser {
   }
   isValidSequenceStep() {
     return this.peek() &&
-      ( /^[\(\[]/.test(this.peek().value) ||
+      ( this.isLeftBracket(this.peek())   ||
         this.isVariable(this.peek())      ||
         this.isSoundLiteral(this.peek())  ||
         this.isRepetitionOperator()       ||
@@ -261,38 +261,6 @@ export class FirstPassParser {
       this.pushToken(this.consume())
   }
   
-  parseAssignment() {
-    const start = this.peek().start
-    
-    // we know the structure is <VARIABLE_DECL> =
-    this.pushVariableDeclToken(this.consume())
-    this.pushToken({...this.consume(), type: SemanticTokenType.AssignmentOp})
-
-
-    // we can assign sequences or function chains or numbers
-    if (this.isNumber()) {
-      this.pushToken(this.consume())
-
-      this.parseEndOfStatement()
-    } else if (this.isHz()) {
-      this.pushToken(this.consume()) // Hz
-      this.pushToken(this.consume()) // HzUnit
-      
-      this.parseEndOfStatement()
-      
-    } else if(this.peek() && this.isFn(this.peek().value)) {
-      this.parseFn()
-      this.parseEndOfStatement()
-    } else if (this.isSequence()) {
-      this.parseSequenceStatement()
-    } else {
-      const end = this.getEndIndexOfLastResultToken()
-      this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
-
-      this.parseEndOfStatement()
-    }
-  }
-
   parseErrorUntilEndOfParamScope() {
     const start = this.peek().start
     while (this.peek() && !/^[\),]/.test(this.peek().value)) this.advance()
@@ -530,25 +498,56 @@ export class FirstPassParser {
   parseSequenceStatement() {
     // this handles the case in which the entire line is a sequence
     while (this.peek()) {
-      if (this.isValidSequenceStep) {
+      if (this.isValidSequenceStep()) {
         this.parseSequence() 
       } else {
         this.parseTokenAsError()
       }
     }
   }
-  
+
+  parseAssignment() {
+    const start = this.peek().start
+    
+    // we know the structure is <VARIABLE_DECL> =
+    this.pushVariableDeclToken(this.consume())
+    this.pushToken({...this.consume(), type: SemanticTokenType.AssignmentOp})
+
+
+    // we can assign sequences or function chains or numbers
+    if (this.isNumber()) {
+      this.pushToken(this.consume())
+
+      this.parseEndOfStatement()
+    } else if (this.isHz()) {
+      this.pushToken(this.consume()) // Hz
+      this.pushToken(this.consume()) // HzUnit
+      
+      this.parseEndOfStatement()
+      
+    } else if(this.peek() && this.isFn(this.peek().value)) {
+      this.parseFn()
+      this.parseEndOfStatement()
+    } else if (this.isSequence()) {
+      this.parseSequenceStatement()
+    } else {
+      const end = this.getEndIndexOfLastResultToken()
+      this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
+
+      this.parseEndOfStatement()
+    }
+  }
+
   // the point of this isn't to create a parse tree, but rather augment tokens from
   // lexical analysis with more specific types and report semantic/type errors.
   // in other words, this needs to be fast and not concerned with creating a tree.
   analyze(tokens, blockKey, blockIndex) {
     this.reset(tokens, blockKey, blockIndex)
 
-    
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments
     if (this.isAssignment()) {
       this.parseAssignment()
-    } else if (this.isSequence()) {
+    } else if (this.isValidSequenceStep()) {
       this.parseSequenceStatement()
     } else {
       this.parseEndOfStatement()

@@ -1629,6 +1629,30 @@ describe('The First Pass Parser', () => {
   ///////////////
 
   describe('analyze()', () => {
-    it.todo('integration style testing')
+    describe('sequence statements', () => {
+      it('parses sequences starting with string literals', () => {
+        const tokens = [
+          newLexicalToken({start: 0, length: 11, type: LexicalTokenType.String, value: 'test string'}),
+          newLexicalToken({start: 11, length: 1, type: LexicalTokenType.Identifier, value: 'A'}),
+          newLexicalToken({start: 12, length: 1, type: LexicalTokenType.Identifier, value: 'B'}),
+        ]
+        const errors = []
+        
+        const expectations = {
+          tokens: [
+            newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'test_string__', parameters: {}}),
+            newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
+            newSemanticToken({...tokens[2], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
+          ],
+          errors: [],
+        }
+
+        const parser = newTestParser([])
+        
+        expect(parser.analyze({tokens, errors})).toEqual(expectations)        
+      })
+    })
+    
+    it.todo('more integration style testing')
   })
 })

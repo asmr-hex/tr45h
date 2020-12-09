@@ -9,14 +9,15 @@
 export const newLexicalToken = fields => ({
   type:   null,
   value:  null,
-  start:  null,
-  length: null,
-  block:  null,
+  start:  0,
+  length: 0,
+  block:  '',
   ...fields,
 })
 
 export const LexicalTokenType = {
   Bracket:    'BRACKET',
+  Separator:  'SEPARATOR',
   Delimiter:  'DELIMITER',
   Quote:      'QUOTE',
   String:     'STRING',
@@ -27,6 +28,8 @@ export const LexicalTokenType = {
   Hz:         'HZ',
   HzUnit:     'HZ_UNIT',
   Identifier: 'IDENTIFIER',
+  MuteOp:     'MUTE_OP',
+  SoloOp:     'SOLO_OP',
   Error:      'ERROR',
 }
 

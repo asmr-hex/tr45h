@@ -1,5 +1,8 @@
 import { Lexer } from './lexer'
-import { LexicalTokenType } from './types/tokens'
+import {
+  LexicalTokenType,
+  newLexicalToken,
+} from './types/tokens'
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
@@ -52,27 +55,33 @@ describe('Lexer', () => {
     })
   })
 
-  describe('.isSeparator(c)', () => {
+  describe('.isBracket(c)', () => {
     it('detects open paren', () => {
-      expect(lexer.isSeparator('(')).toBeTruthy()
+      expect(lexer.isBracket('(')).toBeTruthy()
     })
     it('detects closed paren', () => {
-      expect(lexer.isSeparator(')')).toBeTruthy()
+      expect(lexer.isBracket(')')).toBeTruthy()
     })
     it('detects open curly bracket', () => {
-      expect(lexer.isSeparator('{')).toBeTruthy()
+      expect(lexer.isBracket('{')).toBeTruthy()
     })
     it('detects closed curly bracket', () => {
-      expect(lexer.isSeparator('}')).toBeTruthy()
+      expect(lexer.isBracket('}')).toBeTruthy()
     })
     it('detects open square bracket', () => {
-      expect(lexer.isSeparator('[')).toBeTruthy()
+      expect(lexer.isBracket('[')).toBeTruthy()
     })
     it('detects closed square bracket', () => {
-      expect(lexer.isSeparator(']')).toBeTruthy()
+      expect(lexer.isBracket(']')).toBeTruthy()
     })
+  })
+
+  describe('.isSeparator(c)', () => {
     it('detects commas', () => {
       expect(lexer.isSeparator(',')).toBeTruthy()
+    })
+    it('detects colons', () => {
+      expect(lexer.isSeparator(':')).toBeTruthy()
     })
   })
 
@@ -201,13 +210,13 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'SEPARATOR', value: '(', start: 0, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'one', start: 1, length: 3, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 0, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'one', start: 1, length: 3}),
           {type: 'IDENTIFIER', value: 'two', start: 5, length: 3, block: ''},
-          {type: 'SEPARATOR', value: '(', start: 9, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 9, length: 1}),
           {type: 'IDENTIFIER', value: 'three', start: 10, length: 5, block: ''},
-          {type: 'SEPARATOR', value: ')', start: 15, length: 1, block: ''},
-          {type: 'SEPARATOR', value: ')', start: 17, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 15, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 17, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -217,13 +226,13 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'SEPARATOR', value: '{', start: 0, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '{', start: 0, length: 1}),
           {type: 'IDENTIFIER', value: 'one', start: 1, length: 3, block: ''},
           {type: 'IDENTIFIER', value: 'two', start: 5, length: 3, block: ''},
-          {type: 'SEPARATOR', value: '{', start: 9, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '{', start: 9, length: 1}),
           {type: 'IDENTIFIER', value: 'three', start: 10, length: 5, block: ''},
-          {type: 'SEPARATOR', value: '}', start: 15, length: 1, block: ''},
-          {type: 'SEPARATOR', value: '}', start: 17, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '}', start: 15, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '}', start: 17, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -233,13 +242,13 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'SEPARATOR', value: '[', start: 0, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'one', start: 1, length: 3, block: ''},
-          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3, block: ''},
-          {type: 'SEPARATOR', value: '[', start: 9, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'three', start: 10, length: 5, block: ''},
-          {type: 'SEPARATOR', value: ']', start: 15, length: 1, block: ''},
-          {type: 'SEPARATOR', value: ']', start: 17, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 0, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'one', start: 1, length: 3}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'two', start: 5, length: 3}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 9, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'three', start: 10, length: 5}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']', start: 15, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']', start: 17, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -271,11 +280,11 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'IDENTIFIER', value: 'one', start: 0, length: 3, block: ''},
-          {type: 'SEPARATOR', value: ',', start: 3, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3, block: ''},
-          {type: 'SEPARATOR', value: ',', start: 8, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'three', start: 9, length: 5, block: ''},
+          newLexicalToken({type: 'IDENTIFIER', value: 'one', start: 0, length: 3}),
+          newLexicalToken({type: LexicalTokenType.Separator, value: ',', start: 3, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'two', start: 5, length: 3}),
+          newLexicalToken({type: LexicalTokenType.Separator, value: ',', start: 8, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'three', start: 9, length: 5}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -286,12 +295,12 @@ describe('Lexer', () => {
       const expectedResult = {
         errors: [],
         tokens: [
-          {type: 'IDENTIFIER', value: 'one', start: 0, length: 3, block: ''},
-          {type: 'SEPARATOR', value: ',', start: 3, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'two', start: 5, length: 3, block: ''},
-          {type: 'SEPARATOR', value: ',', start: 8, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'three', start: 9, length: 5, block: ''},
-          {type: 'COMMENT', value: '# well this is a fine list', start: 15, length: 26, block: ''},
+          newLexicalToken({type: 'IDENTIFIER', value: 'one', start: 0, length: 3}),
+          newLexicalToken({type: 'SEPARATOR', value: ',', start: 3, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'two', start: 5, length: 3}),
+          newLexicalToken({type: 'SEPARATOR', value: ',', start: 8, length: 1}),
+          newLexicalToken({type: 'IDENTIFIER', value: 'three', start: 9, length: 5}),
+          newLexicalToken({type: 'COMMENT', value: '# well this is a fine list', start: 15, length: 26}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResult)
@@ -413,10 +422,10 @@ describe('Lexer', () => {
         errors: [ {
           type: 'ERROR',
           tokens: [
-            {type: 'SEPARATOR', value: '(', start: 8, length: 1, block: ''},
-            {type: 'SEPARATOR', value: '(', start: 9, length: 1, block: ''},
-            {type: 'IDENTIFIER', value: 'orange', start: 10, length: 6, block: ''},
-            {type: 'SEPARATOR', value: ')', start: 16, length: 1, block: ''},
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 8, length: 1}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 9, length: 1}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'orange', start: 10, length: 6}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 16, length: 1}),
           ],
           start: 8,
           length: 9,
@@ -424,9 +433,9 @@ describe('Lexer', () => {
           block: ''
         } ],
         tokens: [
-          {type: 'SEPARATOR', value: '(', start: 0, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'apple', start: 1, length: 5, block: ''},
-          {type: 'SEPARATOR', value: ')', start: 6, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 0, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'apple', start: 1, length: 5}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 6, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResults)
@@ -438,10 +447,10 @@ describe('Lexer', () => {
         errors: [ {
           type: 'ERROR',
           tokens: [
-            {type: 'SEPARATOR', value: '[', start: 8, length: 1, block: ''},
-            {type: 'SEPARATOR', value: '[', start: 9, length: 1, block: ''},
-            {type: 'IDENTIFIER', value: 'orange', start: 10, length: 6, block: ''},
-            {type: 'SEPARATOR', value: ']', start: 16, length: 1, block: ''},
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 8, length: 1}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 9, length: 1}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'orange', start: 10, length: 6}),
+            newLexicalToken({type: LexicalTokenType.Bracket, value: ']', start: 16, length: 1}),
           ],
           start: 8,
           length: 9,
@@ -449,9 +458,9 @@ describe('Lexer', () => {
           block: ''
         } ],
         tokens: [
-          {type: 'SEPARATOR', value: '[', start: 0, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'apple', start: 1, length: 5, block: ''},
-          {type: 'SEPARATOR', value: ']', start: 6, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 0, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'apple', start: 1, length: 5}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ']', start: 6, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResults)
@@ -463,7 +472,7 @@ describe('Lexer', () => {
         errors: [{
           type: 'ERROR',
           tokens: [
-            {type: 'SEPARATOR', value: '[', start: 6, length: 1, block: ''},
+            newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 6, length: 1}),
             {type: 'IDENTIFIER', value: 'c', start: 8, length: 1, block: ''},
           ],
           start: 6,
@@ -473,10 +482,10 @@ describe('Lexer', () => {
         }],
         tokens: [
           {type: 'IDENTIFIER', value: 'a', start: 0, length: 1, block: ''},
-          {type: 'SEPARATOR', value: '(', start: 2, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 2, length: 1}),
           {type: 'IDENTIFIER', value: 'b', start: 4, length: 1, block: ''},
           {type: 'IDENTIFIER', value: 'd', start: 12, length: 1, block: ''},
-          {type: 'SEPARATOR', value: ')', start: 14, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 14, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResults)
@@ -489,9 +498,9 @@ describe('Lexer', () => {
           {
             type: 'ERROR',
             tokens: [
-              {type: 'SEPARATOR', value: '(', start: 6, length: 1, block: ''},
-              {type: 'SEPARATOR', value: '[', start: 7, length: 1, block: ''},
-              {type: 'IDENTIFIER', value: 'c', start: 9, length: 1, block: ''},
+              newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 6, length: 1}),
+              newLexicalToken({type: LexicalTokenType.Bracket, value: '[', start: 7, length: 1}),
+              newLexicalToken({type: LexicalTokenType.Identifier, value: 'c', start: 9, length: 1}),
             ],
             start: 6,
             length: 7,
@@ -503,11 +512,11 @@ describe('Lexer', () => {
           },
         ],
         tokens: [
-          {type: 'IDENTIFIER', value: 'a', start: 0, length: 1, block: ''},
-          {type: 'SEPARATOR', value: '(', start: 2, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'b', start: 4, length: 1, block: ''},
-          {type: 'IDENTIFIER', value: 'd', start: 14, length: 1, block: ''},
-          {type: 'SEPARATOR', value: ')', start: 16, length: 1, block: ''},
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'a', start: 0, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: '(', start: 2, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'b', start: 4, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Identifier, value: 'd', start: 14, length: 1}),
+          newLexicalToken({type: LexicalTokenType.Bracket, value: ')', start: 16, length: 1}),
         ]
       }
       expect(lexer.tokenize(str)).toEqual(expectedResults)
