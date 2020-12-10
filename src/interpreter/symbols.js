@@ -1,4 +1,13 @@
-import { filter, flatMap, uniq, reduce, keys, values, intersection, xor } from 'lodash'
+import {
+  filter,
+  flatMap,
+  uniq,
+  reduce,
+  keys,
+  values,
+  intersection,
+  xor
+} from 'lodash'
 
 import { audioContext } from '../context/audio'
 import { getNativeSymbols } from './nativeSymbols'
@@ -33,6 +42,7 @@ export class SymbolTable {
     this.fetchWaitInterval = 1000  // in ms
   }
 
+  // TODO make this an rxjs observable
   updateTheme(theme) {
     this.theme = theme
   }
@@ -62,6 +72,101 @@ export class SymbolTable {
     //   this.remove(danglingIdentifier)
     // }
   }
+
+  /////////////////////
+  //                 //
+  //  QUERY METHODS  //
+  //                 //
+  /////////////////////
+
+  /**
+   * given a symbol id, returns its corresponding symbol. returns null if symbol is not found.
+   * @param {string} id the id of the symbol.
+   * @return {Symbol|null} the symbol corresponding to the given id, or null.
+   */
+  get(id) {
+    return id in this.symbols ? this.symbols[id] : null
+  }
+  
+  /**
+   * returns true if the given identifier is a function, otherwise returns false.
+   * @param {string} identifier the identifier to check.
+   * @return {bool} true if it is a function, false otherwise.
+   */
+  isFn(identifier) {
+    return !!this.symbols[identifier]
+      && this.symbols[identifier].type === SemanticTokenType.Fn
+  }
+
+  /**
+   * returns true if the given identifier is a variable, otherwise returns false.
+   * @param {string} identifier the identifier to check.
+   * @return {bool} true if it is a variable, false otherwise.
+   */
+  isVariable(identifier) {
+    return !!this.symbols[identifier]
+      && this.symbols[identifier].type === SemanticTokenType.Variable
+  }
+  
+  /**
+   * returns true if this is a valid query parameter for a sound, false otherwise.
+   * @param {string} paramName the parameter name in question.
+   * @return {bool} true if it is a valid sound query parameter, false otherwise.
+   */
+  isQueryParameter(paramName) {
+    return this.isFnParameter('_soundFn', paramName)
+  }
+
+  /**
+   * returns true if this is a valid function parameter for a sound, false otherwise.
+   * @param {string} fnName the name of the function.
+   * @param {string} paramName the name of the potential function parameter.
+   * @return {bool} returns true if it is a parameter for the given function, false otherwise.
+   */
+  isFnParameter(fnName, paramName) {
+    return this.isFn(fnName)
+      && paramName in this.symbols[fnName].meta.parameters
+  }
+
+  /**
+   * returns true if the parameter is a boolean flag parameter, false otherwise.
+   * @param {string} fnName the name of the function.
+   * @param {string} paramName the name of the potential flag function parameter.
+   * @return {bool} returns true if it is a boolean flag parameter for the given function, false otherwise.
+   */
+  isFnFlagParameter(fnName, paramName) {
+    return this.isFnParameter(fnName, paramName)
+      && !!this.symbols[fnName].meta.parameters[paramName].isFlag
+  }
+
+  /**
+   * returns true if the given value token for a function parameter is valid (in type and value), false otherwise.
+   * @param {string} fnName the name of the function.
+   * @param {string} paramName the name of the function parameter.
+   * @param {LexicalToken} argToken the function parameter value in question
+   */
+  isValidFnArg(fnName, paramName, argToken) {
+    return this.isFnParameter(fnName, paramName)
+      && this.symbols[fnName].meta.parameters[paramName].types.includes(argToken.type)
+  }
+
+  /**
+   * translates input tokens for a function argument, returning a canonicalized mapping of k-v pairs.
+   *
+   * @description this method exists because the parameters used in alea-lang may not always map directly
+   * onto the parameter names of the underlying functions that the alea-lang functions will invoke. Moreover,
+   * the mapping may also even be one-to-many, e.g. one alea-lang argument could map to several parameters of
+   * the underlying function(s) being executed in Javascript.
+   *
+   * @param {string} fnName the function name.
+   * @param {string} paramName the function parameter name.
+   * @param {Array<LexicalToken>} argTokens an array of value tokens.
+   * @return {Object} a mapping from canonicalized parameter names to values.
+   */
+  translateFnArgs(fnName, paramName, argTokens) {
+    return this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
+  }
+  
   
   // {
   //   identifier: <identifier>,
@@ -92,12 +197,6 @@ export class SymbolTable {
       setTimeout(() => this._fetchNewSound(symbol), this.fetchWaitInterval)
   }
 
-  get(id) {
-    return id in this.symbols
-      ? this.symbols[id]
-      : null
-  }
-  
   remove(id) {
     if (this.symbols[id].status !== 'static')
       delete this.symbols[id]
@@ -106,38 +205,7 @@ export class SymbolTable {
   addVariable(variable) {
     this.merge(variable)
   }
-  
-  isFn(identifier) {
-    return !!this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Fn
-  }
 
-  isVariable(identifier) {
-    return !!this.symbols[identifier] && this.symbols[identifier].type === SemanticTokenType.Variable
-  }
-  
-  /**
-   * returns true if this is a valid query parameter for a sound
-   */
-  isQueryParameter(paramName) {
-    return this.isFnParameter('_soundFn', paramName)
-  }
-
-  isFnParameter(fnName, paramName) {
-    return paramName in this.symbols[fnName].meta.parameters
-  }
-
-  isFnFlagParameter(fnName, paramName) {
-    return !!this.symbols[fnName].meta.parameters[paramName].isFlag
-  }
-
-  isValidFnArg(fnName, paramName, argToken) {
-    return this.symbols[fnName].meta.parameters[paramName].types.includes(argToken.type)
-  }
-
-  translateFnArgs(fnName, paramName, argTokens) {
-    return this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
-  }
-  
   // metadata for sounds
   // {
   //   meta: {
