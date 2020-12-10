@@ -1,6 +1,5 @@
 import React from  'react'
-import { Tooltip } from '@material-ui/core'
-import { convertToRaw } from 'draft-js'
+// import { Tooltip } from '@material-ui/core'
 import { List } from 'immutable'
 
 
@@ -60,7 +59,6 @@ export class SyntaxHighlightDecorator {
    */
   getDecorations(block, contentState) {
     const blockKeys   = contentState.getBlocksAsArray().map(b => b.key)
-    const blockType  = block.getType()
     const blockKey   = block.getKey()
     const blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)

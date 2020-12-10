@@ -3,12 +3,12 @@ import { min, max } from 'lodash'
 import {
   newLexicalToken,
   LexicalTokenType,
-} from './types/tokens'
+} from '../types/tokens'
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
   QuoteMissingError,
-} from './error'
+} from '../types/error'
 
 
 // TODO refactor all try/catch statements in the tokenize statements to just directly
@@ -238,7 +238,7 @@ export class Lexer {
         const start = this.index
         const isValidQuoteBody = c => {
           if ( c === undefined ) throw new QuoteMissingError(start)
-          return !(this.isQuote(c) && c == quoteType)
+          return !(this.isQuote(c) && c === quoteType)
         }
         
         // handle potential errors
@@ -468,13 +468,13 @@ export class Lexer {
   //                //
   ////////////////////
   
-  isMuteOperator(c) { return this.tokens.length === 0 && /[\~]/.test(c)}  // must be the first character
-  isSoloOperator(c) { return this.tokens.length === 0 && /[\$]/.test(c)}  // must be the first character
+  isMuteOperator(c) { return this.tokens.length === 0 && /[~]/.test(c)}  // must be the first character
+  isSoloOperator(c) { return this.tokens.length === 0 && /[$]/.test(c)}  // must be the first character
   isWhiteSpace(c)   { return /\s/.test(c) }
   isBracket(c)      { return /[[\](){}]/.test(c) }
   isSeparator(c)    { return /[,:]/.test(c) }
   isQuote(c)        { return /['"]/.test(c) }
-  isRest(c)         { return /[\-]/.test(c)}
+  isRest(c)         { return /[-]/.test(c)}
   isOperator(c)     { return /[|.=*]/.test(c) }
   isComment(c)      { return /[#]/.test(c) }
   isDigit(c)        { return /[0-9]/.test(c) }

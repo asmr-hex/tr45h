@@ -6,5 +6,5 @@ code {
 
 @font-face {
     font-family: 'gilbert';
-    src: local('gilbert-color'), url(./fonts/gilbert-color.otf) format('opentype');
+    src: local('gilbert-color'), url(./ui/themes/fonts/gilbert-color.otf) format('opentype');
 }

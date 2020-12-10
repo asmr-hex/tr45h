@@ -6,9 +6,8 @@ import {
 } from "@material-ui/core/styles"
 import {
   IconButton,
-  Slider,
+  // Slider,
   Switch,
-  FormGroup,
   FormControlLabel,
 } from '@material-ui/core'
 import RecordIcon from '@material-ui/icons/FiberManualRecord'
@@ -21,8 +20,8 @@ import DarkIcon from '@material-ui/icons/Brightness3'
 import LightIcon from '@material-ui/icons/WbSunny';
 import SettingsIcon from '@material-ui/icons/Settings';
 
-import { useTransportContext } from './context/transport'
-import { Theme, useTheme } from './themes'
+import { useTransportContext } from '../../context/transport'
+import { useTheme } from '../themes'
 
 
 const useStyles = makeStyles(theme => ({
@@ -134,8 +133,8 @@ export const Toolbar = props => {
     setIsPaused,
     isMuted,
     setIsMuted,
-    bpm,
-    setBpm
+    // bpm,
+    // setBpm
   } = useTransportContext()
   const classes = useStyles()
   // const styles = {
@@ -179,9 +178,9 @@ export const Toolbar = props => {
     setIsMuted(!isMuted)
   }
   
-  const changeBpm = (e, newBpm) => {
-    setBpm(newBpm)
-  }
+  // const changeBpm = (e, newBpm) => {
+  //   setBpm(newBpm)
+  // }
   
   return (
     <HeaderBody>
@@ -223,7 +222,7 @@ export const Toolbar = props => {
         <FormControlLabel
           control={<Switch name="theme" checked={isLightTheme} onChange={toggleTheme} inputProps={{ 'aria-label': 'secondary checkbox' }}/>}
           label={isLightTheme ? <LightIcon/> : <DarkIcon/>}
-          classes={classes.theme}
+          className={classes.theme}
         />
         
         {/* <Slider value={bpm} onChange={changeBpm} min={50} max={400} valueLabelDisplay="on" className={classes.slider}/> */}

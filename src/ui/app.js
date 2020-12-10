@@ -1,16 +1,14 @@
 import React from 'react'
 import {
-  makeStyles,
   withTheme,
   styled
 } from "@material-ui/core/styles"
 
-import { TransportProvider } from './context/transport'
-import { SequenceProvider } from './context/sequence'
+import { TransportProvider } from '../context/transport'
 
 import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
-import { Details } from './details'
+import { Details } from './statbar'
 
 
 const AppContainer = withTheme(styled('div')({

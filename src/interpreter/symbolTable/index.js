@@ -1,17 +1,12 @@
 import {
-  filter,
   flatMap,
   uniq,
   reduce,
-  keys,
-  values,
-  intersection,
-  xor
 } from 'lodash'
 
-import { audioContext } from '../context/audio'
+import { audioContext } from '../../context/audio'
 import { getNativeSymbols } from './nativeSymbols'
-import { SemanticTokenType } from './types/tokens'
+import { SemanticTokenType } from '../types/tokens'
 
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -59,10 +54,10 @@ export class SymbolTable {
       ...flatMap(lexicon.errors, e => e.tokens).filter(t => t.type === 'IDENTIFIER').map(t => t.value)
     ])
 
-    const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
-    const identifiersInSymbolTable = keys(this.symbols)
+    // const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
+    // const identifiersInSymbolTable = keys(this.symbols)
 
-    const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
+    // const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
 
     // TODO DEBUGGING BECAUSE WE NEED TO FIGURE OUT HOW TO DEAL WITH REMOVING
     // DANGLING IDENTIFIERS NOW THAT SOUNDS UNIQUENESS IS DEPENDENT ON PARAMETERS

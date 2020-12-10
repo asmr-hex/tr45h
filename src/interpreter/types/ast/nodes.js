@@ -1,4 +1,4 @@
-import { NotImplementedError } from './error'
+import { NotImplementedError } from '../error'
 
 /**
  * Step is a data-type which represents a fully-resolved step in a sequence.

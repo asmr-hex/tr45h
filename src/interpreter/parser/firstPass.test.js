@@ -1,4 +1,4 @@
-import { getTheme, Theme } from '../../themes'
+import { getTheme, Theme } from '../../ui/themes'
 import {
   newLexicalToken,
   LexicalTokenType,
@@ -6,7 +6,7 @@ import {
   SemanticTokenType,
   newErrorToken,
 } from '../types/tokens'
-import { SymbolTable } from '../symbols'
+import { SymbolTable } from '../symbolTable'
 import { FirstPassParser } from './firstPass'
 
 

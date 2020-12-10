@@ -1,13 +1,13 @@
-import { Lexer } from './lexer'
+import { Lexer } from './index'
 import {
   LexicalTokenType,
   newLexicalToken,
-} from './types/tokens'
+} from '../types/tokens'
 import {
   SeparatorBalanceError,
   SeparatorMismatchError,
   QuoteMissingError
-} from './error'
+} from '../types/error'
 
 
 describe('Lexer', () => {

@@ -1,7 +1,7 @@
-import { reduce, filter, values, keys, intersection, xor } from 'lodash'
+import { values } from 'lodash'
 import Recorder from 'recorder-js'
 
-import { audioContext } from './context/audio'
+import { audioContext } from '../context/audio'
 
 
 /**

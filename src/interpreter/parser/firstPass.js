@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid'
 import { reduce } from 'lodash'
 
 import {
@@ -73,12 +72,12 @@ export class FirstPassParser {
   isLeftBracket(token) {
     return !!token                            &&
       token.type === LexicalTokenType.Bracket &&
-      ( /^[\(\[]/.test(token.value) )
+      ( /^[([]/.test(token.value) )
   }
   isRightBracket(token) {
     return !!token                            &&
       token.type === LexicalTokenType.Bracket &&
-      ( /^[\)\]]/.test(token.value) )
+      ( /^[)\]]/.test(token.value) )
   }
   isLeftSequenceBracket(token) {
     return !!token                            &&
@@ -113,7 +112,7 @@ export class FirstPassParser {
           ( this.isVariable(this.peek()) ||
             this.isSoundLiteral(this.peek())
          )) ||
-        /^[\(\[]/.test(this.peek().value) ||
+        /^[([]/.test(this.peek().value) ||
         this.isRepetitionOperator()
       )
   }
@@ -149,14 +148,14 @@ export class FirstPassParser {
         ( this.peek(-1).type === LexicalTokenType.Identifier &&
           !this.isFn(this.peek(-1).value)
         ) ||
-        /^[\)\]]/.test(this.peek(-1).value)
+        /^[)\]]/.test(this.peek(-1).value)
       ) &&
       this.peek(1) &&
       (
         ( this.peek(1).type === LexicalTokenType.Identifier &&
           !this.isFn(this.peek(1).value)
         ) ||
-        /^[\(\[]/.test(this.peek(1).value)
+        /^[([]/.test(this.peek(1).value)
       )
   }
   isChoiceParameter() {
@@ -172,7 +171,7 @@ export class FirstPassParser {
       this.peek().type === LexicalTokenType.Operator &&
       this.peek().value === '.' &&
       this.peek(-1) &&     // and previous token is identifier or ) ]
-      ( /^[\)\]]/.test(this.peek(-1).value) ||
+      ( /^[)\]]/.test(this.peek(-1).value) ||
         this.peek(-1).type === LexicalTokenType.Identifier
       ) &&
       this.peek(1) &&     // and next token is a function name
@@ -187,7 +186,7 @@ export class FirstPassParser {
         this.peek(1) &&
         this.peek(1).type === LexicalTokenType.Number &&
         this.peek(-1) &&  // LHS is a sequence or identifier
-        ( /^[\)\]]/.test(this.peek(-1).value) ||
+        ( /^[)\]]/.test(this.peek(-1).value) ||
           this.peek(-1).type === LexicalTokenType.Identifier
         )
       ) ||
@@ -197,7 +196,7 @@ export class FirstPassParser {
         this.peek(1).type === LexicalTokenType.Operator &&
         this.peek(1).value === '*' &&
         this.peek(2) &&  // RHS is a sequence or identifier
-        ( /^[\(\[]/.test(this.peek(2).value) ||
+        ( /^[([]/.test(this.peek(2).value) ||
           ( this.peek(2).type === LexicalTokenType.Identifier &&
             !this.isFn(this.peek(2).value) )
         )
@@ -263,7 +262,7 @@ export class FirstPassParser {
   
   parseErrorUntilEndOfParamScope() {
     const start = this.peek().start
-    while (this.peek() && !/^[\),]/.test(this.peek().value)) this.advance()
+    while (this.peek() && !/^[),]/.test(this.peek().value)) this.advance()
 
     if (/^[,]/.test(this.peek().value)) this.advance()
     
@@ -281,7 +280,7 @@ export class FirstPassParser {
 
     let parameters = {}
 
-    while (this.peek() && !/^[\)]/.test(this.peek().value)) {
+    while (this.peek() && !/^[)]/.test(this.peek().value)) {
       if (!this.symbolTable.isFnParameter(fnName, this.peek().value)) {
         this.parseErrorUntilEndOfParamScope()
         continue
@@ -315,7 +314,7 @@ export class FirstPassParser {
       const paramName = {...this.consume(), type: SemanticTokenType.FnParameter}           // pop off the parameter name
       const kvDelimiter = {...this.consume(), type: SemanticTokenType.FnParamKvDelimiter}  // pop off the parameter kv delimiter
       let args = []
-      while (this.peek() && !/^[,\)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
+      while (this.peek() && !/^[,)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
 
       // push all tokens
       this.pushToken(paramName)
@@ -460,14 +459,14 @@ export class FirstPassParser {
     // <IDENTIFIER> or ( or [
 
     // if ( or [, lets pop them off (synce lexical analysis ensures they are balanced properly)
-    if (/^[\(]/.test(this.peek().value)) {
+    if (/^[(]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
-    } else if (/^[\[]/.test(this.peek().value)) {
+    } else if (/^[[]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})
     }
     
     // iterate over steps
-    while(this.peek() && !/^[\)\]]/.test(this.peek().value)) {
+    while(this.peek() && !/^[)\]]/.test(this.peek().value)) {
       if (this.isVariable(this.peek()) || this.isSoundLiteral(this.peek())) {
         this.parseIdentifier()
       } else if (this.isRepetitionOperator()) {
@@ -484,7 +483,7 @@ export class FirstPassParser {
     }
 
     // pop off right bracket if necessary
-    if (this.peek() && /^[\)]/.test(this.peek().value)) {
+    if (this.peek() && /^[)]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.SequenceBracket})
     } else if (this.peek() && /^[\]]/.test(this.peek().value)) {
       this.pushToken({...this.consume(), type: SemanticTokenType.BeatDivBracket})

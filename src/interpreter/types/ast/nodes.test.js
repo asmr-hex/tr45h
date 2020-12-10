@@ -4,8 +4,8 @@ import {
   Sequence,
   SubBeatSequence,
   Choice,
-} from './types'
-import { NotImplementedError } from './error'
+} from './nodes'
+import { NotImplementedError } from '../error'
 
 
 describe('language types', () => {

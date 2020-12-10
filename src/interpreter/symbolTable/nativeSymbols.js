@@ -1,17 +1,17 @@
 import {
   LexicalTokenType,
   SemanticTokenType,
-} from './types/tokens'
+} from '../types/tokens'
 
 
 // make into classes
-const paramTypes = {
-  bool: {},
-  key: {},
-  hz: {},
-  midi: {},
-  name: {},
-}
+// const paramTypes = {
+//   bool: {},
+//   key: {},
+//   hz: {},
+//   midi: {},
+//   name: {},
+// }
 
 const nativeSymbols = {
   _soundFn: {
@@ -48,7 +48,6 @@ const nativeSymbols = {
               return { ac_note_frequency: tokens[0].value }
             case 'NUMBER':
               return { ac_note_midi: tokens[0].value }
-              return tokens[0].value
             default:
               throw new Error('umm unsupported argument type')
             }
