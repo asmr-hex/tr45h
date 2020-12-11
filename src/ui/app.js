@@ -5,10 +5,12 @@ import {
 } from "@material-ui/core/styles"
 
 import { TransportProvider } from '../context/transport'
+import { UIStateProvider } from '../context/ui'
 
 import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
 import { Details } from './statbar'
+import { AboutDialog } from  './toolbar/dialog/customDialog'
 
 
 const AppContainer = withTheme(styled('div')({
@@ -30,13 +32,16 @@ const App = () => {
   return (
     <AppContainer>
       <TransportProvider>
-        <Toolbar/>
-        <AppBody>
-          <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
-            <MusicEditor/>
-          </div>
-        </AppBody>
-        <Details/>
+        <UIStateProvider>
+          <Toolbar/>
+          <AppBody>
+            <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
+              <MusicEditor/>
+            </div>
+            <AboutDialog/>
+          </AppBody>
+          <Details/>
+        </UIStateProvider>
       </TransportProvider>
     </AppContainer>
   );

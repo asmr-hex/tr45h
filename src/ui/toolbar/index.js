@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   makeStyles,
   withTheme,
@@ -21,7 +21,10 @@ import LightIcon from '@material-ui/icons/WbSunny';
 import SettingsIcon from '@material-ui/icons/Settings';
 
 import { useTransportContext } from '../../context/transport'
+import { useUIStateContext } from '../../context/ui'
 import { useTheme } from '../themes'
+
+import { AboutDialog } from './dialog/customDialog'
 
 
 const useStyles = makeStyles(theme => ({
@@ -107,6 +110,12 @@ const Logo = withTheme(styled('div')({
   flexDirection: 'column',
   justifyContent: 'center',
   userSelect: 'none',
+  cursor: 'help',
+  textShadow: '2px 2px #777777',
+  '&:hover': {
+    textShadow: '2px 2px #000000',
+    // backgroundColor: 'black'
+  },
 }))
 
 const Settings = withTheme(styled('div')({
@@ -181,10 +190,12 @@ export const Toolbar = props => {
   // const changeBpm = (e, newBpm) => {
   //   setBpm(newBpm)
   // }
-  
+
+  const { setIsAboutDialogOpen } = useUIStateContext()
+
   return (
     <HeaderBody>
-      <Logo>
+      <Logo onClick={() => setIsAboutDialogOpen(true)}>
         <div>
           <LogoLetter0>A</LogoLetter0>
           <LogoLetter1>L</LogoLetter1>
