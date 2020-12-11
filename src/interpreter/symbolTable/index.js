@@ -32,9 +32,16 @@ const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 export class SymbolTable {
   constructor(theme) {
     this.theme = theme
-    this.symbols = getNativeSymbols()
+    this.symbols = getNativeSymbols() // TODO rename to registry
     this.activeIdentifiersByBlock = {}
     this.fetchWaitInterval = 1000  // in ms
+
+    this.registry = {
+      ref:       {},  // Map<BlockKey, Array<SymbolId> > references to symbols by block
+      sounds:   {},  // Map<SymbolId, Symbol>
+      variables:  {},  // Map<SymbolId, Symbol>
+      functions:  {},  // Map<SymbolId, Symbol>
+    }
   }
 
   // TODO make this an rxjs observable
@@ -42,31 +49,6 @@ export class SymbolTable {
     this.theme = theme
   }
   
-  /**
-   * updates by-block record of active identifiers and prunes dangling identifiers.
-   *
-   * @param {string} blockKey the key of the block being updated
-   * @param {LexicalAnalysisResults} lexicon the results of lexical analysis.
-   */
-  updateActiveIdentifiers(blockKey, lexicon) {
-    this.activeIdentifiersByBlock[blockKey] = uniq([
-      ...lexicon.tokens.filter(t => t.type === 'IDENTIFIER').map(t => t.value),
-      ...flatMap(lexicon.errors, e => e.tokens).filter(t => t.type === 'IDENTIFIER').map(t => t.value)
-    ])
-
-    // const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
-    // const identifiersInSymbolTable = keys(this.symbols)
-
-    // const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
-
-    // TODO DEBUGGING BECAUSE WE NEED TO FIGURE OUT HOW TO DEAL WITH REMOVING
-    // DANGLING IDENTIFIERS NOW THAT SOUNDS UNIQUENESS IS DEPENDENT ON PARAMETERS
-    
-    // remove dangling identifiers
-    // for (const danglingIdentifier of danglingIdentifiers) {
-    //   this.remove(danglingIdentifier)
-    // }
-  }
 
   /////////////////////
   //                 //
@@ -159,8 +141,17 @@ export class SymbolTable {
    * @return {Object} a mapping from canonicalized parameter names to values.
    */
   translateFnArgs(fnName, paramName, argTokens) {
-    return this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
+    return this.isValidFnArg(fnName, paramName, argTokens[0]) // TODO should isValidFnArg accept an array?
+    && this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
   }
+
+  
+  ////////////////////////////
+  //                        //
+  //  REGISTRATION METHODS  //
+  //                        //
+  ////////////////////////////
+
   
   
   // {
@@ -308,6 +299,59 @@ export class SymbolTable {
       el.classList.add(this.theme.classes[status])
     }
   }
+
+  ////////////////////////////////////
+  //                                //
+  //  "GARBAGE COLLECTION" METHODS  //
+  //                                //
+  ////////////////////////////////////
+
+  // variables can be declared if
+  // (1) there is no other variable declaration of the same (edge case, there is one but it is on ehte same block ())
+  // (2) there are no sound literals that share the same name
+
+  // variable /variable decl behavior
+  // * a variable needs to be declared before usage (if there is an existing sound literal with the same id as a variable, its an error)
+  // * when a variable has been declared and it is used in other statements
+  //   - if it is deleted, it will by default look up a sound literal with the same id as the variable
+  //   - when the variable is modified, statements using it will immediately get those updates
+  
+  // how to handle garbage collecting of different symbol types:
+  // * variable/variable decl - when a variable declaration is removed and there still exist references to it, replace with the equivalent sound literal
+  //                            if there are no references to it in any block, purge it from the symbol table
+  // * sound literal - when there are no references to it in any block
+  //                   - eventually this also goes for imported sound literals and variables
+
+  // notes: so we should keep a blockRefRegistry - referenced sybmols by block
+
+  // question: should there be a distinction between variable usage and declaration in symbol table?
+  
+    /**
+   * updates by-block record of active identifiers and prunes dangling identifiers.
+   *
+   * @param {string} blockKey the key of the block being updated
+   * @param {LexicalAnalysisResults} lexicon the results of lexical analysis.
+   */
+  updateActiveIdentifiers(blockKey, lexicon) {
+    this.activeIdentifiersByBlock[blockKey] = uniq([
+      ...lexicon.tokens.filter(t => t.type === 'IDENTIFIER').map(t => t.value),
+      ...flatMap(lexicon.errors, e => e.tokens).filter(t => t.type === 'IDENTIFIER').map(t => t.value)
+    ])
+
+    // const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
+    // const identifiersInSymbolTable = keys(this.symbols)
+
+    // const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
+
+    // TODO DEBUGGING BECAUSE WE NEED TO FIGURE OUT HOW TO DEAL WITH REMOVING
+    // DANGLING IDENTIFIERS NOW THAT SOUNDS UNIQUENESS IS DEPENDENT ON PARAMETERS
+    
+    // remove dangling identifiers
+    // for (const danglingIdentifier of danglingIdentifiers) {
+    //   this.remove(danglingIdentifier)
+    // }
+  }
+
 }
 
 // TEST

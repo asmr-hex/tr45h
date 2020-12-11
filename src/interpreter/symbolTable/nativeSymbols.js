@@ -20,6 +20,7 @@ const nativeSymbols = {
     value: null,
     meta: {
       parameters: {
+        _default: '', // THIS SHOULD BE THE DEFAULT no key argument
         unique: {
           // makes a sound unique
           isFlag: true,
