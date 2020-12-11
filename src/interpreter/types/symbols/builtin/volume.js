@@ -1,4 +1,5 @@
-import { FunctionSymbol } from '../function'
+import { SemanticTokenType } from '../../tokens'
+import { FunctionSymbol, FunctionParameter } from '../function'
 import { VolumeProcessor } from '../../ast/functions/processors/volume'
 
 
@@ -21,7 +22,7 @@ const parameters = [
 
 export const Volume = new FunctionSymbol({
   id: 'volume',
-  returnType: SomeType.AudioProcessor,
+  returnType: SemanticTokenType.AudioProcessorFn,
   parameters,
-  create: (parameters, {audioContext}) => new VolumeProcessor(audioContext, parameters)
+  initialize: (parameters, {audioContext}) => new VolumeProcessor(audioContext, parameters)
 })

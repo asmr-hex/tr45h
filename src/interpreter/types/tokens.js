@@ -44,7 +44,9 @@ export const SemanticTokenType = {
   Variable:           'VARIABLE',
   VariableDecl:       'VARIABLE_DECL',
   AssignmentOp:       'ASSIGNMENT_OP',
-  Fn:                 'FN',
+  Fn:                 'FN',  // TODO retire this for more specific function types
+  AudioProcessorFn:   'AUDIO_PROCESSOR_FN',
+  NumericFn:          'NUMERIC_FN',
   FnBracket:          'FN_BRACKET',
   FnParameter:        'FN_PARAMETER',
   FnParamKvDelimiter: 'FN_PARAM_KV_DELIMITER',

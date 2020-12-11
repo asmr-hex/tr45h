@@ -1,5 +1,6 @@
 import { reduce } from 'lodash'
 
+import { SemanticTokenType } from '../tokens'
 import { Symbol } from './base'
 
 
@@ -12,15 +13,15 @@ import { Symbol } from './base'
 // call
 
 export class FunctionSymbol extends Symbol {
-  constructor({ id, returnType, parameters, create }) {
+  constructor({ id, returnType, parameters, initialize }) {
     this.super({id, type: SemanticTokenType.Fn})
     this.returnType = returnType
     this.parameters = new FunctionParameters(parameters)
-    this.create = create
+    this.initialize = initialize
   }
 
   init(parameters, ctx) {
-    return this.create(
+    return this.initialize(
       this.parameters.canonicalize(parameters),
       ctx,
     )
