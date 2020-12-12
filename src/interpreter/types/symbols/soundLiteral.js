@@ -70,6 +70,34 @@ export class SoundSymbol extends Symbol {
     return `${urlBase}?query=${this.keyword}&fields=${this.queryReturnFields}&${filter}&${page}&${pageSize}`
   }
 
+  fetchSound() {
+    // perform initial search
+    const { count, results } = await fetch(
+      this.makeSearchQueryUrl(),
+      { headers: { Authorization: `Token ${this.apiToken}`}}
+    ).then(r => r.json())
+
+    // check results
+
+    if (!results || results.length === 0) {
+      // mark sound as unavailable
+      this.updateStatus(SoundStatusType.Unavailable, symbolTable)
+      return null
+    }
+
+    // how many pages are available?
+    const availablePages = Math.ceil(count / this.queryPageSize)
+
+    // randomly pick a page
+    const randomPage = Math.ceil(Math.random() * availablePages)
+
+    // TODO finish this
+    
+    const result = {}
+    
+    return result
+  }
+  
   updateStatus(status) {
     this.status = status
 
@@ -82,29 +110,7 @@ export class SoundSymbol extends Symbol {
     // check whether this sound literal still exists in the symbol table registry
     if (!symbolTable.hasSound(this.id)) return
     
-
-    // perform initial search
-    const { count, results } = await fetch(
-      this.makeSearchQueryUrl(),
-      { headers: { Authorization: `Token ${this.apiToken}`}}
-    ).then(r => r.json())
-
-    // check results
-
-    if (!results || results.length === 0) {
-      // mark sound as unavailable
-      this.updateStatus(SoundStatusType.Unavailable, symbolTable)
-      return
-    }
-
-    // how many pages are available?
-    const availablePages = Math.ceil(count / this.queryPageSize)
-
-    // randomly pick a page
-    const randomPage = Math.ceil(Math.random() * availablePages)
-
     // TODO finish this
-    
   }
   
   // query methods
