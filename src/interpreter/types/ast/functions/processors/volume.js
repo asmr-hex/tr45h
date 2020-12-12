@@ -1,7 +1,7 @@
 import { AudioProcessor } from './audioProcessor'
 
 // contract between this class and the symbols parameters class
-class Parameters extends AudioProcessorParameters {
+class Parameters {
   constructor({level, level_fn}) {
     this.level    = level
     this.level_fn = level_fn

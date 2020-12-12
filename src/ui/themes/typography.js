@@ -1,6 +1,7 @@
 
 export const typography = {
   fontFamily: [
+    'Courier',
     '-apple-system',
     'BlinkMacSystemFont',
     'Segoe UI',

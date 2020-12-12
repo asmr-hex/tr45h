@@ -10,7 +10,7 @@ import { UIStateProvider } from '../context/ui'
 import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
 import { Details } from './statbar'
-import { AboutDialog } from  './toolbar/dialog/customDialog'
+import { AboutDialog } from  './toolbar/dialog/about'
 
 
 const AppContainer = withTheme(styled('div')({

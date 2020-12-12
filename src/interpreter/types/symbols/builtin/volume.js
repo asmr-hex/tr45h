@@ -1,4 +1,7 @@
-import { SemanticTokenType } from '../../tokens'
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+} from '../../tokens'
 import { FunctionSymbol, FunctionParameter } from '../function'
 import { VolumeProcessor } from '../../ast/functions/processors/volume'
 
@@ -12,9 +15,9 @@ const parameters = [
     canonicalize: tokens => {
       switch (tokens[0].type) {
       case LexicalTokenType.Number:
-        return { level: token[0].value }
+        return { level: tokens[0].value }
       case LexicalTokenType.NumericalFn:
-        return { level_fn: token[0].value }
+        return { level_fn: tokens[0].value }
       }
     }
   })

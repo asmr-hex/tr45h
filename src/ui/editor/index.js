@@ -62,7 +62,7 @@ export const MusicEditor = props => {
       decorator.updateTheme(themeMap)
     }
   }, [theme, styleClasses])
-  
+
   const onChange = newEditorState => {
     // // detect block deletions
     // const newBlockKeys = newEditorState.getCurrentContent().getBlocksAsArray().map(b => b.key)

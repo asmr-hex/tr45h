@@ -8,6 +8,8 @@ import { audioContext } from '../../context/audio'
 import { getNativeSymbols } from './nativeSymbols'
 import { SemanticTokenType } from '../types/tokens'
 
+import { Builtin } from '../types/symbols/builtin'
+
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 
@@ -36,11 +38,12 @@ export class SymbolTable {
     this.activeIdentifiersByBlock = {}
     this.fetchWaitInterval = 1000  // in ms
 
+    // regristry of all known symbols
     this.registry = {
-      ref:       {},  // Map<BlockKey, Array<SymbolId> > references to symbols by block
-      sounds:   {},  // Map<SymbolId, Symbol>
-      variables:  {},  // Map<SymbolId, Symbol>
-      functions:  {},  // Map<SymbolId, Symbol>
+      ref:       {},                 // Map<BlockKey, Array<SymbolId> > references to symbols by block
+      sounds:    Builtin.sounds,     // Map<SymbolId, Symbol>
+      variables: Builtin.variables,  // Map<SymbolId, Symbol>
+      functions: Builtin.functions,  // Map<SymbolId, Symbol>
     }
   }
 
@@ -152,6 +155,13 @@ export class SymbolTable {
   //                        //
   ////////////////////////////
 
+  addVariable(variable) {
+    this.merge(variable)
+  }
+
+  addSound() {
+    
+  }
   
   
   // {
@@ -188,9 +198,6 @@ export class SymbolTable {
       delete this.symbols[id]
   }
 
-  addVariable(variable) {
-    this.merge(variable)
-  }
 
   // metadata for sounds
   // {

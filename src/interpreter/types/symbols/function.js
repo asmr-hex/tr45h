@@ -14,7 +14,7 @@ import { Symbol } from './base'
 
 export class FunctionSymbol extends Symbol {
   constructor({ id, returnType, parameters, initialize }) {
-    this.super({id, type: SemanticTokenType.Fn})
+    super({id, type: SemanticTokenType.Fn})
     this.returnType = returnType
     this.parameters = new FunctionParameters(parameters)
     this.initialize = initialize
@@ -50,7 +50,7 @@ export class FunctionParameters {
   constructor(parameters) {
     this.parameters = reduce(
       parameters,
-      (acc, p) => {...acc, [p.key]: p},
+      (acc, p) => ({...acc, [p.key]: p}),
       {}
     )
   }
