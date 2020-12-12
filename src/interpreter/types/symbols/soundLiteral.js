@@ -27,7 +27,7 @@ export const createSoundLiteralId = (keyword, queryParams, block, index) => {
 }
 
 export class SoundSymbol extends Symbol {
-  constructor({keyword, queryParams, block, index}) {
+  constructor({keyword, queryParams, block, index, themeObservable}) {
     super({
       id: createSoundLiteralId(keyword, queryParams, block, index),
       type: SemanticTokenType.SoundLiteral,
@@ -59,6 +59,17 @@ export class SoundSymbol extends Symbol {
 
     // set the number of records to return in a search query
     this.queryPageSize = 150
+
+    // status css classes
+    this.statusClasses = {}
+    themeObservable.subscribe(theme => {
+      this.statusClasses = {
+        [SoundStatusType.Searching]:   theme.classes[SoundStatusType.Searching],
+        [SoundStatusType.Downloading]: theme.classes[SoundStatusType.Downloading],
+        [SoundStatusType.Available]:   theme.classes[SoundStatusType.Available],
+        [SoundStatusType.Unavailable]: theme.classes[SoundStatusType.Unavailable],
+      }
+    })
   }
 
   makeSearchQueryUrl(pageNumber = null) {
@@ -70,9 +81,9 @@ export class SoundSymbol extends Symbol {
     return `${urlBase}?query=${this.keyword}&fields=${this.queryReturnFields}&${filter}&${page}&${pageSize}`
   }
 
-  fetchSound() {
+  search() {
     // perform initial search
-    const { count, results } = await fetch(
+    let { count, results } = await fetch(
       this.makeSearchQueryUrl(),
       { headers: { Authorization: `Token ${this.apiToken}`}}
     ).then(r => r.json())
@@ -91,17 +102,52 @@ export class SoundSymbol extends Symbol {
     // randomly pick a page
     const randomPage = Math.ceil(Math.random() * availablePages)
 
-    // TODO finish this
-    
-    const result = {}
-    
-    return result
+    if (randomPage !== 0 && randomPage !== 1) {
+      // re-query the random page
+      { count, results } = await fetch(
+        this.makeSearchQueryUrl(randomPage),
+        { headers: { Authorization: `Token ${this.apiToken}`}}
+      ).then(r => r.json())
+
+      // check results
+
+      if (!results || results.length === 0) {
+        // mark sound as unavailable
+        this.updateStatus(SoundStatusType.Unavailable, symbolTable)
+        return null
+      }
+    }
+
+    // randomly select a result in result list and return it
+    return results[Math.floor(Math.random() * results.length)]
+  }
+
+  download(queryResult) {
+    // get preview to download
+    const previewUrl = queryResult.previews['preview-hq-mp3']
+
+    // set status to downloading
+    this.updateStatus(SoundStatusType.Downloading)
+
+    // download
+    this.buffer = await fetch(previewUrl)
+      .then(r => r.arrayBuffer())
+
+    //update status to available
+    this.updateStatus(SoundStatusType.Available)
+  }
+
+  getStatusCssClass(status) {
+    return this.statusClasses[status]
   }
   
   updateStatus(status) {
     this.status = status
 
-    // TODO visually mark instances of this sound
+    const elements = document.getElementsByClassName(this.id)
+    for (const el of elements) {
+      el.classList.add(this.getStatusCssClass(status))
+    }
   }
   
   async fetch({symbolTable}) {
@@ -110,7 +156,14 @@ export class SoundSymbol extends Symbol {
     // check whether this sound literal still exists in the symbol table registry
     if (!symbolTable.hasSound(this.id)) return
     
-    // TODO finish this
+    // search for sounds
+    const queryResult = this.search()
+
+    // check if no results
+    if (queryResult === null) return
+
+    // download sound
+    this.download(queryResult)
   }
   
   // query methods
