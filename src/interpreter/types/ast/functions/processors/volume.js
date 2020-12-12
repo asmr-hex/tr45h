@@ -12,7 +12,7 @@ class Parameters {
 
 export class VolumeProcessor extends AudioProcessor {
   constructor(audioContext, args) {
-    this.super(audioContext)
+    super(audioContext)
 
     // process parameters
     this.parameters = new Parameters(args)

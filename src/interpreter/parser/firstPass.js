@@ -389,7 +389,8 @@ export class FirstPassParser {
         (acc, v, k) => `${acc}${acc === '' ? '' : '_'}${k}-${v}`,
         ''
       )
-      
+
+      // TODO impl pushSoundLiteral method which will merge into symbol table if doesn't exist
       this.pushToken({
         ...soundLiteral,
         type: SemanticTokenType.SoundLiteral,

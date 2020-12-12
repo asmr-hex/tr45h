@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   makeStyles,
   withTheme,
@@ -23,8 +23,6 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import { useTransportContext } from '../../context/transport'
 import { useUIStateContext } from '../../context/ui'
 import { useTheme } from '../themes'
-
-import { AboutDialog } from './dialog/customDialog'
 
 
 const useStyles = makeStyles(theme => ({

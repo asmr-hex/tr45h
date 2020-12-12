@@ -9,6 +9,7 @@ import { getNativeSymbols } from './nativeSymbols'
 import { SemanticTokenType } from '../types/tokens'
 
 import { Builtin } from '../types/symbols/builtin'
+import { SoundSymbol } from '../types/symbols/soundLiteral'
 
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -64,9 +65,10 @@ export class SymbolTable {
     this.merge(variable)
   }
 
-  addSound({keyword, queryParams}) {
+  // TODO change to register sound and it will add if not exists or add a ref to refs registry
+  addSound({keyword, queryParams, block, index}) {
     // create sound symbol
-    const sound = new SoundSymbol({keyword, queryParams})
+    const sound = new SoundSymbol({keyword, queryParams, block, index})
 
     // add to registry
     this.registry.sounds[sound.id] = sound
@@ -83,6 +85,15 @@ export class SymbolTable {
   //                 //
   /////////////////////
 
+  /**
+   * given a sound symbol id, returns true if it exists within the registry, false otherwise.
+   * @param {string} id sound literal id in question.
+   * @return {bool} true if exists, false otherwise
+   */
+  hasSound(id) {
+    return id in this.registry.sounds
+  }
+  
   /**
    * given a symbol id, returns its corresponding symbol. returns null if symbol is not found.
    * @param {string} id the id of the symbol.

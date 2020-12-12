@@ -18,6 +18,8 @@ const validParameters = [
         return { level: tokens[0].value }
       case LexicalTokenType.NumericalFn:
         return { level_fn: tokens[0].value }
+      default:
+        // TODO throw an error
       }
     }
   })
