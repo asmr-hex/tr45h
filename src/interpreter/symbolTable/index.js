@@ -44,6 +44,7 @@ export class SymbolTable {
       sounds:    Builtin.sounds,     // Map<SymbolId, Symbol>
       variables: Builtin.variables,  // Map<SymbolId, Symbol>
       functions: Builtin.functions,  // Map<SymbolId, Symbol>
+      _query:    Builtin.query,      // internal query function for sound queries
     }
   }
 
@@ -51,7 +52,30 @@ export class SymbolTable {
   updateTheme(theme) {
     this.theme = theme
   }
+
   
+  ////////////////////////////
+  //                        //
+  //  REGISTRATION METHODS  //
+  //                        //
+  ////////////////////////////
+
+  addVariable(variable) {
+    this.merge(variable)
+  }
+
+  addSound({keyword, queryParams}) {
+    // create sound symbol
+    const sound = new SoundSymbol({keyword, queryParams})
+
+    // add to registry
+    this.registry.sounds[sound.id] = sound
+
+    // start fetching new sound (but after timeout)
+    setTimeout(() => sound.fetch({symbolTable: this}), this.fetchWaitInterval)
+    
+    return sound.id
+  }
 
   /////////////////////
   //                 //
@@ -148,21 +172,7 @@ export class SymbolTable {
     && this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
   }
 
-  
-  ////////////////////////////
-  //                        //
-  //  REGISTRATION METHODS  //
-  //                        //
-  ////////////////////////////
-
-  addVariable(variable) {
-    this.merge(variable)
-  }
-
-  addSound() {
     
-  }
-  
   
   // {
   //   identifier: <identifier>,

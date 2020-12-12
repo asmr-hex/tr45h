@@ -6,7 +6,7 @@ import { FunctionSymbol, FunctionParameter } from '../function'
 import { VolumeProcessor } from '../../ast/functions/processors/volume'
 
 
-const parameters = [
+const validParameters = [
   new FunctionParameter({
     key: 'level',
     isFlag: false,
@@ -26,6 +26,6 @@ const parameters = [
 export const Volume = new FunctionSymbol({
   id: 'volume',
   returnType: SemanticTokenType.AudioProcessorFn,
-  parameters,
-  initialize: (parameters, {audioContext}) => new VolumeProcessor(audioContext, parameters)
+  validParameters,
+  initialize: (args, {audioContext}) => new VolumeProcessor(audioContext, args)
 })

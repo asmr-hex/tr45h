@@ -13,21 +13,24 @@ import { Symbol } from './base'
 // call
 
 export class FunctionSymbol extends Symbol {
-  constructor({ id, returnType, parameters, initialize }) {
+  constructor({ id, returnType, validParameters, initialize }) {
     super({id, type: SemanticTokenType.Fn})
     this.returnType = returnType
-    this.parameters = new FunctionParameters(parameters)
+    this.validParameters = new FunctionParameters(validParameters)
     this.initialize = initialize
   }
 
-  init(parameters, ctx) {
+  init(args, ctx) {
     return this.initialize(
-      this.parameters.canonicalize(parameters),
+      this.validParameters.canonicalize(args),
       ctx,
     )
   }
 }
 
+/**
+ * describes valid functio parameters.
+ */
 export class FunctionParameter {
   constructor({key, isFlag, isDefault, acceptedTypes, canonicalize}) {
     this.key = key
