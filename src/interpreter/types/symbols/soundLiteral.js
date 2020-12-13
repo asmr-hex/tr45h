@@ -165,6 +165,6 @@ export class SoundSymbol extends Symbol {
     // download sound
     this.download(queryResult)
   }
-  
-  // query methods
+
+  // TODO add query methods.
 }

@@ -14,32 +14,10 @@ import { SoundSymbol } from '../types/symbols/soundLiteral'
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 
-// soundwords
-// fx
-// symbols are entires of identifiers as keys
-// with an object as a value with different fields
-// {
-//   'apple': {
-//     type: 'sound',
-//     status: 'downloading',
-//     value: <bytes>,
-//     meta: {...}
-//   },
-//   'reverb': {
-//     type: 'fx',
-//     status: 'ready',
-//     value: <fn>,
-//     meta: {...},
-//   }
-// }
+
 export class SymbolTable {
   constructor(theme) {
-    this.theme = theme
-    this.symbols = getNativeSymbols() // TODO rename to registry
-    this.activeIdentifiersByBlock = {}
-    this.fetchWaitInterval = 1000  // in ms
-
-    // regristry of all known symbols
+    // registry of all known symbols
     this.registry = {
       ref:       {},                 // Map<BlockKey, Array<SymbolId> > references to symbols by block
       sounds:    Builtin.sounds,     // Map<SymbolId, Symbol>
@@ -47,11 +25,14 @@ export class SymbolTable {
       functions: Builtin.functions,  // Map<SymbolId, Symbol>
       _query:    Builtin.query,      // internal query function for sound queries
     }
-  }
 
-  // TODO make this an rxjs observable
-  updateTheme(theme) {
-    this.theme = theme
+    // some config
+    this.activeIdentifiersByBlock = {}
+    this.fetchWaitInterval = 1000  // in ms
+
+    // theme observable
+    this.theme = {}
+    theme.subscribe(t => this.theme = t)
   }
 
   
