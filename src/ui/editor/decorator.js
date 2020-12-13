@@ -23,13 +23,10 @@ export class SyntaxHighlightDecorator {
     this.interpreter = interpreter
     this.highlighted = {}
 
-    this.theme = theme
+    this.theme = {}
+    theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
   }
 
-  updateTheme(theme) {
-    this.theme = theme
-  }
-  
   /**
    * Given a `ContentBlock`, return an immutable List of decorator keys.
    *

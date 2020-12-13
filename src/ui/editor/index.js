@@ -7,6 +7,7 @@ import {
 import 'draft-js/dist/Draft.css'
 import { Map } from 'immutable'
 import { useTheme } from "@material-ui/core/styles"
+import { BehaviorSubject } from 'rxjs'
 
 import { useTransportContext } from '../../context/transport'
 
@@ -21,9 +22,20 @@ import { Interpreter } from '../../interpreter'
  * MusicEditor is the main editor for writing aleatoric music
  */
 export const MusicEditor = props => {
-  const theme = useTheme()
-  const styleClasses = useSyntaxStyles()
 
+  ///////////////////
+  //               //
+  //  SETUP STATE  //
+  //               //
+  ///////////////////
+
+  const theme = {
+    styles: useTheme(),
+    classes: useSyntaxStyles(),
+  }
+  const themeObservableRef = useRef(new BehaviorSubject(theme))
+  useEffect(() => { themeObservableRef.current.next(theme) }, [theme])
+  
   // get playback observables to pass to the interpreter
   const transport = useTransportContext()
   
@@ -36,7 +48,7 @@ export const MusicEditor = props => {
     () => EditorState.createEmpty()
   )
   const editorRef = useRef(null)
-
+  
   // on mount, set interpreter and decorator.
   // note: we do this instead of creating a ref to store the interpreter since
   // a subsystem of the interpreter (scheduler) uses the WebAudio API. Thus, the
@@ -46,22 +58,13 @@ export const MusicEditor = props => {
     const themeMap = {styles: theme, classes: styleClasses}
     const interpreter = new Interpreter({
       transport: transport.observables,
-      theme: themeMap,
+      theme: themeObservableRef.current,
     })
-    const decorator = new SyntaxHighlightDecorator(interpreter, themeMap)
+    const decorator = new SyntaxHighlightDecorator(interpreter, themeObservableRef.current)
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)
     setInterpreter(interpreter)
   }, [])
-
-  // update theme inside intrpreter
-  useEffect(() => {
-    const themeMap = {styles: theme, classes: styleClasses}
-    if (interpreter) {
-      interpreter.updateTheme(themeMap)
-      decorator.updateTheme(themeMap)
-    }
-  }, [theme, styleClasses])
 
   const onChange = newEditorState => {
     // // detect block deletions

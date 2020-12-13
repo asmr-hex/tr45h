@@ -15,7 +15,18 @@ import { SoundSymbol } from '../types/symbols/soundLiteral'
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 
 
+/**
+ * registers user-defined and builtin identifiers to be used within the program.
+ *
+ * @description TODO
+ *
+ */
 export class SymbolTable {
+
+  /**
+   * constructs a new symbol table.
+   * @param {BehaviorSubject} theme an rxjs BehaviorSubject for subscribing to theme changes.
+   */
   constructor(theme) {
     // registry of all known symbols
     this.registry = {
@@ -27,7 +38,7 @@ export class SymbolTable {
     }
 
     // some config
-    this.activeIdentifiersByBlock = {}
+    this.activeIdentifiersByBlock = {} // TODO replace with registry.refs
     this.fetchWaitInterval = 1000  // in ms
 
     // theme observable
@@ -42,6 +53,7 @@ export class SymbolTable {
   //                        //
   ////////////////////////////
 
+  // TODO fix up
   addVariable(variable) {
     this.merge(variable)
   }
@@ -74,6 +86,17 @@ export class SymbolTable {
   hasSound(id) {
     return id in this.registry.sounds
   }
+
+  /**
+   * given a sound symbol id, returns the sound if it exists inthe registry, returns null otherwise.
+   * @param {string} id sound literal id in question.
+   * @return {SoundSymbol|null} sound symbol or null
+   */
+  getSound(id) {
+    return this.hasSound(id) ? this.registry.sounds[id] : null
+  }
+
+
   
   /**
    * given a symbol id, returns its corresponding symbol. returns null if symbol is not found.
@@ -90,8 +113,8 @@ export class SymbolTable {
    * @return {bool} true if it is a function, false otherwise.
    */
   isFn(identifier) {
-    return !!this.symbols[identifier]
-      && this.symbols[identifier].type === SemanticTokenType.Fn
+    return !!this.registry.functions[identifier]
+      && this.registry.functions[identifier].type === SemanticTokenType.Fn
   }
 
   /**
@@ -100,8 +123,8 @@ export class SymbolTable {
    * @return {bool} true if it is a variable, false otherwise.
    */
   isVariable(identifier) {
-    return !!this.symbols[identifier]
-      && this.symbols[identifier].type === SemanticTokenType.Variable
+    return !!this.registry.variables[identifier]
+      && this.registry.variables[identifier].type === SemanticTokenType.Variable
   }
   
   /**
@@ -110,6 +133,7 @@ export class SymbolTable {
    * @return {bool} true if it is a valid sound query parameter, false otherwise.
    */
   isQueryParameter(paramName) {
+    // TODO REFACTOR THIS
     return this.isFnParameter('_soundFn', paramName)
   }
 
@@ -121,7 +145,7 @@ export class SymbolTable {
    */
   isFnParameter(fnName, paramName) {
     return this.isFn(fnName)
-      && paramName in this.symbols[fnName].meta.parameters
+      && this.registry.functions[fnName].isValidParameter(paramName)
   }
 
   /**
@@ -132,7 +156,7 @@ export class SymbolTable {
    */
   isFnFlagParameter(fnName, paramName) {
     return this.isFnParameter(fnName, paramName)
-      && !!this.symbols[fnName].meta.parameters[paramName].isFlag
+      && !!this.registry.functions[fnName].isFlagParameter(paramName)
   }
 
   /**
@@ -141,9 +165,10 @@ export class SymbolTable {
    * @param {string} paramName the name of the function parameter.
    * @param {LexicalToken} argToken the function parameter value in question
    */
-  isValidFnArg(fnName, paramName, argToken) {
+  isValidFnArg(fnName, paramName, argTokens) {
+    // TODO rename this method to be plural
     return this.isFnParameter(fnName, paramName)
-      && this.symbols[fnName].meta.parameters[paramName].types.includes(argToken.type)
+      && this.registry.functions[fnName].areValidArguments(paramName, argTokens)
   }
 
   /**

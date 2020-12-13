@@ -26,6 +26,22 @@ export class FunctionSymbol extends Symbol {
       ctx,
     )
   }
+
+  getParameter(paramName) {
+    return this.validParameters.get(paramName)
+  }
+  
+  isValidParameter(paramName) {
+    return paramName in this.validParameters.parameters
+  }
+
+  isFlagParameter(paramName) {
+    return this.validParameters.parameters[paramName].isFlag
+  }
+
+  areValidArguments(paramName, argTokens) {
+    return this.getParameter(paramName).isAcceptedType(argTokens[0].type)
+  }
 }
 
 /**
@@ -58,6 +74,10 @@ export class FunctionParameters {
     )
   }
 
+  get(paramName) {
+    return this.parameters[paramName]
+  }
+  
   // methods for checking existence of parameters
 
   // canonicalizing

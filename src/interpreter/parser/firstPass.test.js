@@ -1,3 +1,4 @@
+import { BehaviorSubject } from 'rxjs'
 import { getTheme, Theme } from '../../ui/themes'
 import {
   newLexicalToken,
@@ -15,7 +16,7 @@ import { FirstPassParser } from './firstPass'
 //  TEST HELPERS  //
 //                //
 ////////////////////
-const testSymbolTable = new SymbolTable(getTheme(Theme.Light))
+const testSymbolTable = new SymbolTable(new BehaviorSubject(getTheme(Theme.Light)))
 const testBlockKey = 'test-block-key'
 const testBlockIndex = 888
 
@@ -25,7 +26,7 @@ const resetTestParser = (parser, tokens, errors=[]) => {
 }
 
 const newTestParser = (tokens, errors=[]) => {
-  const symbolTable = new SymbolTable(getTheme(Theme.Light))
+  const symbolTable = new SymbolTable(new BehaviorSubject(getTheme(Theme.Light)))
   const parser = new FirstPassParser(symbolTable)
   resetTestParser(parser, tokens, errors)
   return parser
@@ -42,7 +43,7 @@ describe('The First Pass Parser', () => {
 
   describe('parsing internal state methods', () => {
     describe('reset()', () => {
-      const symbolTable = new SymbolTable(getTheme(Theme.Light))
+      const symbolTable = new SymbolTable(new BehaviorSubject(getTheme(Theme.Light)))
       const parser = new FirstPassParser(symbolTable)
       
       it('initializes internal state', () => {
