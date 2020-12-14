@@ -8,13 +8,6 @@ import {
 } from '../types/tokens'
 
 
-// TODO
-// * we may need to introduce a STRING lexical token type. the reason is that,
-//   if we want to be able to use keywords as sound literals (e.g. "reverb"), we
-//   need to make a distinction between IDENTIFIERS surrounded by quotes and not
-//   surrounded by quotes.
-
-
 /**
  *
  * Performs a first-pass parse over a stream of lexical tokens.
@@ -62,6 +55,23 @@ export class FirstPassParser {
     this.symbolTable.addVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
   }
 
+  pushVariableToken(token) {
+    // register a variable with symbol table (we want the reference to be added)
+    this.symbolTable.addVariableRef(token.value, token.block, token.start)
+    
+    // push token onto result stack
+    this.pushToken({...token, type: SemanticTokenType.Variable})
+  }
+  
+  pushSoundLiteralToken(token, queryParameters) {
+    const id = this.symbolTable.registerSound({
+      keyword: token.value,
+      queryParameters,
+      block: token.block,
+      index: token.start,
+    })
+    this.pushToken({...token, id, type: SemanticTokenType.SoundLiteral, parameters})
+  }
   
   ////////////////////
   //                //
@@ -100,10 +110,14 @@ export class FirstPassParser {
       token.value === ']'
   }
   isAssignment() {
-    return this.peek()                                &&
-      this.isSoundLiteral(this.peek())                &&  // is not a function or variable
-      this.peek(1)                                    &&
-      this.peek(1).type === LexicalTokenType.Operator &&
+    return this.peek()                                 &&
+      ( !this.isFn(this.peek())                        &&  // here lies no function
+        ( !this.isVariable(this.peek())                ||  // nor variable assigned
+          this.isVariableDeclInThisBlock(this.peek())      // unless this var shall be redefined
+        )
+      )                                                &&
+      this.peek(1)                                     &&
+      this.peek(1).type === LexicalTokenType.Operator  &&
       this.peek(1).value === '='
   }
   isSequence() { // TODO replace this with "isValidSequenceStep?"
@@ -118,11 +132,13 @@ export class FirstPassParser {
   }
   isValidSequenceStep() {
     return this.peek() &&
-      ( this.isLeftBracket(this.peek())   ||
-        this.isVariable(this.peek())      ||
-        this.isSoundLiteral(this.peek())  ||
-        this.isRepetitionOperator()       ||
-        this.isChoice()                   ||
+      ( this.isLeftBracket(this.peek())                ||
+        ( this.isVariable(this.peek())                 && // a variable if present
+          !this.isVariableDeclInThisBlock(this.peek())    // must not be declared in this block
+        )                                              ||
+        this.isSoundLiteral(this.peek())               ||
+        this.isRepetitionOperator()                    ||
+        this.isChoice()                                ||
         this.isComment()
       )
   }
@@ -202,14 +218,16 @@ export class FirstPassParser {
         )
       ) )
   }
-  
   isVariable(token) {
-    // check symbol table to see if this is a valid variable.
     return !!token &&
       ( token.type === LexicalTokenType.Identifier ||
         token.type === LexicalTokenType.String
       ) &&
       this.symbolTable.isVariable(token.value)
+  }
+  isVariableDeclInThisBlock(token) {
+    return this.isVariable(token)
+      && this.symbolTable.getVariable(token.value).declBlock === this.block.key
   }
   isFn(identifier) {
     // check symbol table to see if this is a valid static function.
@@ -363,14 +381,21 @@ export class FirstPassParser {
     if (this.isChainOperator())
       this.parseFnChain()
   }
-  
-  parseIdentifier() {
-    // so this could be a
-    // * variable
-    // * a sound literal
-    // * a sound literal with query parameters
 
+  /**
+   * parses the identifier at the current read index of the token stream.
+   *
+   * @description the identifiers here can either be:
+   *   - variable (but not a variable declaration)
+   *   - sound literal
+   *   - sound literal with query parameters
+   */
+  parseIdentifier() {
     if (this.isVariable(this.peek())) {
+      if (this.isVariableDeclInThisBlock(this.peek())) {
+        // TODO throw an error because we can't have recursive variables
+      }
+      
       // assign instance id to variable
       this.pushToken({
         ...this.consume(),
@@ -541,7 +566,21 @@ export class FirstPassParser {
   // the point of this isn't to create a parse tree, but rather augment tokens from
   // lexical analysis with more specific types and report semantic/type errors.
   // in other words, this needs to be fast and not concerned with creating a tree.
+
+  /**
+   * performs a first-pass semantic analysis over tokens of a given block.
+   *
+   * @description this method is intended to be a quick first-pass parse over the tokens
+   * of a specific block. the concept being that this method will be called on just about
+   * ever key-stroke in the editor.
+   *
+   * @param {Array<LexicalToken>} tokens an array of lexical tokens for a given block.
+   * @param {string} blockKey the key of the block being parsed.
+   * @param {int} blockIndex the index of the block being parsed.
+   * @return {SemanticResults}
+   */
   analyze(tokens, blockKey, blockIndex) {
+    // reset the internal state
     this.reset(tokens, blockKey, blockIndex)
 
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments

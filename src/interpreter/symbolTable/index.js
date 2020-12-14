@@ -53,16 +53,52 @@ export class SymbolTable {
   //                        //
   ////////////////////////////
 
-  // TODO fix up
-  addVariable(variable) {
-    this.merge(variable)
+  clearBlockRefs(block) {
+    delete this.registry.refs[block]
+  }
+  
+  addReference(symbolId, block, index) {
+    // get existing block refs
+    const blockRefs = block in this.registry.refs ? this.registry.refs[block] : {}
+    const symbolRefs = symbolId in blockRefs ? blockRefs[symbolId] : []
+    
+    this.registry.refs[block] = {
+      ...blockRefs,
+      [symbolId]: [...symbolRefs, index]
+    }
   }
 
-  // TODO change to register sound and it will add if not exists or add a ref to refs registry
-  addSound({keyword, queryParams, block, index}) {
-    // create sound symbol
-    const sound = new SoundSymbol({keyword, queryParams, block, index})
+  // used by first-pass parser to declare variable and put value type
+  declareVariable(token, assignedValueType) {
+    // create variable symbol
+    const variable = new VariableSymbol({
+      variable: token.value,
+      assignedValueType,
+      declBlock: token.block,
+    })
 
+    this.registry.variables[variable.id] = variable
+  }
+
+  // used by second-pass parser to actually put variable value 
+  defineVariable() {}
+
+  // used by first-pass parser to add references to variables
+  addVariableRef(id, block, index) {
+    this.addReference(id, block, index)
+  }
+
+  // used by first-pass parser. adds reference and definition if doesn't exist.
+  registerSound({keyword, queryParams, block, index}) {
+    // create sound symbol
+    const sound = new SoundSymbol({keyword, queryParams, block, index, theme})
+
+    // add reference to this sound
+    this.addReference(sound, block, index)
+    
+    // is this sound already in the registry?
+    if (this.hasSound(sound.id)) return
+    
     // add to registry
     this.registry.sounds[sound.id] = sound
 
@@ -83,7 +119,7 @@ export class SymbolTable {
    * @param {string} id sound literal id in question.
    * @return {bool} true if exists, false otherwise
    */
-  hasSound(id) {
+  isSound(id) {
     return id in this.registry.sounds
   }
 
@@ -93,10 +129,12 @@ export class SymbolTable {
    * @return {SoundSymbol|null} sound symbol or null
    */
   getSound(id) {
-    return this.hasSound(id) ? this.registry.sounds[id] : null
+    return this.isSound(id) ? this.registry.sounds[id] : null
   }
 
-
+  getVariable(id) {
+    return this.isVariable(id) ? this.registry.variable(id) : null
+  }
   
   /**
    * given a symbol id, returns its corresponding symbol. returns null if symbol is not found.
@@ -123,7 +161,7 @@ export class SymbolTable {
    * @return {bool} true if it is a variable, false otherwise.
    */
   isVariable(identifier) {
-    return !!this.registry.variables[identifier]
+    return identifier in this.registry.variables
       && this.registry.variables[identifier].type === SemanticTokenType.Variable
   }
   
@@ -133,8 +171,7 @@ export class SymbolTable {
    * @return {bool} true if it is a valid sound query parameter, false otherwise.
    */
   isQueryParameter(paramName) {
-    // TODO REFACTOR THIS
-    return this.isFnParameter('_soundFn', paramName)
+    return this.registry._query.isValidParameter(paramName)
   }
 
   /**
