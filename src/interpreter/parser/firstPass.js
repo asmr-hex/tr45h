@@ -52,7 +52,7 @@ export class FirstPassParser {
 
   pushVariableDeclToken(token) {
     this.pushToken({...token, type: SemanticTokenType.VariableDecl})
-    this.symbolTable.addVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
+    this.symbolTable.declareVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
   }
 
   pushVariableToken(token) {
@@ -63,10 +63,10 @@ export class FirstPassParser {
     this.pushToken({...token, type: SemanticTokenType.Variable})
   }
   
-  pushSoundLiteralToken(token, queryParameters) {
+  pushSoundLiteralToken(token, parameters) {
     const id = this.symbolTable.registerSound({
       keyword: token.value,
-      queryParameters,
+      queryParameters: parameters,
       block: token.block,
       index: token.start,
     })
@@ -110,14 +110,17 @@ export class FirstPassParser {
       token.value === ']'
   }
   isAssignment() {
-    return this.peek()                                 &&
-      ( !this.isFn(this.peek())                        &&  // here lies no function
-        ( !this.isVariable(this.peek())                ||  // nor variable assigned
-          this.isVariableDeclInThisBlock(this.peek())      // unless this var shall be redefined
-        )
-      )                                                &&
-      this.peek(1)                                     &&
-      this.peek(1).type === LexicalTokenType.Operator  &&
+    return this.peek()                                      &&
+      ( this.peek().type === LexicalTokenType.String        ||  // either a string
+        ( this.peek().type === LexicalTokenType.Identifier  &&  // or an identifier (with the following constraints)
+          !this.isFn(this.peek())                           &&  // here lies no function
+          ( !this.isVariable(this.peek())                   ||  // nor variable assigned
+            this.isVariableDeclInThisBlock(this.peek())         // unless this var shall be redefined
+          )
+        )        
+      )                                                     &&
+      this.peek(1)                                          &&
+      this.peek(1).type === LexicalTokenType.Operator       &&
       this.peek(1).value === '='
   }
   isSequence() { // TODO replace this with "isValidSequenceStep?"
@@ -162,14 +165,14 @@ export class FirstPassParser {
       this.peek(-1) &&
       (
         ( this.peek(-1).type === LexicalTokenType.Identifier &&
-          !this.isFn(this.peek(-1).value)
+          !this.isFn(this.peek(-1))
         ) ||
         /^[)\]]/.test(this.peek(-1).value)
       ) &&
       this.peek(1) &&
       (
         ( this.peek(1).type === LexicalTokenType.Identifier &&
-          !this.isFn(this.peek(1).value)
+          !this.isFn(this.peek(1))
         ) ||
         /^[([]/.test(this.peek(1).value)
       )
@@ -192,7 +195,7 @@ export class FirstPassParser {
       ) &&
       this.peek(1) &&     // and next token is a function name
       this.peek(1).type === LexicalTokenType.Identifier &&
-      this.isFn(this.peek(1).value)
+      this.isFn(this.peek(1))
   }
   isRepetitionOperator() {
     return this.peek() && (
@@ -214,7 +217,7 @@ export class FirstPassParser {
         this.peek(2) &&  // RHS is a sequence or identifier
         ( /^[([]/.test(this.peek(2).value) ||
           ( this.peek(2).type === LexicalTokenType.Identifier &&
-            !this.isFn(this.peek(2).value) )
+            !this.isFn(this.peek(2)) )
         )
       ) )
   }
@@ -229,14 +232,14 @@ export class FirstPassParser {
     return this.isVariable(token)
       && this.symbolTable.getVariable(token.value).declBlock === this.block.key
   }
-  isFn(identifier) {
-    // check symbol table to see if this is a valid static function.
-    return this.symbolTable.isFn(identifier)
+  isFn(token) {
+    return !!token
+      && this.symbolTable.isFn(token.value)
   }
   isSoundLiteral(token) {
     return !!token &&
       (( token.type === LexicalTokenType.Identifier &&
-          !this.isFn(token.value) &&
+          !this.isFn(token) &&
           !this.isVariable(token)
         ) ||
         token.type === LexicalTokenType.String)
@@ -244,7 +247,10 @@ export class FirstPassParser {
   hasQueryParameters() {
     return this.peek(-1) &&
       this.isSoundLiteral(this.peek(-1)) &&
-      this.hasFnParameters('_soundFn')
+      this.peek() &&
+      this.peek().value === '(' &&
+      this.peek(1) &&
+      this.symbolTable.isQueryParameter(this.peek(1).value)
   }
   hasFnParameters(fnName) {
     return this.peek() &&
@@ -550,7 +556,7 @@ export class FirstPassParser {
       
       this.parseEndOfStatement()
       
-    } else if(this.peek() && this.isFn(this.peek().value)) {
+    } else if(this.peek() && this.isFn(this.peek())) {
       this.parseFn()
       this.parseEndOfStatement()
     } else if (this.isSequence()) {

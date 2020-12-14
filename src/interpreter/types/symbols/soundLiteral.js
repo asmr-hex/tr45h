@@ -109,7 +109,7 @@ export class SoundSymbol extends Symbol {
 
     if (!results || results.length === 0) {
       // mark sound as unavailable
-      this.updateStatus(SoundStatusType.Unavailable, symbolTable)
+      this.updateStatus(SoundStatusType.Unavailable)
       return null
     }
 
@@ -130,7 +130,7 @@ export class SoundSymbol extends Symbol {
 
       if (!results || results.length === 0) {
         // mark sound as unavailable
-        this.updateStatus(SoundStatusType.Unavailable, symbolTable)
+        this.updateStatus(SoundStatusType.Unavailable)
         return null
       }
     }

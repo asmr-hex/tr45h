@@ -55,7 +55,6 @@ export const MusicEditor = props => {
   // interpreter class must be instantiated when the browser has loaded the WebAudio
   // API (e.g. on initial component mount)
   useEffect(() => {
-    const themeMap = {styles: theme, classes: styleClasses}
     const interpreter = new Interpreter({
       transport: transport.observables,
       theme: themeObservableRef.current,

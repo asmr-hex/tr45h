@@ -10,6 +10,7 @@ import { SemanticTokenType } from '../types/tokens'
 
 import { Builtin } from '../types/symbols/builtin'
 import { SoundSymbol } from '../types/symbols/soundLiteral'
+import { VariableSymbol } from '../types/symbols/variable'
 
 
 const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
@@ -72,7 +73,7 @@ export class SymbolTable {
   declareVariable(token, assignedValueType) {
     // create variable symbol
     const variable = new VariableSymbol({
-      variable: token.value,
+      id: token.value,
       assignedValueType,
       declBlock: token.block,
     })
@@ -91,7 +92,7 @@ export class SymbolTable {
   // used by first-pass parser. adds reference and definition if doesn't exist.
   registerSound({keyword, queryParams, block, index}) {
     // create sound symbol
-    const sound = new SoundSymbol({keyword, queryParams, block, index, theme})
+    const sound = new SoundSymbol({keyword, queryParams, block, index, theme: this.theme})
 
     // add reference to this sound
     this.addReference(sound, block, index)
@@ -133,16 +134,26 @@ export class SymbolTable {
   }
 
   getVariable(id) {
-    return this.isVariable(id) ? this.registry.variable(id) : null
+    return this.isVariable(id) ? this.registry.variables[id] : null
   }
   
   /**
-   * given a symbol id, returns its corresponding symbol. returns null if symbol is not found.
-   * @param {string} id the id of the symbol.
+   * given a semantic token, returns its corresponding symbol. returns null if symbol is not found.
+   * @param {SemanticToken} token token of the symbol.
    * @return {Symbol|null} the symbol corresponding to the given id, or null.
    */
-  get(id) {
-    return id in this.symbols ? this.symbols[id] : null
+  get(token) {
+    switch (token.type) {
+    case SemanticTokenType.Variable:
+    case SemanticTokenType.VariableDecl:
+      return token.id in this.registry.variables ? this.registry.variables[token.id] : null
+    case SemanticTokenType.SoundLiteral:
+      return token.id in this.registry.sounds ? this.registry.sounds[token.id] : null
+    case SemanticTokenType.Fn:
+      return token.id in this.registry.functions ? this.registry.functions[token.id] : null
+    default:
+      return null
+    }
   }
   
   /**

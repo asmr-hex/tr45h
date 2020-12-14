@@ -109,7 +109,7 @@ export class SyntaxHighlightDecorator {
    */
   getComponentForKey(key) {
     return props => {
-      const symbol = this.interpreter.symbols.get(props.token.value)
+      const symbol = this.interpreter.symbols.get(props.token)
       const elements = document.getElementsByClassName(key)
       const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
       const classes = [

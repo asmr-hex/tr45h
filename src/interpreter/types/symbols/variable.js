@@ -11,5 +11,8 @@ export class VariableSymbol extends Symbol {
     this.declBlock         = declBlock            // block where variable is declared
   }
 
+  define(assignedValue) {
+    this.assignedValue = assignedValue
+  }
   // query methods
 }

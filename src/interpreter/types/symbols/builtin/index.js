@@ -1,12 +1,14 @@
 import { reduce } from 'lodash'
 
 import { Volume } from './volume'
+import { Reverb } from './reverb'
 
 import { SoundQuery } from './soundQuery'
 
 
 const functions = [
   Volume,
+  Reverb,
 ]
 
 /**

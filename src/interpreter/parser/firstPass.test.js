@@ -7,6 +7,7 @@ import {
   SemanticTokenType,
   newErrorToken,
 } from '../types/tokens'
+import { ExpressionType } from '../types/expressions'
 import { SymbolTable } from '../symbolTable'
 import { FirstPassParser } from './firstPass'
 
@@ -358,8 +359,11 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
-
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: 'some-random-test-block'}),
+            ExpressionType.Sequence,
+          )
+          
           expect(parser.isAssignment()).toBeFalsy()
         })
         it(`returns false, given '<function> = A' (attempt to bind an existing function name)`, () => {
@@ -559,7 +563,11 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVar'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: 'some-block'}),
+            ExpressionType.Sequence,
+          )
 
           expect(parser.isValidSequenceStep()).toBeTruthy()
         })
@@ -1075,8 +1083,11 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVariable'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
-
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: testBlockKey}),
+            ExpressionType.Number,
+          )
+          
           expect(parser.isVariable(tokens[0])).toBeTruthy()
         })
         it('returns true, given a variable thats a string ', () => {
@@ -1084,7 +1095,10 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.String, value: 'my multiword variable'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: testBlockKey}),
+            ExpressionType.Number,
+          )
 
           expect(parser.isVariable(tokens[0])).toBeTruthy()
         })
@@ -1124,7 +1138,7 @@ describe('The First Pass Parser', () => {
           ]
           const parser = newTestParser(tokens)
 
-          expect(parser.isFn(tokens[0].value)).toBeTruthy()
+          expect(parser.isFn(tokens[0])).toBeTruthy()
         })
       })
       describe('when at invalid function', () => {
@@ -1134,7 +1148,7 @@ describe('The First Pass Parser', () => {
           ]
           const parser = newTestParser(tokens)
 
-          expect(parser.isFn(tokens[0].value)).toBeFalsy()
+          expect(parser.isFn(tokens[0])).toBeFalsy()
         })
       })
     })
@@ -1176,7 +1190,10 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'myVar'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: testBlockKey}),
+            ExpressionType.Number
+          )
           
           expect(parser.isSoundLiteral(tokens[0])).toBeFalsy()
         })
@@ -1253,7 +1270,10 @@ describe('The First Pass Parser', () => {
             newLexicalToken({type: LexicalTokenType.Identifier, value: 'note'}),
           ]
           const parser = newTestParser(tokens)
-          parser.symbolTable.addVariable(newSemanticToken({...tokens[0], type: SemanticTokenType.Variable}))
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: testBlockKey}),
+            ExpressionType.Number,
+          )
           parser.token.index = 1
 
           expect(parser.hasQueryParameters()).toBeFalsy()
