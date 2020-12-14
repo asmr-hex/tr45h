@@ -136,6 +136,10 @@ export class SymbolTable {
   getVariable(id) {
     return this.isVariable(id) ? this.registry.variables[id] : null
   }
+
+  getFunction(id) {
+    return this.isFn(id) ? this.registry.functions[id] : null
+  }
   
   /**
    * given a semantic token, returns its corresponding symbol. returns null if symbol is not found.
@@ -213,7 +217,7 @@ export class SymbolTable {
    * @param {string} paramName the name of the function parameter.
    * @param {LexicalToken} argToken the function parameter value in question
    */
-  isValidFnArg(fnName, paramName, argTokens) {
+  areValidFnArgs(fnName, paramName, argTokens) {
     // TODO rename this method to be plural
     return this.isFnParameter(fnName, paramName)
       && this.registry.functions[fnName].areValidArguments(paramName, argTokens)
@@ -232,6 +236,7 @@ export class SymbolTable {
    * @param {Array<LexicalToken>} argTokens an array of value tokens.
    * @return {Object} a mapping from canonicalized parameter names to values.
    */
+  // TODO deprecate this
   translateFnArgs(fnName, paramName, argTokens) {
     return this.isValidFnArg(fnName, paramName, argTokens[0]) // TODO should isValidFnArg accept an array?
     && this.symbols[fnName].meta.parameters[paramName].translate(argTokens)

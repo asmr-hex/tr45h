@@ -341,6 +341,20 @@ describe('The First Pass Parser', () => {
 
           expect(parser.isAssignment()).toBeTruthy()
         })
+        it(`returns true, given 'aVariable = A' (redefinition of aVariable)`, () => {
+          const tokens = [
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'aVariable'}),
+            newLexicalToken({type: LexicalTokenType.Operator, value: '='}),
+            newLexicalToken({type: LexicalTokenType.Identifier, value: 'A'}),
+          ]
+          const parser = newTestParser(tokens)
+          parser.symbolTable.declareVariable(
+            newSemanticToken({...tokens[0], type: SemanticTokenType.Variable, block: testBlockKey}),
+            ExpressionType.Sequence,
+          )
+          
+          expect(parser.isAssignment()).toBeTruthy()
+        })
       })
       describe('when at invalid assignments', () => {
         it(`returns false, given '= A' (no binding variable)`, () => {

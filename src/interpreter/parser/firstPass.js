@@ -294,71 +294,88 @@ export class FirstPassParser {
 
     this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
   }
-  
-  parseFnParameters(fnName) {
-    // we know the structure so far is
+
+  parseFnParameter(fnSymbol) {
+    // is this a valid parameter for this function?
+    if (!fnSymbol.isValidParameter(this.peek().value)) {
+      // okay its not, parse an error until the next comma or right paren.
+      this.parseErrorUntilEndOfParamScope()
+      return {}
+    }
+
+    // okay this is a valid parameter.
+    const parameter = fnSymbol.getParameter(this.peek().value)
+    
+    // is this a flag parameter?
+    if (parameter.isFlag) {
+      // okay it is. lets canonicalize it and return.
+      const canonicalizedParam = parameter.canonicalize()  // flag params take no arguments
+      this.pushToken({...this.consume(), type: SemanticTokenType.FnParameter})
+
+      // is there a comma param delimiter?
+      if (/^[,]/.test(this.peek().value))
+        this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
+
+      return canonicalizedParam
+    }
+
+    // not a flag parameter.
+
+    // make sure that there is a kv delimiter
+    if (this.peek(1) && !/^[:]/.test(this.peek(1).value)) {
+      this.parseErrorUntilEndOfParamScope()
+      return {}
+    }
+
+    // make sure that the value type is correct
+    if (this.peek(2) && !fnSymbol.areValidArguments(this.peek().value, [ this.peek(2) ])) {
+      this.parseErrorUntilEndOfParamScope()
+      return {}
+    }
+
+    const paramName = {...this.consume(), type: SemanticTokenType.FnParameter}           // pop off the parameter name
+    const kvDelimiter = {...this.consume(), type: SemanticTokenType.FnParamKvDelimiter}  // pop off the parameter kv delimiter
+    let args = []
+    while (this.peek() && !/^[,)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
+
+    // push all tokens
+    this.pushToken(paramName)
+    this.pushToken(kvDelimiter)
+    args.forEach(a => this.pushToken(a))
+    
+    // we should be good, canonicalize the kv pairs
+    const canonicalizedParam = parameter.canonicalize(args)
+
+    // is there a comma param delimiter?
+    if (/^[,]/.test(this.peek().value))
+      this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
+
+    return canonicalizedParam
+  }
+
+  parseFnParameters(fnSymbol) {
+    // okay we know the structure so far is
     // ( <FnParam>
 
     // pop off fn bracket
     this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket})
 
     let parameters = {}
-
+    
+    // parse parameter key-value pairs
     while (this.peek() && !/^[)]/.test(this.peek().value)) {
-      if (!this.symbolTable.isFnParameter(fnName, this.peek().value)) {
-        this.parseErrorUntilEndOfParamScope()
-        continue
+      parameters = {
+        ...parameters,
+        ...this.parseFnParameter(fnSymbol),
       }
-      
-      // is this parameter a flag parameter?
-      if (this.symbolTable.isFnFlagParameter(fnName, this.peek().value)) {
-        parameters = {...parameters, ...this.symbolTable.translateFnArgs(fnName, this.peek().value, [])}
-        this.pushToken({...this.consume(), type: SemanticTokenType.FnParameter})
-        
-        // is there a comma param delimiter?
-        if (/^[,]/.test(this.peek().value))
-          this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
-        continue
-      }
-
-      // okay this must be a key-value parameter
-
-      // make sure that there is a kv delimiter
-      if (this.peek(1) && !/^[:]/.test(this.peek(1).value)) {
-        this.parseErrorUntilEndOfParamScope()
-        continue
-      }
-
-      // make sure that the value type is correct
-      if (this.peek(2) && !this.symbolTable.isValidFnArg(fnName, this.peek().value, this.peek(2))) {
-        this.parseErrorUntilEndOfParamScope()
-        continue
-      }
-
-      const paramName = {...this.consume(), type: SemanticTokenType.FnParameter}           // pop off the parameter name
-      const kvDelimiter = {...this.consume(), type: SemanticTokenType.FnParamKvDelimiter}  // pop off the parameter kv delimiter
-      let args = []
-      while (this.peek() && !/^[,)]/.test(this.peek().value)) args.push(this.consume())    // pop off arg tokens (can be multiple. e.g. HZ & HZ_UNIT)
-
-      // push all tokens
-      this.pushToken(paramName)
-      this.pushToken(kvDelimiter)
-      args.forEach(a => this.pushToken(a))
-      
-      // we should be good, add to parameter mapping
-      parameters = {...parameters, ...this.symbolTable.translateFnArgs(fnName, paramName.value, args)}
-
-      // is there a comma param delimiter?
-      if (/^[,]/.test(this.peek().value))
-        this.pushToken({...this.consume(), type: SemanticTokenType.FnParamDelimiter}) // pop off the parameter delimiter
     }
 
     // pop off fn bracket
     this.pushToken({...this.consume(), type: SemanticTokenType.FnBracket})
-    
+
     return parameters
   }
-
+  
   parseFnChain() {
     // we know that the structure so far is . <FN>
 
@@ -377,7 +394,7 @@ export class FirstPassParser {
     // parse parameters if necessary
     let parameters = {}
     if (this.hasFnParameters(fnToken.value)) {
-      parameters = this.parseFnParameters(fnToken.value)
+      parameters = this.parseFnParameters(this.symbolTable.getFunction(fnToken.value))
     }
     
     // push fn token
@@ -412,7 +429,7 @@ export class FirstPassParser {
       let parameters = {}
       // check for query parameters
       if (this.hasQueryParameters()) {
-        parameters = this.parseFnParameters(`_soundFn`)
+        parameters = this.parseFnParameters(this.symbolTable.registry._query)  // pass in query function symbol
       }
 
       const paramStr = reduce(
