@@ -19,7 +19,6 @@ import { AST } from './types/ast'
  */
 export class Interpreter {
   constructor(observables) {
-    // this.theme = new BehaviorSubject(theme)
     this.theme = observables.theme
     
     this.symbols = new SymbolTable(this.theme)
@@ -83,13 +82,29 @@ export class Interpreter {
     // perform lexical analysis
     const lexicon = this.lexer.tokenize(blockText, blockKey)
 
+    // perform first-pass semantic analysis
     const semantics = this.parser.firstPass(lexicon, blockKey, blockIndex)
+
+    // perform second-pass parsing (debounced)
     
     return semantics
   }
+
+  debouncedParse(semantics, blockKey, blockIndex) {
+    if (!(blockKey in this.memoizedParse))
+      this.memoizedParse[blockKey] = debounce(
+        (s, k, i) => {
+          this.parser.secondPass(s, k , i)
+          delete this.memoizedParse[k]
+        },
+        1000,
+      )
+    
+    this.memoizedParse[blockKey](semantics, blockKey, blockIndex)
+  }
   
   // basically memoize it too based on block (statement)
-  debouncedParse(lexicon, blockKey, blockIndex) {
+  _debouncedParse(lexicon, blockKey, blockIndex) {
     if (!(blockKey in this.memoizedParse))
       this.memoizedParse[blockKey] = debounce(
         (l, k, i) => {

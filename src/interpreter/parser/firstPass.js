@@ -6,6 +6,7 @@ import {
   newSemanticToken,
   newErrorToken,
 } from '../types/tokens'
+import { StatementType } from '../types/statements'
 
 
 /**
@@ -30,7 +31,7 @@ export class FirstPassParser {
   reset({ tokens, errors }, key, index) {
     this.token = { stream: tokens, index: 0}
     this.block = { key, index }
-    this.result = { tokens: [], errors }
+    this.result = { stmtType: null, tokens: [], errors }
   }
 
   peek(skipAhead = 0) {
@@ -50,6 +51,8 @@ export class FirstPassParser {
   pushToken(token) { this.result.tokens.push(newSemanticToken(token)) }
   pushError(error) { this.result.errors.push(newErrorToken(error)) }
 
+  setStmtType(type) { this.result.stmtType = type }
+  
   pushVariableDeclToken(token) {
     this.pushToken({...token, type: SemanticTokenType.VariableDecl})
     this.symbolTable.declareVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
@@ -609,8 +612,10 @@ export class FirstPassParser {
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments
     if (this.isAssignment()) {
       this.parseAssignment()
+      this.setStmtType(StatementType.Assignment)
     } else if (this.isValidSequenceStep()) {
       this.parseSequenceStatement()
+      this.setStmtType(StatementType.Sequence)
     } else {
       this.parseEndOfStatement()
     }

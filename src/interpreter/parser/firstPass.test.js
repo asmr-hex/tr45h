@@ -8,6 +8,7 @@ import {
   newErrorToken,
 } from '../types/tokens'
 import { ExpressionType } from '../types/expressions'
+import { StatementType } from '../types/statements'
 import { SymbolTable } from '../symbolTable'
 import { FirstPassParser } from './firstPass'
 
@@ -54,7 +55,7 @@ describe('The First Pass Parser', () => {
 
         expect(parser.token).toEqual({ stream: tokens, index: 0})
         expect(parser.block).toEqual({key: testBlockKey, index: testBlockIndex})
-        expect(parser.result).toEqual({tokens: [], errors})
+        expect(parser.result).toEqual({stmtType: null, tokens: [], errors})
       })
     })
 
@@ -1361,6 +1362,7 @@ describe('The First Pass Parser', () => {
         parser.parseEndOfStatement()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken(tokens[0])
           ],
@@ -1378,6 +1380,7 @@ describe('The First Pass Parser', () => {
         parser.parseEndOfStatement()
         
         const expectations = {
+          stmtType: null,
           tokens: [
           ],
           errors: [newErrorToken({start: 0, length: 2, block: testBlockKey})],
@@ -1429,6 +1432,7 @@ describe('The First Pass Parser', () => {
         parser.parseChoice()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[1], type: SemanticTokenType.ChoiceOp}),
             newSemanticToken({...tokens[2], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
@@ -1457,6 +1461,7 @@ describe('The First Pass Parser', () => {
         parser.parseChoice()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[1], type: SemanticTokenType.ChoiceOp}),
             newSemanticToken({...tokens[2], type: SemanticTokenType.SequenceBracket}),
@@ -1487,6 +1492,7 @@ describe('The First Pass Parser', () => {
         parser.parseChoice()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
             newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
@@ -1513,6 +1519,7 @@ describe('The First Pass Parser', () => {
         parser.parseChoice()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[3], type: SemanticTokenType.ChoiceOp}),
             newSemanticToken({...tokens[4], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
@@ -1546,6 +1553,7 @@ describe('The First Pass Parser', () => {
         parser.parseSequence()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
             newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'B__', parameters: {}}),
@@ -1567,6 +1575,7 @@ describe('The First Pass Parser', () => {
         parser.parseSequence()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.SequenceBracket}),
             newSemanticToken({...tokens[2], type: SemanticTokenType.SequenceBracket}),
@@ -1589,6 +1598,7 @@ describe('The First Pass Parser', () => {
         parser.parseSequenceStatement()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'my_string__', parameters: {}}),
           ],
@@ -1611,6 +1621,7 @@ describe('The First Pass Parser', () => {
         parser.parseSequenceStatement()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.SequenceBracket}),
             newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
@@ -1639,6 +1650,7 @@ describe('The First Pass Parser', () => {
         parser.parseSequenceStatement()
         
         const expectations = {
+          stmtType: null,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.BeatDivBracket}),
             newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),
@@ -1674,6 +1686,7 @@ describe('The First Pass Parser', () => {
         const errors = []
         
         const expectations = {
+          stmtType: StatementType.Sequence,
           tokens: [
             newSemanticToken({...tokens[0], type: SemanticTokenType.SoundLiteral, id: 'test_string__', parameters: {}}),
             newSemanticToken({...tokens[1], type: SemanticTokenType.SoundLiteral, id: 'A__', parameters: {}}),

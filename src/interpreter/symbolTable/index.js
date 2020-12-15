@@ -76,13 +76,11 @@ export class SymbolTable {
       id: token.value,
       assignedValueType,
       declBlock: token.block,
+      symbolTable: this,
     })
 
     this.registry.variables[variable.id] = variable
   }
-
-  // used by second-pass parser to actually put variable value 
-  defineVariable() {}
 
   // used by first-pass parser to add references to variables
   addVariableRef(id, block, index) {

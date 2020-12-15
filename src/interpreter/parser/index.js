@@ -12,7 +12,7 @@ export class Parser {
     return this.firstPassParser.analyze(tokens, blockKey, blockIndex)
   }
 
-  secondPass() {
-    // something.
+  secondPass(tokens, blockKey, blockIndex) {
+    this.secondPassParser.analyze(tokens, blockKey, blockIndex)
   }
 }
