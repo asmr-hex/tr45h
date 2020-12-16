@@ -160,7 +160,7 @@ export class Sequence extends NonTerminal {
 // we don't know the ppqn until we bubble up....
 // which means that, when its evaluation time, we pass the context to
 // actually set the ppqn on the terminals.
-export class SubBeatSequence extends Sequence {
+export class BeatDiv extends Sequence {
   current() {
     return {
       ...this._current,

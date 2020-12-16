@@ -2,6 +2,10 @@ import { BehaviorSubject } from 'rxjs'
 import { getTheme, Theme } from '../../ui/themes'
 
 import {
+  Sequence,
+  Terminal,
+} from '../types/ast/nodes'
+import {
   newSemanticToken,
   SemanticTokenType,
   LexicalTokenType,
@@ -79,6 +83,25 @@ describe('The Second Pass Parser', () => {
       expect(parser.symbolTable.isVariable('A')).toBeTruthy()
       expect(parser.symbolTable.getVariable('A').resolve().type).toEqual(ExpressionType.Number)
       expect(parser.symbolTable.getVariable('A').resolve().value).toEqual(3.3)
+    })
+  })
+
+  describe('parseSequenceExpr()', () => {
+    it(`parses a sequence: 'apple orange pear'`, () => {
+      const tokens = [
+        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+      ]
+      const parser = newTestParser(tokens)
+
+      const expectations = new Sequence([
+        new Terminal({...tokens[0], fx: [], ppqn: 1}),
+        new Terminal({...tokens[1], fx: [], ppqn: 1}),
+        new Terminal({...tokens[2], fx: [], ppqn: 1}),
+      ])
+      
+      expect(parser.parseSequenceExpr()).toEqual(expectations)
     })
   })
 })

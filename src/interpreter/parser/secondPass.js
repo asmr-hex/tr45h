@@ -1,3 +1,12 @@
+import {
+  Sequence,
+  BeatDiv,
+  Terminal,
+} from '../types/ast/nodes'
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+} from '../types/tokens'
 import { ExpressionType } from '../types/expressions'
 import { StatementType } from '../types/statements'
 
@@ -37,7 +46,55 @@ export class SecondPassParser {
   advance() { return this.token.stream[++this.token.index] || null }
   consume() { return this.token.stream[this.token.index++] || null }
 
+  
+  /////////////////////
+  //                 //
+  //  QUERY METHODS  //
+  //                 //
+  /////////////////////
 
+  isRightSeqBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.SequenceBracket
+      && this.peek().value === ')'
+  }
+  isRightBeatDivBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.BeatDivBracket
+      && this.peek().value === ']'    
+  }
+  isLeftSeqBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.SequenceBracket
+      && this.peek().value === '('
+  }
+  isLeftBeatDivBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.BeatDivBracket
+      && this.peek().value === '['    
+  }
+  isSoundLiteral() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.SoundLiteral
+  }
+  isVariable() {
+    return this.peel()
+      && this.peek().type === SemanticTokenType.Variable
+  }
+  isRepetitionOperator() {
+    return false  // TODO impl me
+  }
+  isChoiceOperator() {
+    return false  // TODO impl me
+  }
+
+  /////////////////////
+  //                 //
+  //  PARSE METHODS  //
+  //                 //
+  /////////////////////
+  
+  
   /**
    * entrypoint to second-pass parser.
    *
@@ -77,14 +134,95 @@ export class SecondPassParser {
       variable.define(this.consume().value)
       break
     case ExpressionType.Sequence:
-      variable.define(this.parseSequence())
+      variable.define(this.parseSequenceExpr())
       break
     default:
       // we should never get here.
     }
   }
 
-  parseSequence() {
-    
+  parseSequenceExpr() {
+    let steps =  []
+
+    while (this.peek()) {
+      steps.push(this.parseStep())
+    }
+
+    return new Sequence(steps)
   }
+
+  // returns a Sequence object
+  parseSequence() {
+    let steps = []
+
+    // pop off left sequence bracket
+    this.advance()
+    
+    while (!this.isRightSeqBracket()) {
+      steps.push(this.parseStep())
+    }
+
+    // pop off right sequence bracket
+    this.advance()
+    
+    return new Sequence(steps)
+  }
+
+  // returns a BeatDivision object
+  parseBeatDiv() {
+    let steps = []
+
+    // pop off left beat div bracket
+    this.advance()
+    
+    while (!this.isRightBeatDivBracket()) {
+      steps.push(this.parseStep())
+    }
+
+    // pop off right beat div bracket
+    this.advance()
+    
+    return new BeatDiv(steps)
+  }
+
+  
+  // returns step
+  parseStep() {
+    let step = null
+    
+    if (this.isSoundLiteral()) {
+      step = this.parseSoundLiteral()
+    } else if (this.isVariable()) {
+      
+    } else if (this.isLeftSequenceBracket()) {
+      
+    } else if (this.isLeftBeatDivBracket()) {
+      
+    }
+
+    // okay, after we've finished parsing the step, there may be some operation
+    // we are applying to that step.
+    
+    if (this.isRepetitionOperator()) {
+      
+    } else if (this.isChoiceOperator()) {
+      
+    }
+
+    return step
+  }
+
+
+  parseSoundLiteral() {
+    const sound = this.consume()
+
+    // TODO pop off sound parameter stuff we don't need anymore.
+
+    // also... check for chained functions!
+    // and include processor chains
+    const fxChain = [] // TODO change this
+
+    return new Terminal({...sound, fx: fxChain, ppqn: 1})
+  }
+  
 }

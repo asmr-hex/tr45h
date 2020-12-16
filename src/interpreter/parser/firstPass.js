@@ -52,6 +52,23 @@ export class FirstPassParser {
   pushError(error) { this.result.errors.push(newErrorToken(error)) }
 
   setStmtType(type) { this.result.stmtType = type }
+
+  /**
+   * EXPERIMENTAL
+   * pushes a token, but adds a new context to the context stack also.
+   *
+   * @description TODO
+   *
+   * ideas: 
+   *  A = (B C D).reverb [ E F [ G H ] ] I | J | K
+   *  {value: A} {value: "=" scope: [ {value:"(", scope: [ {A C D}]} ]}
+   * 
+   */
+  pushContext(token) {
+    
+  }
+  // EXPERIMENTAL
+  popContext() {}
   
   pushVariableDeclToken(token) {
     this.pushToken({...token, type: SemanticTokenType.VariableDecl})

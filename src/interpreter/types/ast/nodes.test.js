@@ -2,7 +2,7 @@ import {
   ASTNode,
   Terminal,
   Sequence,
-  SubBeatSequence,
+  BeatDiv,
   Choice,
 } from './nodes'
 import { NotImplementedError } from '../error'
@@ -177,9 +177,9 @@ describe('language types', () => {
     })
   })
 
-  describe('SubBeatSequence', () => {
+  describe('BeatDiv', () => {
     it('resolves ppqn for Terminal sequences', () => {
-      const subbeat = new SubBeatSequence([
+      const subbeat = new BeatDiv([
         new Terminal({type: 'sound', value: 'A', fx: [], ppqn: 1}),
         new Terminal({type: 'sound', value: 'B', fx: [], ppqn: 2}),
         new Terminal({type: 'sound', value: 'C', fx: [], ppqn: 3})
@@ -202,9 +202,9 @@ describe('language types', () => {
     })
 
     it('resolves ppqn for sequences with nested sub beats', () => {
-      const subbeat = new SubBeatSequence([
+      const subbeat = new BeatDiv([
         new Terminal({type: 'sound', value: 'A', fx: [], ppqn: 1}),
-        new SubBeatSequence([
+        new BeatDiv([
           new Terminal({type: 'sound', value: 'B', fx: [], ppqn: 2}),
           new Terminal({type: 'sound', value: 'C', fx: [], ppqn: 3}),
         ]),
