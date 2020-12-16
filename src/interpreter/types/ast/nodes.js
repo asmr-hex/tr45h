@@ -1,4 +1,7 @@
+import { cloneDeep } from 'lodash'
+
 import { NotImplementedError } from '../error'
+
 
 /**
  * Step is a data-type which represents a fully-resolved step in a sequence.
@@ -133,13 +136,43 @@ export class NonTerminal extends ASTNode {
   advanceCurrentNode() { throw new NotImplementedError('advanceCurrentNode()') }
 }
 
+/**
+ * NOTE: each variable needs to be its own copy of the one in the symbol table
+ * because each instance of the variable will have its own independent internal
+ * sequence state...
+ * So, we need to watch out for this becoming very memory intensive....aka how
+ * does this scale with many instance variables? maybe an alternative could be reworking
+ * ast node classes to make it possible to keep track of internal state independently
+ * (so we don't need tons of instances of deeply nested AST nodes, but rather multiple
+ * internal state pointers which tell each instance which is the current node etc.)
+ * this will PROBABLY be really useful in the future anyway when we are trying to have
+ * more graceful way sto append new steps in a sequence for example.....
+ *
+ * BUT for now.... we maintain each copy... we will have to somehow update each copy
+ * if the original variable is redefined....but maybe we can punt on that for now
+ * or at least until we understand if this one-copy-per-instance approach is super
+ * inefficient or not.
+ */
+export class Variable extends NonTerminal {
+  constructor(variableSymbol, procChain=null) {
+    super(cloneDeep(variableSymbol.resolve().value))  // deep clone.....
+
+    this._variable = variableSymbol
+    this._processChain = procChain
+  }
+
+  advanceCurrentNode() {
+    return this._currentNode.advance()
+  }
+}
 
 export class Sequence extends NonTerminal {
-  constructor(seq) {
+  constructor(seq, procChain=null) {
     super(seq[0])
     
     this._currentNodeIndex = 0
     this._seq = seq
+    this._processChain = procChain
   }
 
   advanceCurrentNode() {

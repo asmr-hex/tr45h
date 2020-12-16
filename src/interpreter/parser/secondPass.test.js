@@ -5,6 +5,7 @@ import {
   Sequence,
   BeatDiv,
   Choice,
+  Variable,
   Terminal,
 } from '../types/ast/nodes'
 import {
@@ -89,7 +90,7 @@ describe('The Second Pass Parser', () => {
       expect(parser.result).toEqual({ stmtType: null, ast: null })
       expect(parser.symbolTable.isVariable('A')).toBeTruthy()
       expect(parser.symbolTable.getVariable('A').resolve().type).toEqual(ExpressionType.Number)
-      expect(parser.symbolTable.getVariable('A').resolve().value).toEqual(3.3)
+      expect(parser.symbolTable.getVariable('A').resolve().value).toEqual(new Terminal(tokens[2]))
     })
   })
 
@@ -195,6 +196,35 @@ describe('The Second Pass Parser', () => {
       
       expect(parser.parseSequence()).toEqual(expectations)
     })
+    it(`parses a sequence with a processor chain: '(apple orange pear).reverb.volume'`, () => {
+      const tokens = [
+        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: '('}),
+        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: ')'}),
+        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
+        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
+        
+      ]
+      const parser = newTestParser(tokens)
+
+      const expectations = new Sequence(
+        [
+          new Terminal({...tokens[1], fx: null, ppqn: 1}),
+          new Terminal({...tokens[2], fx: null, ppqn: 1}),
+          new Terminal({...tokens[3], fx: null, ppqn: 1}),
+        ],
+        new ProcessorChain([
+          Builtin.functions.reverb.initialize({}, {audioContext: mockAudioContext}),
+          Builtin.functions.volume.initialize({}, {audioContext: mockAudioContext})
+        ])
+      )
+      
+      expect(parser.parseSequence()).toEqual(expectations)
+    })
   })
 
   describe('parseBeatDiv()', () => {
@@ -213,6 +243,35 @@ describe('The Second Pass Parser', () => {
         new Terminal({...tokens[2], fx: null, ppqn: 1}),
         new Terminal({...tokens[3], fx: null, ppqn: 1}),
       ])
+      
+      expect(parser.parseBeatDiv()).toEqual(expectations)
+    })
+    it(`parses a beat division sequence with a processor chain: '[apple orange pear].reverb.volume'`, () => {
+      const tokens = [
+        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: '['}),
+        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: ']'}),
+        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
+        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
+        
+      ]
+      const parser = newTestParser(tokens)
+
+      const expectations = new BeatDiv(
+        [
+          new Terminal({...tokens[1], fx: null, ppqn: 1}),
+          new Terminal({...tokens[2], fx: null, ppqn: 1}),
+          new Terminal({...tokens[3], fx: null, ppqn: 1}),
+        ],
+        new ProcessorChain([
+          Builtin.functions.reverb.initialize({}, {audioContext: mockAudioContext}),
+          Builtin.functions.volume.initialize({}, {audioContext: mockAudioContext})
+        ])
+      )
       
       expect(parser.parseBeatDiv()).toEqual(expectations)
     })
@@ -242,7 +301,28 @@ describe('The Second Pass Parser', () => {
       expect(parser.parseChoice(expectedChoices[0])).toEqual(expectations)
     })
   })
-  
+
+  describe('parseVariable()', () => {
+    it(`parses a sound literal variable: 'A = piano ... A'`, () => {
+      const tokens = [
+        newSemanticToken({block: 'a-test-block', type: SemanticTokenType.Variable, value: 'A'}),
+        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'C'}),
+      ]
+      const stmtTokens = [
+        {...tokens[0], block: 'some-other-block'}
+      ]
+      const parser = newTestParser(stmtTokens)
+      parser.symbolTable.declareVariable(tokens[0], ExpressionType.Sequence)
+      parser.symbolTable.getVariable(tokens[0].value).define(
+        new Terminal({...tokens[1], fx: null, ppqn: 1}),
+      )
+
+      const expectations = new Variable(parser.symbolTable.getVariable(tokens[0].value))
+      
+      expect(parser.parseVariable()).toEqual(expectations)
+    })
+  })
+
   describe('parseProcessorChain()', () => {
     it(`parses processing chain: '.reverb.volume'`, () => {
       const tokens = [

@@ -1,6 +1,7 @@
 import {
   Sequence,
   BeatDiv,
+  Variable,
   Terminal,
   Choice,
   choose,
@@ -190,7 +191,7 @@ export class SecondPassParser {
     
     switch (variable.assignedValueType) {
     case ExpressionType.Number:
-      variable.define(this.consume().value)
+      variable.define(new Terminal(this.consume()))
       break
     case ExpressionType.Sequence:
       variable.define(this.parseSequenceExpr())
@@ -223,8 +224,11 @@ export class SecondPassParser {
 
     // pop off right sequence bracket
     this.advance()
+
+    // parse processor chain if it exists.
+    const processorChain = this.parseProcessorChain()
     
-    return new Sequence(steps)
+    return new Sequence(steps, processorChain)
   }
 
   // returns a BeatDivision object
@@ -240,8 +244,11 @@ export class SecondPassParser {
 
     // pop off right beat div bracket
     this.advance()
+
+    // parse processor chain if it exists.
+    const processorChain = this.parseProcessorChain()
     
-    return new BeatDiv(steps)
+    return new BeatDiv(steps, processorChain)
   }
 
   
@@ -252,7 +259,7 @@ export class SecondPassParser {
     if (this.isSoundLiteral()) {
       step = this.parseSoundLiteral()
     } else if (this.isVariable()) {
-      
+      step = this.parseVariable()
     } else if (this.isLeftSeqBracket()) {
       step = this.parseSequence()
     } else if (this.isLeftBeatDivBracket()) {
@@ -319,6 +326,15 @@ export class SecondPassParser {
     const processorChain = this.parseProcessorChain()
      
     return new Terminal({...sound, fx: processorChain, ppqn: 1})
+  }
+
+  parseVariable() {
+    const variable = this.symbolTable.getVariable(this.consume().value)
+
+    // check for chained functions
+    const processorChain = this.parseProcessorChain()
+    
+    return new Variable(variable, processorChain)
   }
 
   parseProcessorChain() {
