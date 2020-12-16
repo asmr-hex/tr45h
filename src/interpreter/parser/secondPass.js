@@ -2,7 +2,12 @@ import {
   Sequence,
   BeatDiv,
   Terminal,
+  Choice,
+  choose,
 } from '../types/ast/nodes'
+import {
+  ProcessorChain,
+} from '../types/ast/functions/processors/processorChain'
 import {
   LexicalTokenType,
   SemanticTokenType,
@@ -10,10 +15,18 @@ import {
 import { ExpressionType } from '../types/expressions'
 import { StatementType } from '../types/statements'
 
-
+/**
+ * "ain't it nice to live in an error-free world"
+ *                           -- cin quai lee
+ */
 export class SecondPassParser {
-  constructor(symbolTable) {
-    this.symbolTable = symbolTable
+  constructor(symbolTable, audioContext, options={}) {
+    this.symbolTable  = symbolTable
+    this.audioContext = audioContext
+    this.options = {
+      choiceFn: choose,
+      ...options,
+    }
 
     // initialize internal state
     this.token  = { stream: [], index: 0 }
@@ -46,6 +59,20 @@ export class SecondPassParser {
   advance() { return this.token.stream[++this.token.index] || null }
   consume() { return this.token.stream[this.token.index++] || null }
 
+  skipQueryParamTokens() {
+    if (this.isLeftFnBracket()) {
+      while (!this.isRightFnBracket()) { this.advance() }
+
+      // now pop off left fn bracket
+      this.advance()
+    }
+  }
+
+  skipFnParameterTokens() {
+    // TODO eventually this will have to handle nested function calls as
+    // arguments (in the case of random and other numeric functions)
+    this.skipQueryParamTokens()
+  }
   
   /////////////////////
   //                 //
@@ -73,19 +100,51 @@ export class SecondPassParser {
       && this.peek().type === SemanticTokenType.BeatDivBracket
       && this.peek().value === '['    
   }
+  isRightFnBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.FnBracket
+      && this.peek().value === '('    
+  }
+  isLeftFnBracket() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.FnBracket
+      && this.peek().value === ')'    
+  }
   isSoundLiteral() {
     return this.peek()
       && this.peek().type === SemanticTokenType.SoundLiteral
   }
   isVariable() {
-    return this.peel()
+    return this.peek()
       && this.peek().type === SemanticTokenType.Variable
+  }
+  isChainingOperator() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.ChainingOp
   }
   isRepetitionOperator() {
     return false  // TODO impl me
   }
   isChoiceOperator() {
-    return false  // TODO impl me
+    return this.peek()
+      && this.peek().type === SemanticTokenType.ChoiceOp
+  }
+  isChoiceParam() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.FnBracket
+      && this.peek(1)
+      && this.peek(1).type === LexicalTokenType.Number
+  }
+
+  ///////////////
+  //           //
+  //  HELPERS  //
+  //           //
+  ///////////////
+
+  normalize(choices, probabilities) {
+    // TODO make more sophisticated to handle parameters and nulls.
+    return choices.map(c => 1/choices.length)
   }
 
   /////////////////////
@@ -145,7 +204,7 @@ export class SecondPassParser {
     let steps =  []
 
     while (this.peek()) {
-      steps.push(this.parseStep())
+      steps.push(this.parseStepAndChoice())
     }
 
     return new Sequence(steps)
@@ -159,7 +218,7 @@ export class SecondPassParser {
     this.advance()
     
     while (!this.isRightSeqBracket()) {
-      steps.push(this.parseStep())
+      steps.push(this.parseStepAndChoice())
     }
 
     // pop off right sequence bracket
@@ -176,7 +235,7 @@ export class SecondPassParser {
     this.advance()
     
     while (!this.isRightBeatDivBracket()) {
-      steps.push(this.parseStep())
+      steps.push(this.parseStepAndChoice())
     }
 
     // pop off right beat div bracket
@@ -194,10 +253,10 @@ export class SecondPassParser {
       step = this.parseSoundLiteral()
     } else if (this.isVariable()) {
       
-    } else if (this.isLeftSequenceBracket()) {
-      
+    } else if (this.isLeftSeqBracket()) {
+      step = this.parseSequence()
     } else if (this.isLeftBeatDivBracket()) {
-      
+      step = this.parseBeatDiv()
     }
 
     // okay, after we've finished parsing the step, there may be some operation
@@ -205,24 +264,84 @@ export class SecondPassParser {
     
     if (this.isRepetitionOperator()) {
       
-    } else if (this.isChoiceOperator()) {
-      
     }
 
     return step
   }
 
+  parseStepAndChoice() {
+    let step = this.parseStep()
 
+    if (this.isChoiceOperator())
+      step = this.parseChoice(step)
+
+    return step
+  }
+  
+  parseChoice(lhs) {
+    let choices       = [lhs]
+    let probabilities = []
+
+    while (this.isChoiceOperator()) {
+      // pop off choice operator
+      this.advance()
+
+      // get probability parameter if provided
+      probabilities.push(this.parseChoiceParam())
+
+      choices.push(this.parseStep())
+    }
+
+    // normalize probabilities
+    probabilities = this.normalize(choices, probabilities)
+    
+    return new Choice(choices, probabilities, this.options.choiceFn)
+  }
+
+  parseChoiceParam() {
+    let probability = null
+    if (this.isChoiceParam()) {
+      this.advance()
+      probability = this.consume().value
+      this.advance()
+    }
+    return probability
+  }
+  
   parseSoundLiteral() {
     const sound = this.consume()
 
-    // TODO pop off sound parameter stuff we don't need anymore.
+    // pop off sound parameters
+    // (querying is performed in first pass)
+    this.skipQueryParamTokens()
 
-    // also... check for chained functions!
-    // and include processor chains
-    const fxChain = [] // TODO change this
-
-    return new Terminal({...sound, fx: fxChain, ppqn: 1})
+    // check for chained functions
+    const processorChain = this.parseProcessorChain()
+     
+    return new Terminal({...sound, fx: processorChain, ppqn: 1})
   }
-  
+
+  parseProcessorChain() {
+    const chain = new ProcessorChain()
+    
+    while (this.isChainingOperator()) {
+      // skip over chaining operator
+      this.advance()
+
+      chain.add(this.parseProcessor())
+    }
+    
+    return chain.processors.length === 0 ? null : chain
+  }
+
+  parseProcessor() {
+    const processor = this.symbolTable
+          .getFunction(this.peek().value)
+          .initialize(this.consume().parameters, {audioContext: this.audioContext})
+
+    // pop off parameter tokens since ther were stored in the function name token.
+    this.skipFnParameterTokens()
+
+    return processor
+  }
 }

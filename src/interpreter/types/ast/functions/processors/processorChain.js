@@ -1,10 +1,13 @@
 
 
 export class ProcessorChain {
-  constructor() {
+  constructor(processors=[]) {
     this.processors = []    // the array of processors, applied in left to right order.
     this.input      = null  // the input processor node of the processor chain.
     this.isEmpty    = true  // whether the chain is empty
+
+    // initialize processor chain
+    processors.forEach(p => this.add(p))
   }
 
   /**
@@ -27,7 +30,7 @@ export class ProcessorChain {
       this.isEmpty = false
     } else if (this.processors.length >= 2) {
       // hookup the previous processor with the newest chain tail.
-      this.penultimateProcessor().connect(this.finalProcessor())
+      this.penultimateProcessor().connect(this.finalProcessor().input)
     }
   }
 
