@@ -6,6 +6,7 @@ import {
   BeatDiv,
   Choice,
   Variable,
+  Repetition,
   Terminal,
 } from '../types/ast/nodes'
 import {
@@ -323,6 +324,45 @@ describe('The Second Pass Parser', () => {
     })
   })
 
+  describe('parseRepetitionOperator()', () => {
+    it(`parses a prefix repetition operator: '3 * flute'`, () => {
+      const tokens = [
+        newSemanticToken({type: LexicalTokenType.Number, value: 3}),
+        newSemanticToken({type: SemanticTokenType.RepetitionOp, value: '*'}),
+        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'flute'}),
+
+      ]
+      const parser = newTestParser(tokens)
+      parser.token.index = 1
+
+      const repetition = new Terminal(tokens[0])
+      const expectations = new Repetition(
+        new Terminal({...tokens[2], fx: null, ppqn: 1}),
+        repetition,
+      )
+      
+      expect(parser.parseRepetitionOperator(repetition)).toEqual(expectations)
+    })
+    it(`parses a postfix repetition operator: 'flute * 3'`, () => {
+      const tokens = [
+        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'flute'}),
+        newSemanticToken({type: SemanticTokenType.RepetitionOp, value: '*'}),
+        newSemanticToken({type: LexicalTokenType.Number, value: 3}),
+      ]
+      const parser = newTestParser(tokens)
+      parser.token.index = 1
+
+      const repeatedNode = new Terminal({...tokens[0], fx: null, ppqn: 1})
+      const expectations = new Repetition(
+        repeatedNode,
+        new Terminal(tokens[2])
+      )
+      
+      expect(parser.parseRepetitionOperator(repeatedNode)).toEqual(expectations)
+    })
+  })
+
+  
   describe('parseProcessorChain()', () => {
     it(`parses processing chain: '.reverb.volume'`, () => {
       const tokens = [

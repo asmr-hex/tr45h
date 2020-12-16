@@ -1,5 +1,9 @@
 import { cloneDeep } from 'lodash'
 
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+} from '../tokens'
 import { NotImplementedError } from '../error'
 
 
@@ -185,6 +189,42 @@ export class Sequence extends NonTerminal {
     }
 
     this._currentNode = this._seq[this._currentNodeIndex]
+
+    return hasCycled
+  }
+}
+
+export class Repetition extends NonTerminal {
+  constructor(node, repetitionScheme) {
+    super(node)
+
+    this._repetitionScheme = repetitionScheme
+
+    this._currentCount = 0
+    this._repetitions  = this._getRepetitions()
+  }
+
+  _getRepetitions() {
+    const scheme = this._repetitionScheme.current()
+    switch (scheme.type) {
+    case LexicalTokenType.Number:
+      return scheme.value
+    case SemanticTokenType.Fn:
+      // do something to update the function (like if its random then get a new random number)
+    default:
+      // idk
+    }
+  }
+
+  advanceCurrentNode() {
+    let hasCycled = false
+    if ( this._currentCount === this._repetitions - 1 ) {
+      this._currentCount = 0
+      this._repetitions = this._getRepetitions()
+      hasCycled = true
+    } else {
+      this._currentNodeIndex += 1
+    }
 
     return hasCycled
   }

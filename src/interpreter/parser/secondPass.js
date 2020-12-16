@@ -2,6 +2,7 @@ import {
   Sequence,
   BeatDiv,
   Variable,
+  Repetition,
   Terminal,
   Choice,
   choose,
@@ -123,8 +124,21 @@ export class SecondPassParser {
     return this.peek()
       && this.peek().type === SemanticTokenType.ChainingOp
   }
+  isPrefixRepetitionOperator() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.RepetitionOp
+      && this.peek(-1)
+      && this.peek(-1).type === LexicalTokenType.Number
+  }
+  isPostfixRepetitionOperator() {
+    return this.peek()
+      && this.peek().type === SemanticTokenType.RepetitionOp
+      && this.peek(1)
+      && this.peek(1).type === LexicalTokenType.Number
+  }
   isRepetitionOperator() {
-    return false  // TODO impl me
+    return this.isPrefixRepetitionOperator()
+      || this.isPostfixRepetitionOperator()
   }
   isChoiceOperator() {
     return this.peek()
@@ -270,7 +284,7 @@ export class SecondPassParser {
     // we are applying to that step.
     
     if (this.isRepetitionOperator()) {
-      
+      step = this.parseRepetitionOperator(step)
     }
 
     return step
@@ -283,6 +297,39 @@ export class SecondPassParser {
       step = this.parseChoice(step)
 
     return step
+  }
+
+  parseRepetitionOperator(lhs) {
+    if (this.isPrefixRepetitionOperator()) return this.parsePrefixRepetitionOperator(lhs)
+    if (this.isPostfixRepetitionOperator()) return this.parsePostfixRepetitionOperator(lhs)
+    
+    throw new Error(`developer error.`)  // should never get here
+  }
+
+  parsePrefixRepetitionOperator(repetition) {
+    // skip operator
+    this.advance()
+
+    // rhs could be any kind of step
+    // TODO beware of sandwiched repetitions!
+    // for example: 3 * flute * 3 will bite you maybe..... (this should
+    // be handled in first-pass parser?)
+    const repeatedNode = this.parseStep()
+
+    return new Repetition(repeatedNode, repetition) 
+  }
+  
+  parsePostfixRepetitionOperator(lhs) {
+    // skip operator
+    this.advance()
+
+    // TODO enhance.
+    // eventually the rhs could be a numeric function or
+    // a variable or an arithmetic expression (of numbers
+    // variables, and/or numeric functions)
+    // but for now, it will just be a number. small steps.
+
+    return new Repetition(lhs, new Terminal(this.consume()))
   }
   
   parseChoice(lhs) {
