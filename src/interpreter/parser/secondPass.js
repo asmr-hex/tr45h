@@ -183,12 +183,13 @@ export class SecondPassParser {
    */
   analyze(tokens, blockKey, blockIndex) {
     this.reset(tokens, blockKey, blockIndex)
-
+    
     switch(tokens.stmtType) {
     case StatementType.Assignment:
       this.parseAssignment()
       break
     case StatementType.Sequence:
+      this.result.ast = this.parseSequenceExpr()
       break
     default:
       break

@@ -625,7 +625,7 @@ export class FirstPassParser {
   analyze(tokens, blockKey, blockIndex) {
     // reset the internal state
     this.reset(tokens, blockKey, blockIndex)
-
+    
     // there are three kinds of statements: (1) sequence (2) assignment (3) comments
     if (this.isAssignment()) {
       this.parseAssignment()
