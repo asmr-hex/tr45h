@@ -20,16 +20,18 @@ import { AST } from './types/ast'
  */
 export class Interpreter {
   constructor(observables) {
-    this.theme = observables.theme
+    const {
+      theme,
+      transport,
+    } = observables
 
-    this.mem = new MemorySystem()
-    this.symbols = new SymbolTable(this.theme)
-    this.lexer = new Lexer()
-    this.parser = new Parser(this.symbols)
+    this.mem       = new MemorySystem()
+    this.sym       = new SymbolTable(theme)
+    this.lexer     = new Lexer()
+    this.parser    = new Parser(this.sym)
+    this.scheduler = new Scheduler(this.mem, this.sym, transport, theme)
 
-    this.ast = new AST()
-
-    this.scheduler = new Scheduler(this.ast.program, this.symbols, observables.transport, this.theme)
+    
     this.scheduler.start()
 
     //this.debouncedParse = debounce(this.parseBlock, 1000)
@@ -63,7 +65,8 @@ export class Interpreter {
     if (!(blockKey in this.memoizedParse))
       this.memoizedParse[blockKey] = debounce(
         (s, k, i) => {
-          this.parser.secondPass(s, k , i)
+          const results = this.parser.secondPass(s, k , i)
+          this.mem.set(k, results)
           delete this.memoizedParse[k]
         },
         1000,

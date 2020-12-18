@@ -10,7 +10,7 @@ import { audioContext } from '../context/audio'
  *
  */
 export class Scheduler {
-  constructor(ast, symbolTable, transport, theme) {
+  constructor(mem, symbolTable, transport, theme) {
     this.theme = theme
 
     this.audioContext = audioContext
@@ -58,11 +58,18 @@ export class Scheduler {
     })
     
 
-    
+    ////////////////////////
+    //                    //
+    //  MEMORY & SYMBOLS  //
+    //                    //
+    ////////////////////////
 
-    this.ast = ast
+    this.mem = mem
     this.symbolTable = symbolTable
     this.sequences = []
+
+    // TODO subscribe to memory changes!
+    
     
     this.lookAheadInterval = 100 // ms
     this.timerFn = null
