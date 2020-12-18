@@ -45,7 +45,7 @@ export class SecondPassParser {
   /**
    * resets the internal state with the output of semantic analysis.
    */
-  reset({ stmtType, tokens, errors }, key, index) {
+  reset({ stmtType, tokens }, key, index) {
     this.token  = { stream: tokens, index: 0 }
     this.block  = { key, index }
     this.result = { stmtType, ast: null }

@@ -66,12 +66,11 @@ export class SyntaxHighlightDecorator {
 
     // we simply create a decoratorKey for each character?
     // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
-    const { errors, tokens } = this.interpreter.analyzeBlockSyntax(blockKey, blockIndex, blockText)
+    const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
 
-    // create ids for valid tokens
-    for (const token of tokens) {
-      const tokenId = `token${token.start}`
-      const componentKey = `${blockKey}-${tokenId}`
+    for (const token of [...tokens, ...errors]) {
+      const tokenId = `${token.start}`
+      const componentKey = `${blockKey}-${token.start}`
 
       // store information about this token in map (for use in getPropsforKey)
       this.highlighted[blockKey][tokenId] = token
@@ -79,23 +78,8 @@ export class SyntaxHighlightDecorator {
       // set the component key for all char indices
       for (let i = token.start; i < token.start + token.length; i++) {
         decorations[i] = componentKey
-      }
+      }      
     }
-
-    // create ids for errors
-    for (const error of errors) {
-      const tokenId = `token${error.start}`
-      const componentKey = `${blockKey}-${tokenId}`
-
-      // store information about this token in map (for use in getPropsforKey)
-      this.highlighted[blockKey][tokenId] = error
-
-      // set the component key for all char indices
-      for (let i = error.start; i < error.start + error.length; i++) {
-        decorations[i] = componentKey
-      }
-    }
-
     
     return List(decorations)
   }
