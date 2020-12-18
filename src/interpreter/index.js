@@ -5,6 +5,7 @@ import { Scheduler } from '../scheduler'
 
 import { Lexer } from './lexer'
 import { Parser } from './parser'
+import { MemorySystem } from './memory'
 import { SymbolTable } from './symbolTable'
 import { AST } from './types/ast'
 
@@ -20,7 +21,8 @@ import { AST } from './types/ast'
 export class Interpreter {
   constructor(observables) {
     this.theme = observables.theme
-    
+
+    this.mem = new MemorySystem()
     this.symbols = new SymbolTable(this.theme)
     this.lexer = new Lexer()
     this.parser = new Parser(this.symbols)
@@ -32,12 +34,6 @@ export class Interpreter {
 
     //this.debouncedParse = debounce(this.parseBlock, 1000)
     this.memoizedParse = {}
-  }
-
-  updateTheme(theme) {
-    this.theme = theme
-    this.symbols.updateTheme(theme)
-    this.scheduler.updateTheme(theme)
   }
 
   /**
@@ -86,7 +82,6 @@ export class Interpreter {
 
     // signal to scheduler (evaluator) that symbol table and ast have changed!
     // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
-    this.scheduler.setSymbols(this.symbols)
     this.scheduler.setAST(this.ast.program)
   }
 }

@@ -88,9 +88,7 @@ export class Scheduler {
     this.sequences = this.ast.map(
       s => new Sequence(s, this.symbolTable, this.audioContext, this.output, this.mediaStreamDestination, this.theme, this.transport, this.bpm.next)
     )
-  }
-  setSymbols(symbols) { this.symbolTable = symbols }
-  
+  }  
 
   setBpm(bpm) {
     this.tmpBpm = bpm
