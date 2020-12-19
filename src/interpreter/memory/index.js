@@ -17,6 +17,8 @@ export class MemorySystem {
   }
 
   set(key, stmt) {
+    if (!stmt) return
+    
     this._blocks[key] = stmt
 
     // update rxjs changes

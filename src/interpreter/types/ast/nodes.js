@@ -166,7 +166,10 @@ export class Variable extends NonTerminal {
   }
 
   advanceCurrentNode() {
-    return this._currentNode.advance()
+    return this._currentNode.advance()  // TODO some bug here....
+    // TODO try:
+    // A = one two three
+    // A four five
   }
 }
 

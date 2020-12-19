@@ -1,3 +1,4 @@
+import { orderBy } from 'lodash'
 import {
   Sequence,
   BeatDiv,
@@ -46,7 +47,8 @@ export class SecondPassParser {
    * resets the internal state with the output of semantic analysis.
    */
   reset({ stmtType, tokens }, key, index) {
-    this.token  = { stream: tokens, index: 0 }
+    const sortedTokens = orderBy(tokens, ['start'], ['asc'])
+    this.token  = { stream: sortedTokens, index: 0 }
     this.block  = { key, index }
     this.result = { stmtType, ast: null }
   }
@@ -200,7 +202,7 @@ export class SecondPassParser {
 
   parseAssignment() {
     const variable = this.symbolTable.getVariable(this.consume().value)
-
+    
     // skip over assignment operator
     this.advance()
     
@@ -213,6 +215,7 @@ export class SecondPassParser {
       break
     default:
       // we should never get here.
+      console.log("we should never get here.")
     }
   }
 

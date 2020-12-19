@@ -7,6 +7,7 @@ import {
   newErrorToken,
 } from '../types/tokens'
 import { StatementType } from '../types/statements'
+import { ExpressionType } from '../types/expressions'
 
 
 /**
@@ -53,9 +54,12 @@ export class FirstPassParser {
 
   setStmtType(type) { this.result.stmtType = type }
   
-  pushVariableDeclToken(token) {
+  pushVariableDeclToken(token, assignedValueType) {
     this.pushToken({...token, type: SemanticTokenType.VariableDecl})
-    this.symbolTable.declareVariable(newSemanticToken({...token, type: SemanticTokenType.Variable}))
+    this.symbolTable.declareVariable(
+      newSemanticToken({...token, type: SemanticTokenType.Variable}),
+      assignedValueType,
+    )
   }
 
   pushVariableToken(token) {
@@ -423,10 +427,8 @@ export class FirstPassParser {
       }
       
       // assign instance id to variable
-      this.pushToken({
-        ...this.consume(),
-        type: SemanticTokenType.Variable,
-      })
+      this.pushVariableToken(this.consume())
+      
     } else if (this.isSoundLiteral(this.peek())) {
       const soundLiteral = this.consume()
       let parameters = {}
@@ -562,7 +564,9 @@ export class FirstPassParser {
     const start = this.peek().start
     
     // we know the structure is <VARIABLE_DECL> =
-    this.pushVariableDeclToken(this.consume())
+    const variableDeclToken = this.consume()
+    let assignedType = null
+    
     this.pushToken({...this.consume(), type: SemanticTokenType.AssignmentOp})
 
 
@@ -571,23 +575,30 @@ export class FirstPassParser {
       this.pushToken(this.consume())
 
       this.parseEndOfStatement()
+      assignedType = ExpressionType.Number
     } else if (this.isHz()) {
       this.pushToken(this.consume()) // Hz
       this.pushToken(this.consume()) // HzUnit
       
       this.parseEndOfStatement()
-      
+
+      // assignedType = ExpressionType.Number TODO HANDLE THIS
     } else if(this.peek() && this.isFn(this.peek())) {
       this.parseFn()
       this.parseEndOfStatement()
     } else if (this.isSequence()) {
       this.parseSequenceStatement()
+      
+      assignedType = ExpressionType.Sequence
     } else {
       const end = this.getEndIndexOfLastResultToken()
       this.pushError({ start, length: end - start, reasons: [], block: this.block.key})
 
       this.parseEndOfStatement()
     }
+
+    // declare variable with assigned value type in symbol table
+    this.pushVariableDeclToken(variableDeclToken, assignedType)
   }
 
   // the point of this isn't to create a parse tree, but rather augment tokens from

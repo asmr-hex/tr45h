@@ -92,6 +92,7 @@ export class SymbolTable {
       symbolTable: this,
     })
 
+    this.addReference(variable.id, token.block, token.index)
     this.registry.variables[variable.id] = variable
   }
 
