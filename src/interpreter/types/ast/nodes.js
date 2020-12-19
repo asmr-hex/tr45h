@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash'
+import { cloneDeep, reduce } from 'lodash'
 
 import {
   LexicalTokenType,
@@ -56,6 +56,11 @@ export class ASTNode {
   next() { return this._next }
 
   /**
+   * returns the length of the node, i.e. the number of steps contained within.
+   */
+  length() { throw new NotImplementedError('length()') }
+  
+  /**
    * advance is an unimplemented method for advancing the current and next fully resolved steps.
    *
    * @returns {bool} true if advancing has 'cycled' its step stream, false otherwise.
@@ -83,6 +88,8 @@ export class Terminal extends ASTNode {
    * @returns {true} a terminal step always 'cycles' when advanced.
    */
   advance() { return true }
+
+  length() { return 1 }
 }
 
 
@@ -138,6 +145,8 @@ export class NonTerminal extends ASTNode {
    * @returns {bool} if this NonTerminal, itself, has cycled while advancing its currentNode.
    */
   advanceCurrentNode() { throw new NotImplementedError('advanceCurrentNode()') }
+
+  length() { return this._currentNode.length() }
 }
 
 /**
@@ -166,10 +175,7 @@ export class Variable extends NonTerminal {
   }
 
   advanceCurrentNode() {
-    return this._currentNode.advance()  // TODO some bug here....
-    // TODO try:
-    // A = one two three
-    // A four five
+    return true  // whenever this method is called, the assigned value has always cycled.
   }
 }
 
@@ -194,6 +200,14 @@ export class Sequence extends NonTerminal {
     this._currentNode = this._seq[this._currentNodeIndex]
 
     return hasCycled
+  }
+
+  length() {
+    return reduce(
+      this._seq,
+      (acc, n) => acc + n.length(),
+      0
+    )
   }
 }
 
@@ -226,10 +240,14 @@ export class Repetition extends NonTerminal {
       this._repetitions = this._getRepetitions()
       hasCycled = true
     } else {
-      this._currentNodeIndex += 1
+      this._currentCount += 1
     }
 
     return hasCycled
+  }
+
+  length() {
+    return this._currentNode.length() + this._getRepetitions()
   }
 }
 
@@ -240,14 +258,14 @@ export class BeatDiv extends Sequence {
   current() {
     return {
       ...this._current,
-      ppqn: this._current.ppqn * this._seq.length
+      ppqn: this._current.ppqn * this.length()
     }
   }
 
   next() {
     return {
       ...this._next,
-      ppqn: this._next.ppqn * this._seq.length
+      ppqn: this._next.ppqn * this.length()
     }
   }
 }
@@ -275,4 +293,5 @@ export class Choice extends NonTerminal {
 
     return true
   }
+  
 }
