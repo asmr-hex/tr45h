@@ -1,7 +1,7 @@
 
 
 export class Thread {
-  constructor(seq, sym, context) {
+  constructor(seq, sym, context, theme) {
     this.seq = seq                   // executing sequence.
     this.sym = sym                   // symbol table.
     
@@ -10,11 +10,13 @@ export class Thread {
       output: context.createGain(),  // GainNode as Thread output.
     }
 
-    this.theme = null                // TODO deal with this.
-
     this.bpm               = null    // beats / s. set when run() is called.
     this.nextStepTime      = 0.0     // (s) time until next step.
     this.scheduleAheadTime = 0.1     // (s) how ahead of time we schedule steps.
+
+    this.theme = null                // style themes.
+    theme.subscribe(t => { this.theme = t })
+
   }
 
   async run(bpm) {

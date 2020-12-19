@@ -110,7 +110,7 @@ export class Scheduler {
 
   scheduleThread(key) {
     
-    this.threads[key] = new Thread(this.mem.get(key), this.sym, this.audio.context)  // TODO eventually, maybe copy from memory?
+    this.threads[key] = new Thread(this.mem.get(key), this.sym, this.audio.context, this.theme)  // TODO eventually, maybe copy from memory?
 
     this.threads[key].audio.output.connect(this.audio.output.main)
     this.threads[key].audio.output.connect(this.audio.output.record)
