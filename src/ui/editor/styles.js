@@ -4,6 +4,9 @@ import {
   LexicalTokenType,
   SemanticTokenType,
 } from '../../interpreter/types/tokens'
+import {
+  SoundStatusType,
+} from '../../interpreter/types/symbols/soundLiteral'
 
 
 /**
@@ -38,9 +41,9 @@ export const useSyntaxStyles = makeStyles(theme => ({
     color: theme.palette.text.tokens.error,
     backgroundColor: theme.palette.background.error,
   },
-  searching:   { color: theme.palette.text.status.searching },
-  downloading: { color: theme.palette.text.status.downloading },
-  available:   { color: theme.palette.text.status.available },
-  unavailable: { color: theme.palette.text.status.unavailable },
+  [SoundStatusType.Searching]:   { color: theme.palette.text.status.searching },
+  [SoundStatusType.Downloading]: { color: theme.palette.text.status.downloading },
+  [SoundStatusType.Available]:   { color: theme.palette.text.status.available },
+  [SoundStatusType.Unavailable]: { color: theme.palette.text.status.unavailable },
   currentStep: { borderBottom: `2px ${theme.palette.divider} solid` },
 }))

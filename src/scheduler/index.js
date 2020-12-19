@@ -2,6 +2,7 @@ import { values } from 'lodash'
 import Recorder from 'recorder-js'
 
 import { audioContext } from '../context/audio'
+import { Thread } from './thread'
 
 
 /**
@@ -10,14 +11,49 @@ import { audioContext } from '../context/audio'
  *
  */
 export class Scheduler {
-  constructor(mem, symbolTable, transport, theme) {
-    this.theme = theme
+  constructor(mem, sym, transport, theme) {
 
-    this.audioContext = audioContext
-    this.volume = this.audioContext.createGain()
-    this.volume.connect(this.audioContext.destination)
-    this.output = this.volume
-    
+    ////////////////////////
+    //                    //
+    //  MEMORY & SYMBOLS  //
+    //                    //
+    ////////////////////////
+
+    this.mem     = mem                                               // memory system. 
+    this.sym     = sym                                               // symbol table.
+    this.threads = {}                                                // execution threads.
+
+    // subscribe to memory changes.
+    this.mem.changes.subscribe(change => {
+      switch (change.type) {
+      case 'SET':
+        this.scheduleThread(change.key)                              // schedule a new thread.
+        break
+      case 'DELETE':
+        this.killThread(change.key)                                  // kill a thread.
+        break
+      default:
+      }
+    })
+
+    /////////////
+    //         //
+    //  AUDIO  //
+    //         //
+    /////////////
+
+    this.audio = {
+      context: audioContext,
+      output: {
+        main:   audioContext.createGain(),                           // main audio line out (GainNode).
+        record: audioContext.createMediaStreamDestination(),         // recording audio line out (MediaStream).
+      },
+      recorder: null,                                                // declare audio recorder.
+      filename: 'untitled',                                          // recording output default filename.
+    }
+    this.audio.output.main.connect(this.audio.context.destination)   // connect global gain to speakers.
+    this.audio.recorder = new Recorder(this.audio.context)           // create a new recorder.
+    this.audio.recorder.init(this.audio.output.record.stream)        // initialize the recorder.
     
     ////////////////////
     //                //
@@ -56,84 +92,66 @@ export class Scheduler {
     transport.bpm.subscribe(bpm => {
       this.bpm.next = bpm                                            // set the next bpm
     })
+
     
-
-    ////////////////////////
-    //                    //
-    //  MEMORY & SYMBOLS  //
-    //                    //
-    ////////////////////////
-
-    this.mem = mem
-    this.symbolTable = symbolTable
-    this.sequences = []
-
-    // TODO subscribe to memory changes!
+    ///////////////////////
+    //                   //
+    //  SCHEDULING CONF  //
+    //                   //
+    ///////////////////////
     
-    
-    this.lookAheadInterval = 100 // ms
-    this.timerFn = null
+    this.lookAheadInterval = 100                                     // (ms) coarse scheduling intervals.
+    this.timerFn           = null                                    // setInterval fn for coarse scheduling.
 
-    // recording
-    this.mediaStreamDestination = this.audioContext.createMediaStreamDestination()
-    this.mediaRecorder = new Recorder(this.audioContext)
-    this.mediaRecorder.init(this.mediaStreamDestination.stream)
-    this.isRecording = false
+        
+    this.theme = theme                                               // theme observable.... ?
 
-    this.filename = 'untitled'
   }
 
-  updateTheme(theme) {
-    this.theme = theme
-    for (const sequence of this.sequences) {
-      sequence.updateTheme(theme)
-    }
-  }
-  
-  setAST(ast) {
-    this.ast = ast
-    this.sequences = this.ast.map(
-      s => new Sequence(s, this.symbolTable, this.audioContext, this.output, this.mediaStreamDestination, this.theme, this.transport, this.bpm.next)
-    )
-  }  
+  scheduleThread(key) {
+    this.threads[key] = new Thread(this.mem.get(key), this.sym, this.audio.context)  // TODO eventually, maybe copy from memory?
 
-  setBpm(bpm) {
-    this.tmpBpm = bpm
+    this.threads[key].audio.output.connect(this.audio.output.main)
+    this.threads[key].audio.output.connect(this.audio.output.record)
+  }
+
+  killThread(key) {
+    // TODO stop thread
+
+    delete this.threads[key]
   }
 
   toggleMute(isMuted) {
-    this.volume.gain.value = isMuted ? 0 : 1
+    this.audio.output.main.gain.value = isMuted ? 0 : 1
   }
   
   stop() {
     clearInterval(this.timerFn)
     this.timerFn = null
-    for (const sequence of values(this.sequences)) {
-      sequence.resetReadHead()
-    }
-    this.audioContext.suspend()
+    for (const thread of values(this.threads)) { thread.resetReadHead() }
+    this.audio.context.suspend()
   }
 
   pause() {
     clearInterval(this.timerFn)
     this.timerFn = null
-    this.audioContext.suspend()
+    this.audio.context.suspend()
   }
   
   startRecording() {
     if (this.isRecording) return
-    this.mediaRecorder.start().then(() => this.isRecording = true)
+    this.audio.recorder.start().then(() => this.isRecording = true)
   }
 
   stopRecording() {
     if (!this.isRecording) return
-    this.mediaRecorder.stop().then(({blob, buffer}) => {
+    this.audio.recorder.stop().then(({blob, buffer}) => {
       this.isRecording = false
       // TODO set filename to random words in symbol table
       // const words = filter(reduce(sequences, (acc, v, k) => [...acc, ...v], []), v => v !== '_')
       // this.filename = `${words[Math.floor(Math.random() * words.length)]} ${words[Math.floor(Math.random() * words.length)]}`
       
-      Recorder.download(blob, this.filename)
+      Recorder.download(blob, this.audio.filename)
     })
   }
   
@@ -143,13 +161,14 @@ export class Scheduler {
     
     this.timerFn = setInterval(() => {
       // if Web Audio has been suspended (see https://goo.gl/7K7WLu), resume
-      if (this.audioContext.state === "suspended") this.audioContext.resume()
+      if (this.audio.context.state === "suspended") this.audio.context.resume()
 
-      // console.log(this.ast)
-      
-      for (const sequence of this.sequences) {
-        sequence.schedule()
+      for (const thread of values(this.threads)) {
+        thread.run(this.bpm.current)
       }
+
+      // TODO add new threads here....to avoid adding in the middle of loop above.
+      
       this.bpm.current = this.bpm.next
       
     }, this.lookAheadInterval)

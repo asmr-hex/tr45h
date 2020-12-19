@@ -19,7 +19,7 @@ export const createSoundLiteralId = (keyword, queryParams, block, index) => {
   )
 
   // if this sound literal is forcing uniqueness, append its block and index to the id.
-  const uniqueness = 'unique' in queryParams && queryParams['unique']
+  const uniqueness = queryParams && queryParams['unique']
         ? `__${block}-${index}`
         : ''
   
@@ -49,6 +49,8 @@ export class SoundSymbol extends Symbol {
       id: createSoundLiteralId(keyword, queryParams, block, index),
       type: SemanticTokenType.SoundLiteral,
     })
+
+    this.apiToken    = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
     
     this.status      = SoundStatusType.Searching      // availability status of searched sound keyword
     this.queryParams = queryParams                    // query parameters used in keyword search
@@ -142,7 +144,7 @@ export class SoundSymbol extends Symbol {
   async download(queryResult) {
     // get preview to download
     const previewUrl = queryResult.previews['preview-hq-mp3']
-
+    
     // set status to downloading
     this.updateStatus(SoundStatusType.Downloading)
 
@@ -161,6 +163,9 @@ export class SoundSymbol extends Symbol {
   updateStatus(status) {
     this.status = status
 
+    // console.log("updating status ", status)
+    // console.log(this.keyword)
+    
     const elements = document.getElementsByClassName(this.id)
     for (const el of elements) {
       el.classList.add(this.getStatusCssClass(status))
@@ -168,10 +173,9 @@ export class SoundSymbol extends Symbol {
   }
   
   async fetch({symbolTable}) {
-    // do fetching logic in here....! RIP OUT FROM SYMBOL TABLE
 
     // check whether this sound literal still exists in the symbol table registry
-    if (!symbolTable.hasSound(this.id)) return
+    if (!symbolTable.isSound(this.id)) return
     
     // search for sounds
     const queryResult = await this.search()
@@ -181,6 +185,7 @@ export class SoundSymbol extends Symbol {
 
     // download sound
     this.download(queryResult)
+
   }
 
   // TODO add query methods.

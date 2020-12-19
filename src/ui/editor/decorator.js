@@ -85,32 +85,6 @@ export class SyntaxHighlightDecorator {
   }
 
   /**
-   * Given a decorator key, return the component to use when rendering 
-   * this decorated range.
-   *
-   * @param {string} key a decorator key
-   * @return {Function} the component to use when rendering decorated range.
-   */
-  getComponentForKey(key) {
-    return props => {
-      const symbol = this.interpreter.symbols.get(props.token)
-      const elements = document.getElementsByClassName(key)
-      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
-      const classes = [
-        key,                                                                        // individual token class
-        this.theme.classes[props.token.type.toLowerCase()],                         // token type class
-        symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
-        props.token.value && props.token.type === 'IDENTIFIER' ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
-        isCurrentStep ? this.theme.classes.currentStep : '',                        // current step class
-      ].join(' ')
-
-      return (
-          <span className={classes}>{props.children}</span>
-      ) 
-    }
-  }
-
-  /**
    * Given a decorator key, optionally return the props to use when rendering
    * this decorated range.
    *
@@ -125,4 +99,34 @@ export class SyntaxHighlightDecorator {
       token
     }
   }
+  
+  /**
+   * Given a decorator key, return the component to use when rendering 
+   * this decorated range.
+   *
+   * @param {string} key a decorator key
+   * @return {Function} the component to use when rendering decorated range.
+   */
+  getComponentForKey(key) {
+    return props => {
+      console.log(props.token.id)
+      
+      const symbol = this.interpreter.sym.get(props.token)
+      const elements = document.getElementsByClassName(key)
+      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
+      const classes = [
+        key,                                                                        // individual token class (instance)
+        props.token.id ? props.token.id : '',  // symbol id
+        this.theme.classes[props.token.type.toLowerCase()],                         // token type class
+        symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
+        // props.token.value && props.token.type === 'IDENTIFIER' ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
+        isCurrentStep ? this.theme.classes.currentStep : '',                        // current step class
+      ].join(' ')
+
+      return (
+          <span className={classes}>{props.children}</span>
+      ) 
+    }
+  }
+
 }

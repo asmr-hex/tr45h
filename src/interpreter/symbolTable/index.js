@@ -1,7 +1,11 @@
 import {
   flatMap,
   uniq,
+  map,
   reduce,
+  keys,
+  intersection,
+  xor,
 } from 'lodash'
 
 import { audioContext } from '../../context/audio'
@@ -11,9 +15,6 @@ import { SemanticTokenType } from '../types/tokens'
 import { Builtin } from '../types/symbols/builtin'
 import { SoundSymbol } from '../types/symbols/soundLiteral'
 import { VariableSymbol } from '../types/symbols/variable'
-
-
-const API_TOKEN = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
 
 
 /**
@@ -31,7 +32,7 @@ export class SymbolTable {
   constructor(theme) {
     // registry of all known symbols
     this.registry = {
-      ref:       {},                 // Map<BlockKey, Array<SymbolId> > references to symbols by block
+      refs:      {},                 // Map<BlockKey, Array<SymbolId> > references to symbols by block
       sounds:    Builtin.sounds,     // Map<SymbolId, Symbol>
       variables: Builtin.variables,  // Map<SymbolId, Symbol>
       functions: Builtin.functions,  // Map<SymbolId, Symbol>
@@ -43,8 +44,7 @@ export class SymbolTable {
     this.fetchWaitInterval = 1000  // in ms
 
     // theme observable
-    this.theme = {}
-    theme.subscribe(t => this.theme = t)
+    this.theme = theme
   }
 
   
@@ -66,6 +66,19 @@ export class SymbolTable {
     this.registry.refs[block] = {
       ...blockRefs,
       [symbolId]: [...symbolRefs, index]
+    }
+  }
+
+  collectGarbage() {
+    // get all symbols. sounds and variables
+    const allSymbols = [...keys(this.registry.variables), ...keys(this.registry.sounds)]
+    const usedSymbols = uniq(flatMap(map(this.registry.refs, v => keys(v))))
+
+    const unusedSymbols = intersection(xor(allSymbols, usedSymbols), allSymbols)
+
+    for (const s of unusedSymbols) {
+      if (s in this.registry.variables) delete this.registry.variables[s]
+      if (s in this.registry.sounds) delete this.registry.sounds[s]
     }
   }
 
@@ -93,10 +106,10 @@ export class SymbolTable {
     const sound = new SoundSymbol({keyword, queryParams, block, index, theme: this.theme})
 
     // add reference to this sound
-    this.addReference(sound, block, index)
+    this.addReference(sound.id, block, index)
     
     // is this sound already in the registry?
-    if (this.hasSound(sound.id)) return
+    if (this.isSound(sound.id)) return
     
     // add to registry
     this.registry.sounds[sound.id] = sound
@@ -286,104 +299,6 @@ export class SymbolTable {
   //   }
   // }
   
-  async _fetchNewSound(symbol) {
-    // if the identifier no longer exists, do not fetch
-    if (!(symbol.id in this.symbols)) return
-
-
-    console.log(symbol)
-    
-    // deal with "_" keyword
-
-    // TODO dispatch status info for this sound
-
-    // const filters = {
-    //   singleEvent: true,
-    //   tonality: {
-    //     root: 'C#',      // “A”, “A#”, “B”, “C”, “C#”, “D”, “D#”, “E”, “F”, “F#”, “G”, “G#”
-    //     scale: 'major',  // can be 'minor'
-    //   },
-    //   midiNote: 74,      // numeric midi note number
-    //   noteName: 'A#4',   // note name string
-    //   loopable: true,
-    //   noteFrequency: 440, // note frequency in hertz
-    // }
-    
-    // compile filters
-    // const queryFilters = [
-    //   `ac_single_event:${filters.singleEvent}`,  // whether the clip is one distinct sound event,
-    //   `ac_tonality:"${filters.tonality.rootNote} ${filters.tonality.scale}"`,  // the key the sound is in
-    //   `ac_note_midi:${filters.midiNote}`,
-    //   `ac_note_name:"${filters.noteName}"`,
-    //   `ac_loop:${filters.loopable}`,
-    //   `ac_note_frequency:${filters.noteFrequency}`,
-    //   `ac_note_confidence:${0.95}`,
-    // ]
-
-    // compile filters
-    console.log(symbol.meta.parameters)
-    const filters = reduce(
-      symbol.meta.parameters,
-      (acc, v, k) => `${acc}${k}:${v} `,
-      ''
-    )
-    const filter = filters === '' ? '' : `filter=${filters}`
-    // compile search fields
-    const returnFields = ['id', 'name', 'previews', 'license', 'description', 'username', 'similar_sounds', 'ac_analysis'].join(',')
-    
-    console.debug(`Fetching Sounds Related to: ${symbol.id}`)
-    this.merge( {id: symbol.id, status: 'searching'} )
-    this.updateVisualStatus(symbol.id, 'searching')
-    const { results } = await fetch(
-      `https://freesound.org/apiv2/search/text/?query=${symbol.identifier}&fields=${returnFields}&${filter}&page_size=150`,
-      {headers: {Authorization: `Token ${API_TOKEN}`}}
-    ).then(res => res.json())
-
-
-    if (!results || results.length === 0) {
-      // darn. no results found. mark this as unavailable.
-
-      // mark as unavailable in symbol table
-      this.merge( {id: symbol.id, status: 'unavailable'} )
-      this.updateVisualStatus(symbol.id, 'unavailable')
-      
-      return
-    }
-
-    // we found results, lets start downloading the sound.
-    // TODO dispatch status info for this sound
-    console.debug(`Found Sounds Related to: ${symbol.id}`)
-    
-    
-    // randomly select a result from array of results
-    const result = results[Math.floor(Math.random() * results.length)]
-    let previewUrl = result.previews["preview-hq-mp3"]
-
-    this.merge( {id: symbol.id, status: 'downloading'} )
-    this.updateVisualStatus(symbol.id, 'downloading')
-    
-    // console.debug(`Fetching MP3 For: ${result.name}`)
-    // fetch Array Buffer of Mp3
-    const buffer = await fetch(previewUrl)
-          .then(res => res.arrayBuffer())
-
-    this.merge({
-      id: symbol.id,
-      value: await audioContext.decodeAudioData(buffer.slice(0), () => {}),
-      status: 'available'
-    })
-
-    // TODO dispatch status info for this sound
-    console.debug(`Downloaded MP3 For: ${result.name}`)
-    this.updateVisualStatus(symbol.id, 'available')
-  }
-
-  updateVisualStatus(identifier, status) {
-    const elements = document.getElementsByClassName(`token-${identifier.replace(/\s+/g, '')}`)
-    for (const el of elements) {
-      el.classList.add(this.theme.classes[status])
-    }
-  }
 
   ////////////////////////////////////
   //                                //

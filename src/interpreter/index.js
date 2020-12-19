@@ -51,12 +51,16 @@ export class Interpreter {
    * analysis to return the proper error regions.
    */
   analyzeBlock(blockKey, blockIndex, blockText) {
+    this.sym.clearBlockRefs(blockKey)
+    
     const lexicalResults = this.lexer.tokenize(blockText, blockKey)
 
     const { stmtType, tokens, errors} = this.parser.firstPass(lexicalResults, blockKey, blockIndex)
 
     // perform debounced parsing. 
     this.debouncedParse({stmtType, tokens}, blockKey, blockIndex)
+
+    this.sym.collectGarbage()
     
     return {stmtType, tokens, errors}
   }

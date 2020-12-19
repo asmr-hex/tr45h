@@ -28,7 +28,7 @@ export const StatementBlock = props => {
           
 
           const style = {
-            borderLeft: `3px ${isEmpty ? '#ffffff00' : interpreter.ast.getStatementMetaData(key).color} solid`,
+            borderLeft: `3px ${isEmpty ? '#ffffff00' : interpreter.mem.getMetaData(key).color} solid`,
             paddingLeft: '10px',
           }        
 

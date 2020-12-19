@@ -52,23 +52,6 @@ export class FirstPassParser {
   pushError(error) { this.result.errors.push(newErrorToken(error)) }
 
   setStmtType(type) { this.result.stmtType = type }
-
-  /**
-   * EXPERIMENTAL
-   * pushes a token, but adds a new context to the context stack also.
-   *
-   * @description TODO
-   *
-   * ideas: 
-   *  A = (B C D).reverb [ E F [ G H ] ] I | J | K
-   *  {value: A} {value: "=" scope: [ {value:"(", scope: [ {A C D}]} ]}
-   * 
-   */
-  pushContext(token) {
-    
-  }
-  // EXPERIMENTAL
-  popContext() {}
   
   pushVariableDeclToken(token) {
     this.pushToken({...token, type: SemanticTokenType.VariableDecl})
@@ -452,21 +435,22 @@ export class FirstPassParser {
         parameters = this.parseFnParameters(this.symbolTable.registry._query)  // pass in query function symbol
       }
 
-      const paramStr = reduce(
-        parameters,
-        (acc, v, k) => `${acc}${acc === '' ? '' : '_'}${k}-${v}`,
-        ''
-      )
+      // const paramStr = reduce(
+      //   parameters,
+      //   (acc, v, k) => `${acc}${acc === '' ? '' : '_'}${k}-${v}`,
+      //   ''
+      // )
 
       // TODO impl pushSoundLiteral method which will merge into symbol table if doesn't exist
-      this.pushToken({
-        ...soundLiteral,
-        type: SemanticTokenType.SoundLiteral,
-        id: `${soundLiteral.value.replace(/\s+/g, '_')}__${paramStr}`,  // assign sound literal id (combo of value and query parameters)
-        parameters,                                                     // include parameters so we don't have to reparse later
-      })
+      // this.pushToken({
+      //   ...soundLiteral,
+      //   type: SemanticTokenType.SoundLiteral,
+      //   id: `${soundLiteral.value.replace(/\s+/g, '_')}__${paramStr}`,  // assign sound literal id (combo of value and query parameters)
+      //   parameters,                                                     // include parameters so we don't have to reparse later
+      // })
 
       // TODO merge into symbol table?
+      this.pushSoundLiteralToken(soundLiteral, parameters)
       
     } else {
       // error?
