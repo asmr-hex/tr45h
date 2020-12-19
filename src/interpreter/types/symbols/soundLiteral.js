@@ -1,5 +1,6 @@
 import { reduce } from 'lodash'
 
+import { audioContext } from '../../../context/audio'
 import { SemanticTokenType } from '../tokens'
 import { Symbol } from './base'
 
@@ -149,8 +150,10 @@ export class SoundSymbol extends Symbol {
     this.updateStatus(SoundStatusType.Downloading)
 
     // download
-    this.buffer = await fetch(previewUrl)
-      .then(r => r.arrayBuffer())
+    
+    const buffer = await fetch(previewUrl)
+          .then(r => r.arrayBuffer())
+    this.buffer = await audioContext.decodeAudioData(buffer.slice(0), () => {})
 
     //update status to available
     this.updateStatus(SoundStatusType.Available)
@@ -162,9 +165,6 @@ export class SoundSymbol extends Symbol {
   
   updateStatus(status) {
     this.status = status
-
-    // console.log("updating status ", status)
-    // console.log(this.keyword)
     
     const elements = document.getElementsByClassName(this.id)
     for (const el of elements) {

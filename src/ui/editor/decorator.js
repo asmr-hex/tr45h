@@ -109,14 +109,12 @@ export class SyntaxHighlightDecorator {
    */
   getComponentForKey(key) {
     return props => {
-      console.log(props.token.id)
-      
       const symbol = this.interpreter.sym.get(props.token)
       const elements = document.getElementsByClassName(key)
       const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
       const classes = [
-        key,                                                                        // individual token class (instance)
         props.token.id ? props.token.id : '',  // symbol id
+        key,                                                                        // individual token class (instance)
         this.theme.classes[props.token.type.toLowerCase()],                         // token type class
         symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
         // props.token.value && props.token.type === 'IDENTIFIER' ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token

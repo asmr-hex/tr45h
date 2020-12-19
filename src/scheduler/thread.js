@@ -4,7 +4,7 @@ export class Thread {
   constructor(seq, sym, context) {
     this.seq = seq                   // executing sequence.
     this.sym = sym                   // symbol table.
-
+    
     this.audio = {
       context,                       // WebAudio Context instance.
       output: context.createGain(),  // GainNode as Thread output.
@@ -19,7 +19,7 @@ export class Thread {
 
   async run(bpm) {
     if (!this.seq) return
-
+    
     this.bpm = bpm  // set the bpm here.
 
     while (this.nextStepTime < this.audio.context.currentTime + this.scheduleAheadTime) {
@@ -38,10 +38,10 @@ export class Thread {
     
     const sample = this.audio.context.createBufferSource()
     const sound  = this.sym.getSound(this.seq.current().id)
-
+    
     if (!sound)        return
     if (!sound.buffer) return
-
+    
     sample.buffer = sound.buffer
     sample.connect(this.audio.output)
 

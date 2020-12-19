@@ -109,7 +109,7 @@ export class SymbolTable {
     this.addReference(sound.id, block, index)
     
     // is this sound already in the registry?
-    if (this.isSound(sound.id)) return
+    if (this.isSound(sound.id)) return sound.id
     
     // add to registry
     this.registry.sounds[sound.id] = sound
