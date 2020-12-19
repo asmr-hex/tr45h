@@ -186,6 +186,15 @@ export class Sequence extends NonTerminal {
     this._currentNodeIndex = 0
     this._seq = seq
     this._processChain = procChain
+
+    // attach all children to parent process chain.
+    for (const step of this._seq) {
+      if (step.current().fx && this._processChain) {
+        step.current().fx.add(this._processChain)
+      } else if (this._processChain) {
+        step.current().fx = this._processChain
+      }
+    }
   }
 
   advanceCurrentNode() {
