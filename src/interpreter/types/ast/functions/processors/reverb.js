@@ -17,12 +17,27 @@ export class ReverbProcessor extends AudioProcessor {
     // process parameters
     this.parameters = new Parameters(args)
 
-    // create gain node
-    this.gainNode = this.audioContext.createGain()
-
+    
     // set inputs and outputs
-    this.input  = this.gainNode
-    this.output = this.gainNode
+    this.input  = this.audioContext.createGain()
+    this.output = this.audioContext.createGain()
+
+    this.delay    = this.audioContext.createDelay()
+    this.feedback = this.audioContext.createGain()
+    this.wetLevel = this.audioContext.createGain()
+
+    // delay settings
+    this.delay.delayTime.value = 0.15  // 150 ms delay
+    this.feedback.gain.value   = 0.85
+    this.wetLevel.gain.value   = 0.95
+
+    // wire it up
+    this.input.connect(this.delay)
+    this.input.connect(this.output)
+    this.delay.connect(this.feedback)
+    this.delay.connect(this.wetLevel)
+    this.feedback.connect(this.delay)
+    this.wetLevel.connect(this.output)
   }
 
   update() {

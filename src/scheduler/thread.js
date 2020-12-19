@@ -36,21 +36,30 @@ export class Thread {
   }
 
   async schedule(sTime) {
-    const eTime = sTime + (1/this.seq.current().ppqn) * (60.0 / this.bpm) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
+    const step = this.seq.current()
+    const eTime = sTime + (1/step.ppqn) * (60.0 / this.bpm) //time + this.noteLength) TODO MAKE ENVELOPE CONFIGURATBLE
     
     const sample = this.audio.context.createBufferSource()
-    const sound  = this.sym.getSound(this.seq.current().id)
+    const sound  = this.sym.getSound(step.id)
+
+    this.markVisualStep(step.instance, sTime, eTime)
     
     if (!sound)        return
     if (!sound.buffer) return
     
     sample.buffer = sound.buffer
-    sample.connect(this.audio.output)
+
+    // either connect to processor chain or normal output
+    if (step.fx) {
+      sample.connect(step.fx.input)
+      step.fx.connect(this.audio.output)
+    } else {
+      sample.connect(this.audio.output) 
+    }
 
     sample.start(sTime)
     sample.stop(eTime)
 
-    this.markVisualStep(this.seq.current().instance, sTime, eTime)
   }
 
   markVisualStep(instance, start, end) {
