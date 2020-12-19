@@ -60,6 +60,7 @@ export class Interpreter {
     // perform debounced parsing. 
     this.debouncedParse({stmtType, tokens}, blockKey, blockIndex)
 
+    // collect garbage
     this.sym.collectGarbage()
     
     return {stmtType, tokens, errors}
@@ -77,18 +78,5 @@ export class Interpreter {
       )
     
     this.memoizedParse[blockKey](semantics, blockKey, blockIndex)
-  }
-  
-  // this is for debouncing
-  parseBlock(lexicon, blockKey, blockIndex) {
-    // perform semantic analysis
-    const semantics = this.parser.analyzeStatement(lexicon)
-
-    // update AST with semantic analysis results for this block (statement)
-    this.ast.merge(semantics, blockKey, blockIndex)
-
-    // signal to scheduler (evaluator) that symbol table and ast have changed!
-    // TODO lets use rxjs here instead, so the scheduler can subscribe to these changes.
-    this.scheduler.setAST(this.ast.program)
   }
 }

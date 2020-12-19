@@ -1,4 +1,5 @@
 import {
+  debounce,
   flatMap,
   uniq,
   map,
@@ -40,8 +41,9 @@ export class SymbolTable {
     }
 
     // some config
-    this.activeIdentifiersByBlock = {} // TODO replace with registry.refs
-    this.fetchWaitInterval = 1000  // in ms
+    this.fetchWaitInterval         = 1000  // in ms
+    this.garbageCollectionInterval = 5000  // in ms
+    this._collectGarbage_debounced = null
 
     // theme observable
     this.theme = theme
@@ -70,16 +72,25 @@ export class SymbolTable {
   }
 
   collectGarbage() {
-    // get all symbols. sounds and variables
-    const allSymbols = [...keys(this.registry.variables), ...keys(this.registry.sounds)]
-    const usedSymbols = uniq(flatMap(map(this.registry.refs, v => keys(v))))
+    if (!this._collectGarbage_debounced) {
+      this._collectGarbage_debounced = debounce(
+        () => {
+          // get all symbols. sounds and variables
+          const allSymbols = [...keys(this.registry.variables), ...keys(this.registry.sounds)]
+          const usedSymbols = uniq(flatMap(map(this.registry.refs, v => keys(v))))
 
-    const unusedSymbols = intersection(xor(allSymbols, usedSymbols), allSymbols)
+          const unusedSymbols = intersection(xor(allSymbols, usedSymbols), allSymbols)
 
-    for (const s of unusedSymbols) {
-      if (s in this.registry.variables) delete this.registry.variables[s]
-      if (s in this.registry.sounds) delete this.registry.sounds[s]
+          for (const s of unusedSymbols) {
+            if (s in this.registry.variables) delete this.registry.variables[s]
+            if (s in this.registry.sounds) delete this.registry.sounds[s]
+          }      
+        },
+        this.garbageCollectionInterval,
+      )
     }
+
+    this._collectGarbage_debounced()
   }
 
   // used by first-pass parser to declare variable and put value type
@@ -234,71 +245,6 @@ export class SymbolTable {
     return this.isFnParameter(fnName, paramName)
       && this.registry.functions[fnName].areValidArguments(paramName, argTokens)
   }
-
-  /**
-   * translates input tokens for a function argument, returning a canonicalized mapping of k-v pairs.
-   *
-   * @description this method exists because the parameters used in alea-lang may not always map directly
-   * onto the parameter names of the underlying functions that the alea-lang functions will invoke. Moreover,
-   * the mapping may also even be one-to-many, e.g. one alea-lang argument could map to several parameters of
-   * the underlying function(s) being executed in Javascript.
-   *
-   * @param {string} fnName the function name.
-   * @param {string} paramName the function parameter name.
-   * @param {Array<LexicalToken>} argTokens an array of value tokens.
-   * @return {Object} a mapping from canonicalized parameter names to values.
-   */
-  // TODO deprecate this
-  translateFnArgs(fnName, paramName, argTokens) {
-    return this.isValidFnArg(fnName, paramName, argTokens[0]) // TODO should isValidFnArg accept an array?
-    && this.symbols[fnName].meta.parameters[paramName].translate(argTokens)
-  }
-
-    
-  
-  // {
-  //   identifier: <identifier>,
-  //   type: <type>,
-  //   status: <status>,
-  //   value: <value>
-  //   meta: <metadata>
-  // }
-  merge(symbol) {
-    
-    
-    // is this a new symbol?
-    const exists = symbol.id in this.symbols
-          
-    // get existing or default fields
-    const fields = exists
-          ? this.symbols[symbol.id]
-          : { id: symbol.id, type: null, identifier: symbol.identifier, status: null, value: null, meta: null}
-
-    // merge symbol
-    this.symbols[symbol.id] = {
-      ...fields,
-      ...symbol,
-    }
-
-    if (!exists && symbol.type && symbol.type === 'sound')
-      // this identifier is a new sound, we need to resolve it
-      setTimeout(() => this._fetchNewSound(symbol), this.fetchWaitInterval)
-  }
-
-  remove(id) {
-    if (this.symbols[id].status !== 'static')
-      delete this.symbols[id]
-  }
-
-
-  // metadata for sounds
-  // {
-  //   meta: {
-  //     id: <freesound-sound-id>,
-  //     user: <freesound-uploader>,
-  //     
-  //   }
-  // }
   
 
   ////////////////////////////////////
@@ -325,33 +271,6 @@ export class SymbolTable {
 
   // notes: so we should keep a blockRefRegistry - referenced sybmols by block
 
-  // question: should there be a distinction between variable usage and declaration in symbol table?
-  
-    /**
-   * updates by-block record of active identifiers and prunes dangling identifiers.
-   *
-   * @param {string} blockKey the key of the block being updated
-   * @param {LexicalAnalysisResults} lexicon the results of lexical analysis.
-   */
-  updateActiveIdentifiers(blockKey, lexicon) {
-    this.activeIdentifiersByBlock[blockKey] = uniq([
-      ...lexicon.tokens.filter(t => t.type === 'IDENTIFIER').map(t => t.value),
-      ...flatMap(lexicon.errors, e => e.tokens).filter(t => t.type === 'IDENTIFIER').map(t => t.value)
-    ])
-
-    // const allActiveIdentifiers = uniq(flatMap(values(this.activeIdentifiersByBlock)))
-    // const identifiersInSymbolTable = keys(this.symbols)
-
-    // const danglingIdentifiers = intersection(xor(identifiersInSymbolTable, allActiveIdentifiers), identifiersInSymbolTable)
-
-    // TODO DEBUGGING BECAUSE WE NEED TO FIGURE OUT HOW TO DEAL WITH REMOVING
-    // DANGLING IDENTIFIERS NOW THAT SOUNDS UNIQUENESS IS DEPENDENT ON PARAMETERS
-    
-    // remove dangling identifiers
-    // for (const danglingIdentifier of danglingIdentifiers) {
-    //   this.remove(danglingIdentifier)
-    // }
-  }
 
 }
 
