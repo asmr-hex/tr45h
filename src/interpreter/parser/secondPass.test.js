@@ -114,11 +114,11 @@ describe('The Second Pass Parser', () => {
     })
     it(`parses a sequence with a subsequence: 'apple (orange pear)'`, () => {
       const tokens = [
-        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'apple'}),
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: '('}),
-        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'orange'}),
-        newSemanticToken({type: SemanticTokenType.SoundLiteral, value: 'pear'}),
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: ')'}),
+        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 6, length: 1, type: SemanticTokenType.SequenceBracket, value: '('}),
+        newSemanticToken({start: 7, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 14, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({start: 15, length: 1, type: SemanticTokenType.SequenceBracket, value: ')'}),
       ]
       const parser = newTestParser(tokens)
 
@@ -137,11 +137,11 @@ describe('The Second Pass Parser', () => {
   describe('parseSequence()', () => {
     it(`parses a sequence: '(apple orange pear)'`, () => {
       const tokens = [
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: '('}),
-        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
-        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
-        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: ')'}),
+        newSemanticToken({start: 0, length: 1,type: SemanticTokenType.SequenceBracket, value: '('}),
+        newSemanticToken({start: 1, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 8, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 16, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({start: 21, length: 1, type: SemanticTokenType.SequenceBracket, value: ')'}),
       ]
       const parser = newTestParser(tokens)
 
@@ -199,15 +199,15 @@ describe('The Second Pass Parser', () => {
     })
     it(`parses a sequence with a processor chain: '(apple orange pear).reverb.volume'`, () => {
       const tokens = [
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: '('}),
-        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
-        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
-        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
-        newSemanticToken({type: SemanticTokenType.SequenceBracket, value: ')'}),
-        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
-        newSemanticToken({type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
-        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
-        newSemanticToken({type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
+        newSemanticToken({start: 0, length: 1, type: SemanticTokenType.SequenceBracket, value: '('}),
+        newSemanticToken({start: 1, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 8, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 15, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({start: 20, length: 1, type: SemanticTokenType.SequenceBracket, value: ')'}),
+        newSemanticToken({start: 21, length: 1, type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({start: 22, length: 6, type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
+        newSemanticToken({start: 28, length: 1, type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({start: 29, length: 6, type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
         
       ]
       const parser = newTestParser(tokens)
@@ -231,11 +231,11 @@ describe('The Second Pass Parser', () => {
   describe('parseBeatDiv()', () => {
     it(`parses a beat division sequence: '[apple orange pear]'`, () => {
       const tokens = [
-        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: '['}),
-        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
-        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
-        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
-        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: ']'}),
+        newSemanticToken({start: 0, length: 1, type: SemanticTokenType.BeatDivBracket, value: '['}),
+        newSemanticToken({start: 1, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 7, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 14, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({start: 15, length: 1, type: SemanticTokenType.BeatDivBracket, value: ']'}),
       ]
       const parser = newTestParser(tokens)
 
@@ -249,15 +249,15 @@ describe('The Second Pass Parser', () => {
     })
     it(`parses a beat division sequence with a processor chain: '[apple orange pear].reverb.volume'`, () => {
       const tokens = [
-        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: '['}),
-        newSemanticToken({start: 0, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
-        newSemanticToken({start: 6, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
-        newSemanticToken({start: 13, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
-        newSemanticToken({type: SemanticTokenType.BeatDivBracket, value: ']'}),
-        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
-        newSemanticToken({type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
-        newSemanticToken({type: SemanticTokenType.ChainingOp, value: '.'}),
-        newSemanticToken({type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
+        newSemanticToken({start: 0, length: 1, type: SemanticTokenType.BeatDivBracket, value: '['}),
+        newSemanticToken({start: 1, length: 5, type: SemanticTokenType.SoundLiteral, value: 'apple'}),
+        newSemanticToken({start: 7, length: 6, type: SemanticTokenType.SoundLiteral, value: 'orange'}),
+        newSemanticToken({start: 14, length: 4, type: SemanticTokenType.SoundLiteral, value: 'pear'}),
+        newSemanticToken({start: 15, length: 1, type: SemanticTokenType.BeatDivBracket, value: ']'}),
+        newSemanticToken({start: 16, length: 1, type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({start: 17, length: 6, type: SemanticTokenType.Fn, value: 'reverb', parameters: {}}),
+        newSemanticToken({start: 23, length: 1, type: SemanticTokenType.ChainingOp, value: '.'}),
+        newSemanticToken({start: 24, length: 6, type: SemanticTokenType.Fn, value: 'volume', parameters: {}}),
         
       ]
       const parser = newTestParser(tokens)

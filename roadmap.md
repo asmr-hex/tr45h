@@ -4,6 +4,7 @@
 * normalize all sounds... to be the same DB
 
 ## Performance
+* performance seems to be bad when second-pass parsing a lot...? maybe? idk
 
 ## Editor
 * underline variables that are being played

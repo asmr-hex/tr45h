@@ -205,7 +205,15 @@ export class Sequence extends NonTerminal {
   length() {
     return reduce(
       this._seq,
-      (acc, n) => acc + n.length(),
+      (acc, n) => {
+        // the actual length of a sequence can be different if the steps are either
+        // a variable, repetition, or choice
+        const isVariableRepetitionOrChoice =
+              n instanceof Variable   ||
+              n instanceof Repetition ||
+              n instanceof Choice
+        return acc + (isVariableRepetitionOrChoice ? n.length() : 1)
+      },
       0
     )
   }
