@@ -1,6 +1,14 @@
 import React from  'react'
+import {
+  convertToRaw,
+  SelectionState,
+  Modifier,
+  EditorState,
+} from 'draft-js'
 // import { Tooltip } from '@material-ui/core'
 import { List } from 'immutable'
+
+import { SemanticTokenType } from '../../interpreter/types/tokens'
 
 
 /**
@@ -25,8 +33,20 @@ export class SyntaxHighlightDecorator {
 
     this.theme = {}
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
+
+    // EXPERIMENTING
+    this.newTokens = []
+    // this.setBlockTokens = setBlockTokens
+    // this.editorState= editorState
+    // this.setEditorState = setEditorState
   }
 
+  getNewTokens() {
+    const tokens = this.newTokens
+    this.newTokens = []
+    return tokens
+  }
+  
   /**
    * Given a `ContentBlock`, return an immutable List of decorator keys.
    *
@@ -63,7 +83,7 @@ export class SyntaxHighlightDecorator {
     
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted[blockKey] = {}
-
+    
     // we simply create a decoratorKey for each character?
     // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
     const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
@@ -75,11 +95,44 @@ export class SyntaxHighlightDecorator {
       // store information about this token in map (for use in getPropsforKey)
       this.highlighted[blockKey][tokenId] = token
 
+      // EXPERIMENT
+      if (token.type === SemanticTokenType.SoundLiteral) this.newTokens.push(token)
+      
       // set the component key for all char indices
       for (let i = token.start; i < token.start + token.length; i++) {
         decorations[i] = componentKey
       }      
     }
+
+    // TODO EXPERIEMNT create entity for the sound literal token
+    // this.setBlockTokens(bt => ({
+    //   block: blockKey,
+    //   tokens: soundLiterals,
+    // }))
+    
+    // for (const soundLiteral of soundLiterals) {
+    //   contentState = contentState.createEntity('SOUND_LITERAL', 'MUTABLE', { soundLiteral })
+    //   const selection = SelectionState.createEmpty(blockKey)
+    //         .merge({
+    //           anchorOffset: soundLiteral.start,
+    //           focusOffset: soundLiteral.start + soundLiteral.length - 1,
+    //         })
+    //   contentState = Modifier.applyEntity(
+    //     contentState,
+    //     selection,
+    //     contentState.getLastCreatedEntityKey()
+    //   )
+    // }
+
+    // this.contentState = contentState
+    // console.log(convertToRaw(contentState))
+    //console.log(blockText)
+    
+    // TODO IIRC draft doesn't put entities in the entity map unless they have been annotated.
+    // thus, maybe this IS working but the selection isn't working or somehow things aren't successfully
+    // applying entities to selection regions? IDK.....explore more.
+    // console.log(convertToRaw(contentStateWithEntity))
+    // this.setEditorState(e => EditorState.set(e, { currentContent: contentState }))
     
     return List(decorations)
   }
@@ -122,7 +175,7 @@ export class SyntaxHighlightDecorator {
       ].join(' ')
 
       return (
-          <span className={classes}>{props.children}</span>
+        <span className={classes}>{props.children}</span>
       ) 
     }
   }
