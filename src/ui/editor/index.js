@@ -13,7 +13,9 @@ import { useTheme } from "@material-ui/core/styles"
 import { BehaviorSubject } from 'rxjs'
 
 import { useTransportContext } from '../../context/transport'
+import { useAnnotationContext } from '../../context/annotation'
 
+import { Annotator } from './annotations'
 import { SyntaxHighlightDecorator } from './decorator'
 import { StatementBlock } from './statementBlock'
 import { useSyntaxStyles } from './styles'
@@ -41,8 +43,12 @@ export const MusicEditor = props => {
   
   // get playback observables to pass to the interpreter
   const transport = useTransportContext()
+
+  // get annotation setter
+  const { setCurrentAnnotation } = useAnnotationContext()
   
   // declare interpreter & decorator
+  const [annotator, setAnnotator] = useState(null)
   const [interpreter, setInterpreter] = useState(null)
   const [decorator, setDecorator] = useState(null)
 
@@ -65,7 +71,9 @@ export const MusicEditor = props => {
       transport: transport.observables,
       theme: themeObservableRef.current,
     })
-    const decorator = new SyntaxHighlightDecorator(interpreter, themeObservableRef.current)
+    const _annotator = new Annotator(setCurrentAnnotation, interpreter.sym)
+    const decorator = new SyntaxHighlightDecorator(interpreter, themeObservableRef.current, _annotator)
+    setAnnotator(_annotator)
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)
     setInterpreter(interpreter)
@@ -136,39 +144,42 @@ export const MusicEditor = props => {
     // REMEDIATION PLAN:
     // maybe debounce and memoize the entities that should be set per block.
     
-    let contentState = newEditorState.getCurrentContent()
-    if (decorator) {
-      // get new tokens
-      for (const token of decorator.getNewTokens()) {
-        contentState = contentState.createEntity('SOUND_LITERAL', 'MUTABLE', { token })
-        const selection = SelectionState.createEmpty(token.block)
-              .merge({
-                anchorOffset: token.start,
-                focusOffset: token.start + token.length,
-              })
-        contentState = Modifier.applyEntity(
-          contentState,
-          selection,
-          contentState.getLastCreatedEntityKey()
-        )
-      }
+  //   let contentState = newEditorState.getCurrentContent()
+  //   if (decorator) {
+  //     // get new tokens
+  //     for (const token of decorator.getNewTokens()) {
+  //       contentState = contentState.createEntity('SOUND_LITERAL', 'MUTABLE', { token })
+  //       const selection = SelectionState.createEmpty(token.block)
+  //             .merge({
+  //               anchorOffset: token.start,
+  //               focusOffset: token.start + token.length,
+  //             })
+  //       contentState = Modifier.applyEntity(
+  //         contentState,
+  //         selection,
+  //         contentState.getLastCreatedEntityKey()
+  //       )
+  //     }
       
-      newEditorState = EditorState.set(newEditorState, { currentContent: contentState }) 
-    }
+  //     newEditorState = EditorState.set(newEditorState, { currentContent: contentState }) 
+  //   }
     
-    // console.log(convertToRaw(newEditorState.getCurrentContent()).entityMap)
+  //   // console.log(convertToRaw(newEditorState.getCurrentContent()).entityMap)
 
-    // get current selection
-    const selection = newEditorState.getSelection()
-    if (selection.isCollapsed()) {
-      // get content block caret is within
-      const block = contentState.getBlockForKey(selection.getAnchorKey())
+  //   // get current selection
+  //   const selection = newEditorState.getSelection()
+  //   if (selection.isCollapsed()) {
+  //     // get content block caret is within
+  //     const block = contentState.getBlockForKey(selection.getAnchorKey())
 
-      const entity = block.getEntityAt(selection.anchorOffset)
-      if (entity) {
-        console.log(contentState.getEntity(entity).data.token.id)
-      }
-    }
+  //     const entity = block.getEntityAt(selection.anchorOffset)
+  //     if (entity) {
+  //       console.log(contentState.getEntity(entity).data.token.id)
+  //     }
+  //   }
+
+    if (annotator !== null)
+      annotator.check(newEditorState.getSelection())
     
     setEditorState(newEditorState)
   }

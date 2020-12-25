@@ -6,6 +6,7 @@ import {
 
 import { TransportProvider } from '../context/transport'
 import { UIStateProvider } from '../context/ui'
+import { AnnotationProvider } from '../context/annotation'
 
 import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
@@ -33,14 +34,16 @@ const App = () => {
     <AppContainer>
       <TransportProvider>
         <UIStateProvider>
-          <Toolbar/>
-          <AppBody>
-            <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
-              <MusicEditor/>
-            </div>
-            <AboutDialog/>
-          </AppBody>
-          <Details/>
+          <AnnotationProvider>
+            <Toolbar/>
+            <AppBody>
+              <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
+                <MusicEditor/>
+              </div>
+              <AboutDialog/>
+            </AppBody>
+            <Details/>
+          </AnnotationProvider>
         </UIStateProvider>
       </TransportProvider>
     </AppContainer>

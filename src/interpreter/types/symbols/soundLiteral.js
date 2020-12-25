@@ -45,7 +45,7 @@ export class SoundSymbol extends Symbol {
    * @param {int} index the character index in the block where this symbol was created.
    * @param {BehaviorSubject} theme an rxjs BehaviorSubject for subscribing to theme changes.
    */
-  constructor({keyword, queryParams, block, index, theme}) {
+  constructor({keyword, queryParams, block, index, theme, updates}) {
     super({
       id: createSoundLiteralId(keyword, queryParams, block, index),
       type: SemanticTokenType.SoundLiteral,
@@ -57,7 +57,8 @@ export class SoundSymbol extends Symbol {
     this.queryParams = queryParams                    // query parameters used in keyword search
     this.keyword     = keyword                        // keyword string used for sound search
     this.buffer      = null                           // audio data sound buffer
-
+    this.metadata    = null                           // metadata of sound
+    
     // enumerate return fields we wish to get from initial search query
     this.queryReturnFields = [
       'id',                // id of the sound from freesound.org
@@ -90,6 +91,8 @@ export class SoundSymbol extends Symbol {
         [SoundStatusType.Unavailable]: t.classes[SoundStatusType.Unavailable],
       }
     })
+
+    this.updates = updates
   }
 
   makeSearchQueryUrl(pageNumber = null) {
@@ -165,11 +168,16 @@ export class SoundSymbol extends Symbol {
   
   updateStatus(status) {
     this.status = status
+    this.updates.next(this)
     
     const elements = document.getElementsByClassName(this.id)
     for (const el of elements) {
       el.classList.add(this.getStatusCssClass(status))
     }
+  }
+
+  updateMetadata(metadata) {
+    this.metadata = metadata
   }
   
   async fetch({symbolTable}) {
@@ -183,6 +191,8 @@ export class SoundSymbol extends Symbol {
     // check if no results
     if (queryResult === null) return
 
+    this.updateMetadata(queryResult)
+    
     // download sound
     this.download(queryResult)
 

@@ -27,7 +27,7 @@ export class SyntaxHighlightDecorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpreter, theme) {
+  constructor(interpreter, theme, annotator) {
     this.interpreter = interpreter
     this.highlighted = {}
 
@@ -35,6 +35,8 @@ export class SyntaxHighlightDecorator {
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
 
     // EXPERIMENTING
+    this.annotator = annotator
+    
     this.newTokens = []
     // this.setBlockTokens = setBlockTokens
     // this.editorState= editorState
@@ -88,6 +90,8 @@ export class SyntaxHighlightDecorator {
     // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
     const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
 
+    let annotations = []
+    
     for (const token of [...tokens, ...errors]) {
       const tokenId = `${token.start}`
       const componentKey = `${blockKey}-${token.start}`
@@ -96,7 +100,7 @@ export class SyntaxHighlightDecorator {
       this.highlighted[blockKey][tokenId] = token
 
       // EXPERIMENT
-      if (token.type === SemanticTokenType.SoundLiteral) this.newTokens.push(token)
+      if (token.type === SemanticTokenType.SoundLiteral) annotations.unshift(token)
       
       // set the component key for all char indices
       for (let i = token.start; i < token.start + token.length; i++) {
@@ -104,36 +108,9 @@ export class SyntaxHighlightDecorator {
       }      
     }
 
-    // TODO EXPERIEMNT create entity for the sound literal token
-    // this.setBlockTokens(bt => ({
-    //   block: blockKey,
-    //   tokens: soundLiterals,
-    // }))
-    
-    // for (const soundLiteral of soundLiterals) {
-    //   contentState = contentState.createEntity('SOUND_LITERAL', 'MUTABLE', { soundLiteral })
-    //   const selection = SelectionState.createEmpty(blockKey)
-    //         .merge({
-    //           anchorOffset: soundLiteral.start,
-    //           focusOffset: soundLiteral.start + soundLiteral.length - 1,
-    //         })
-    //   contentState = Modifier.applyEntity(
-    //     contentState,
-    //     selection,
-    //     contentState.getLastCreatedEntityKey()
-    //   )
-    // }
+    // register block tokens as annotations
+    this.annotator.register(blockKey, annotations)
 
-    // this.contentState = contentState
-    // console.log(convertToRaw(contentState))
-    //console.log(blockText)
-    
-    // TODO IIRC draft doesn't put entities in the entity map unless they have been annotated.
-    // thus, maybe this IS working but the selection isn't working or somehow things aren't successfully
-    // applying entities to selection regions? IDK.....explore more.
-    // console.log(convertToRaw(contentStateWithEntity))
-    // this.setEditorState(e => EditorState.set(e, { currentContent: contentState }))
-    
     return List(decorations)
   }
 

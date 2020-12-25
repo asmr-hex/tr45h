@@ -8,6 +8,8 @@ import {
   intersection,
   xor,
 } from 'lodash'
+import { BehaviorSubject } from 'rxjs'
+import { filter } from 'rxjs/operators'
 
 import { audioContext } from '../../context/audio'
 import { getNativeSymbols } from './nativeSymbols'
@@ -47,6 +49,11 @@ export class SymbolTable {
 
     // theme observable
     this.theme = theme
+
+    // symbol update stream
+    this.updates = new BehaviorSubject(null)
+
+    this.updates.subscribe(s => console.log(s))
   }
 
   
@@ -115,7 +122,7 @@ export class SymbolTable {
   // used by first-pass parser. adds reference and definition if doesn't exist.
   registerSound({keyword, queryParams, block, index}) {
     // create sound symbol
-    const sound = new SoundSymbol({keyword, queryParams, block, index, theme: this.theme})
+    const sound = new SoundSymbol({keyword, queryParams, block, index, theme: this.theme, updates: this.updates})
 
     // add reference to this sound
     this.addReference(sound.id, block, index)
@@ -180,6 +187,24 @@ export class SymbolTable {
       return token.id in this.registry.functions ? this.registry.functions[token.id] : null
     default:
       return null
+    }
+  }
+
+  getObservable(token) {
+    const sym = this.get(token)
+    if (!sym) return null
+
+    // TODO okay. we will be returning the symbol observable with a filter on it for this token. (use rxjs filter on change stream)
+    // return symbol AND observable
+    return {
+      symbol: sym,
+      updates: this.updates.pipe(
+        filter(
+          s => s !== null
+            && s.id
+            && s.id === sym.id
+        )
+      )
     }
   }
   
