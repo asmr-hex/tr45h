@@ -97,7 +97,23 @@ export class SymbolTable {
       )
     }
 
-    this._collectGarbage_debounced()
+    this.markStaleSymbols()           // mark symbols as stale (non-debounced)
+    this._collectGarbage_debounced()  // full garbage collection (debounced)
+  }
+
+  markStaleSymbols() {
+    const allSounds  = keys(this.registry.sounds)
+    const usedSymbols = uniq(flatMap(map(this.registry.refs, v => keys(v))))
+    const staleSounds = intersection(xor(allSounds, usedSymbols), allSounds)
+
+    // mark any used symbols that are sounds and are stale as not stale
+    for (const s of usedSymbols) {
+      if (s.type === SemanticTokenType.SoundLiteral && s.stale) s.stale = false
+    }
+
+    for (const s of staleSounds) {
+      if (s in this.registry.sounds) this.registry.sounds[s].stale = true
+    }
   }
 
   // used by first-pass parser to declare variable and put value type
@@ -148,11 +164,14 @@ export class SymbolTable {
   /**
    * given a sound symbol id, returns true if it exists within the registry, false otherwise.
    * @param {string} id sound literal id in question.
+   * @param {bool} onlyFresh only check against fresh sounds (default false).
    * @return {bool} true if exists, false otherwise
    */
-  isSound(id) {
+  isSound(id, onlyFresh=false) {
     return id in this.registry.sounds
+      && ( onlyFresh ? !this.registry.sounds[id].stale : true )
   }
+
 
   /**
    * given a sound symbol id, returns the sound if it exists inthe registry, returns null otherwise.

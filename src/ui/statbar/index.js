@@ -3,8 +3,14 @@ import {
   withTheme,
   styled
 } from "@material-ui/core/styles"
+import {
+  reduce,
+} from 'lodash'
 
 import { useAnnotationContext } from '../../context/annotation'
+import {
+  LexicalTokenType,
+} from '../../interpreter/types/tokens'
 
 
 const DetailsBody = withTheme(styled('div')({
@@ -20,15 +26,40 @@ const DetailsBody = withTheme(styled('div')({
   // boxShadow: '0px 4px 6px',
 }))
 
-export const Annotation = props => {
-  const { item: { token, symbol } } = props
-  const metadata = symbol.metadata === null
+export const SoundAnnotation = props => {
+  const { sound } = props
+
+  const metadata = sound.metadata === null
         ? ''
-        : `${symbol.metadata.name} (${symbol.metadata.username}): ${symbol.metadata.description}`
+        : `${sound.metadata.name} (${sound.metadata.username}): ${sound.metadata.description}`
 
   return (
     <div>
-      { `${symbol.id} ... ${symbol.status} ${metadata}` }
+      { `${sound.id} ... ${sound.status} ${metadata}` }
+    </div>
+  )
+}
+
+export const ErrorAnnotation = props => {
+  const { error } = props
+
+  return (
+    <div>
+      { `Error: ${reduce(error.reasons, (acc, r) => `${acc} ${r.toString()}`, '' )}` }
+    </div>
+  )
+}
+
+export const Annotation = props => {
+  const { item: { token, symbol } } = props
+
+  return (
+    <div>
+      {
+        token.type === LexicalTokenType.Error
+        ? <ErrorAnnotation error={token}/>
+        : <SoundAnnotation sound={symbol}/>
+      }
     </div>
   )
 }

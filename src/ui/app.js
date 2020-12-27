@@ -12,6 +12,7 @@ import { MusicEditor } from './editor/index'
 import { Toolbar } from  './toolbar'
 import { Details } from './statbar'
 import { AboutDialog } from  './toolbar/dialog/about'
+import { CLI } from  './cli'
 
 
 const AppContainer = withTheme(styled('div')({
@@ -40,6 +41,7 @@ const App = () => {
               <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
                 <MusicEditor/>
               </div>
+              <CLI/>
               <AboutDialog/>
             </AppBody>
             <Details/>

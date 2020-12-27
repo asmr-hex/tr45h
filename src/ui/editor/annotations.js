@@ -21,6 +21,8 @@ export class Annotator {
     this.index = {}
     this.setCurrentAnnotation = setCurrentAnnotation
     this.sym = sym
+
+    this.previousTokenId = null
   }
 
   register(block, tokens) {
@@ -39,13 +41,19 @@ export class Annotator {
     
     const token = this.index[block].get(offset)
 
-    // TODO also, for efficiency, check if this token is the same as the previous.
-    // e.g. keep internal state about previous token.
-    
-    if (!token) return
+    if (!token) {
+      this.setCurrentAnnotation(null)
+      this.previousTokenId = null
+      return
+    }
+    else if (token.id === this.previousTokenId) {
+      return
+    }
 
-    // TODO get symbol observable from symbol table
-    // TODO use token Instance and symbol observable as value in setCurrentAnnotation
+    this.previousTokenId = token.id
+
+    // get symbol observable from symbol table
+    // use token Instance and symbol observable as value in setCurrentAnnotation
     // e.g. { instance: token, symbol: observable }
     const annotation = {
       token,
@@ -53,6 +61,5 @@ export class Annotator {
     }
     
     this.setCurrentAnnotation(annotation)
-    // console.log(annotation)
   }
 }

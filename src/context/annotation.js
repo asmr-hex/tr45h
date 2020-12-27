@@ -18,14 +18,19 @@ export const AnnotationProvider = props => {
   const [subscription, setSubscription] = useState(null)
 
   useEffect(() => {
-    if (currentThing === null) return
-    const {token, symbol: { symbol, updates }} = currentThing
-    setCurrentThing({token, symbol})
+    if (currentThing === null) {
+      setCurrentThing(null)
+      return
+    }
+    const { token, symbol } = currentThing
+    setCurrentThing({token, symbol: symbol === null ? null : symbol.symbol}) // wow...
+
+    if (symbol === null) return
     
-    if (updates !== null) {
+    if (symbol.updates !== null) {
       if (subscription !== null) subscription.unsubscribe()
       setSubscription(
-        updates.subscribe(s => setCurrentThing({token, symbol:s}))
+        symbol.updates.subscribe(s => setCurrentThing({token, symbol:s}))
       )
     }
 

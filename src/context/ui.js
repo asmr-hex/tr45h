@@ -13,12 +13,17 @@ export const useUIStateContext = () => {
 
 
 export const UIStateProvider = props => {
-  // play state
+  // UI states
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false)
+  const [isCLIOpen, setIsCLIOpen] = useState(false)
 
   const context = {
     isAboutDialogOpen,
     setIsAboutDialogOpen,
+
+    isCLIOpen,
+    openCLI: () => setIsCLIOpen(true),
+    closeCLI: () => setIsCLIOpen(false),
   }
   
   return (

@@ -8,7 +8,10 @@ import {
 // import { Tooltip } from '@material-ui/core'
 import { List } from 'immutable'
 
-import { SemanticTokenType } from '../../interpreter/types/tokens'
+import {
+  LexicalTokenType,
+  SemanticTokenType,
+} from '../../interpreter/types/tokens'
 
 
 /**
@@ -99,8 +102,10 @@ export class SyntaxHighlightDecorator {
       // store information about this token in map (for use in getPropsforKey)
       this.highlighted[blockKey][tokenId] = token
 
-      // EXPERIMENT
-      if (token.type === SemanticTokenType.SoundLiteral) annotations.unshift(token)
+      // register sound literals and errors in annotator.
+      if (token.type === SemanticTokenType.SoundLiteral ||
+          token.type === LexicalTokenType.Error)
+        annotations.unshift(token)
       
       // set the component key for all char indices
       for (let i = token.start; i < token.start + token.length; i++) {

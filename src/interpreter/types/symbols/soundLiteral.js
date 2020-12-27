@@ -52,7 +52,8 @@ export class SoundSymbol extends Symbol {
     })
 
     this.apiToken    = "aMdevlgMb06KIjs2yy4pkFbw9IOwq5Z6cZFWncsj"
-    
+
+    this.stale       = false                          // whether this sound is unused but still hasn't been garbage collected.
     this.status      = SoundStatusType.Searching      // availability status of searched sound keyword
     this.queryParams = queryParams                    // query parameters used in keyword search
     this.keyword     = keyword                        // keyword string used for sound search
@@ -167,11 +168,13 @@ export class SoundSymbol extends Symbol {
   }
   
   updateStatus(status) {
+    const previousStatus = this.status
     this.status = status
     this.updates.next(this)
     
     const elements = document.getElementsByClassName(this.id)
     for (const el of elements) {
+      el.classList.remove(this.getStatusCssClass(previousStatus))
       el.classList.add(this.getStatusCssClass(status))
     }
   }
@@ -179,11 +182,17 @@ export class SoundSymbol extends Symbol {
   updateMetadata(metadata) {
     this.metadata = metadata
   }
+
+  async reFetch({symbolTable}) {
+    this.updateStatus(SoundStatusType.Searching)
+
+    this.fetch({symbolTable})
+  }
   
   async fetch({symbolTable}) {
 
     // check whether this sound literal still exists in the symbol table registry
-    if (!symbolTable.isSound(this.id)) return
+    if (!symbolTable.isSound(this.id, true)) return
     
     // search for sounds
     const queryResult = await this.search()
