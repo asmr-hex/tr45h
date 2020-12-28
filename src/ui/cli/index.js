@@ -26,11 +26,13 @@ export const CLI = props => {
   )
   const editorRef = useRef(null)
 
-  // useEffect(() => {
-  //   if (editorRef.current) {
-  //     editorRef.current.focus() 
-  //   }
-  // }, [isCLIOpen, editorRe])
+  useEffect(() => {
+    if (editorRef.current && isCLIOpen) editorRef.current.focus()
+  }, [])
+  
+  useEffect(() => {
+    if (editorRef.current && isCLIOpen) editorRef.current.focus()
+  }, [isCLIOpen])
   
   const open = isCLIOpen
   const handleClose = () => { closeCLI() }
