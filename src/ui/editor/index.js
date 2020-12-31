@@ -47,7 +47,7 @@ export const MusicEditor = props => {
   const transport = useTransportContext()
 
   // ui state
-  const { openCLI } = useUIStateContext()
+  const { isEditorOpen, openCLI } = useUIStateContext()
 
   // get annotation setter
   const { currentAnnotation, setCurrentAnnotation } = useAnnotationContext()
@@ -81,6 +81,11 @@ export const MusicEditor = props => {
     setDecorator(decorator)
     setInterpreter(interpreter)
   }, [])
+
+  // TODO for some reason this prevents parsing from happening??
+  // useEffect(() => {
+  //   if (isEditorOpen) editorRef.current.focus()
+  // }, [isEditorOpen])
   
   const onChange = newEditorState => {
     // // detect block deletions

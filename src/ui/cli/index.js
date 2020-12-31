@@ -10,10 +10,10 @@ import {
   DialogContent,
   DialogActions,
   Dialog,
-} from '../toolbar/dialog/customDialog'
+} from './dialog'
 import { useUIStateContext } from '../../context/ui'
 
-import { KeyBindingFn } from './keybinding'
+import { KeyBindingFn, KeyBoundAction } from './keybinding'
 
 export const CLI = props => {
   const {
@@ -26,20 +26,19 @@ export const CLI = props => {
   )
   const editorRef = useRef(null)
 
-  useEffect(() => {
-    if (editorRef.current && isCLIOpen) editorRef.current.focus()
-  }, [])
-  
-  useEffect(() => {
-    if (editorRef.current && isCLIOpen) editorRef.current.focus()
-  }, [isCLIOpen])
-  
   const open = isCLIOpen
   const handleClose = () => { closeCLI() }
 
+  const onEnter = () => {
+    editorRef.current.focus()
+  }
+  
   const onChange = newEditorState => setEditorState(newEditorState)
   const handleKeyCommand = command => {
     switch (command) {
+    case KeyBoundAction.CloseCLI:
+      handleClose()
+      return 'handled'
     default:
       return 'not-handled'
     }
@@ -47,7 +46,14 @@ export const CLI = props => {
   
   return (
     <div>
-      <Dialog onClose={handleClose} aria-labelledby="customized-dialog-title" open={open} scroll={'paper'} >
+      <Dialog
+        onClose={handleClose}
+        aria-labelledby="customized-dialog-title"
+        open={open}
+        scroll={'paper'}
+        onEnter={() => onEnter()}
+        transitionDuration={50}
+        >
         <Editor
           ref={editorRef}
           editorState={editorState}
