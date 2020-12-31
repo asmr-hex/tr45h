@@ -56,5 +56,6 @@ export const Dialog = withStyles(theme => ({
     // minHeight: '20vh',
     // maxHeight: '20vh',
     fontSize: '2rem',
+    boxShadow: 'none',
   }
 }))(MuiDialog)

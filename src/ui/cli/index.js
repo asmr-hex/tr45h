@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import {
+  ContentState,
   EditorState,
   Editor,
 } from 'draft-js'
@@ -14,6 +15,7 @@ import {
 import { useUIStateContext } from '../../context/ui'
 
 import { KeyBindingFn, KeyBoundAction } from './keybinding'
+import { CLIDecorator } from './decorator'
 
 export const CLI = props => {
   const {
@@ -21,6 +23,7 @@ export const CLI = props => {
     closeCLI,
   } = useUIStateContext()
 
+  const [decorator, setDecorator] = useState(null)
   const [ editorState, setEditorState ] = useState(
     () => EditorState.createEmpty()
   )
@@ -29,14 +32,25 @@ export const CLI = props => {
   const open = isCLIOpen
   const handleClose = () => { closeCLI() }
 
+  useEffect(() => {
+    const decorator = new CLIDecorator()
+    setEditorState(EditorState.set(editorState, {decorator}))
+  }, [])
+  
   const onEnter = () => {
     editorRef.current.focus()
+    const emptyEditor = EditorState.push(editorState, ContentState.createFromText(''))
+    const selection = emptyEditor.getSelection()
+    setEditorState(EditorState.forceSelection(emptyEditor, selection))
   }
   
   const onChange = newEditorState => setEditorState(newEditorState)
   const handleKeyCommand = command => {
     switch (command) {
     case KeyBoundAction.CloseCLI:
+      handleClose()
+      return 'handled'
+    case KeyBoundAction.ExecuteCommand:
       handleClose()
       return 'handled'
     default:
@@ -52,7 +66,7 @@ export const CLI = props => {
         open={open}
         scroll={'paper'}
         onEnter={() => onEnter()}
-        transitionDuration={50}
+        transitionDuration={30}
         >
         <Editor
           ref={editorRef}
