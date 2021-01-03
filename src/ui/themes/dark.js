@@ -45,6 +45,11 @@ const theme = () => createMuiTheme({
         available: '#43bccd',
         unavailable: '#ff6b6b',
       },
+      cli: {
+        command: '#43bccd',
+        argument: '#0ead69',
+        error: '#ff6b6b',
+      },
     },
     logo: [
       '#fddeff',

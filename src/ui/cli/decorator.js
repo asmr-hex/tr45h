@@ -24,8 +24,8 @@ export class CLIDecorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(theme) {
-    this.interpreter = interpreter
+  constructor(cli, theme) {
+    this.cli         = cli
     this.highlighted = {}
 
     this.theme = {}
@@ -67,24 +67,20 @@ export class CLIDecorator {
     let decorations  = Array(blockText.length).fill(null)
     
     // initialize map for this block type for use later (in getPropsforkey)
-    this.highlighted[blockKey] = {}
-    
-    // we simply create a decoratorKey for each character?
-    // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
-    const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
+    this.highlighted = {}
 
-    let annotations = []
-    
-    for (const token of [...tokens, ...errors]) {
+    // parse cli text
+    const tokens = this.cli.interpret(blockText)
+
+    for (const token of tokens) {
       const tokenId = `${token.start}`
-      const componentKey = `${blockKey}-${token.start}`
 
       // store information about this token in map (for use in getPropsforKey)
-      this.highlighted[blockKey][tokenId] = token
+      this.highlighted[tokenId] = token
 
       // set the component key for all char indices
       for (let i = token.start; i < token.start + token.length; i++) {
-        decorations[i] = componentKey
+        decorations[i] = tokenId
       }      
     }
 
@@ -99,11 +95,8 @@ export class CLIDecorator {
    * @return {Object} optional props object.
    */
   getPropsForKey(key) {
-    const [ blockKey, tokenId ] = key.split('-')
-    const token = this.highlighted[blockKey][tokenId]
-
     return {
-      token
+      token: this.highlighted[key]
     }
   }
   
@@ -116,20 +109,8 @@ export class CLIDecorator {
    */
   getComponentForKey(key) {
     return props => {
-      const symbol = this.interpreter.sym.get(props.token)
-      const elements = document.getElementsByClassName(key)
-      const isCurrentStep = elements.length !== 0 ? elements[0].classList.contains(this.theme.classes.currentStep) : false
-      const classes = [
-        props.token.id ? props.token.id : '',  // symbol id
-        key,                                                                        // individual token class (instance)
-        this.theme.classes[props.token.type.toLowerCase()],                         // token type class
-        symbol === null ? '' : this.theme.classes[symbol.status],                   // token status class (for sound identifiers)
-        // props.token.value && props.token.type === 'IDENTIFIER' ? `token-${props.token.value.replace(/\s+/g, '')}` : '',  // in case of error or token
-        isCurrentStep ? this.theme.classes.currentStep : '',                        // current step class
-      ].join(' ')
-
       return (
-        <span className={classes}>{props.children}</span>
+        <span className={this.theme.classes[props.token.type]}>{props.children}</span>
       ) 
     }
   }
