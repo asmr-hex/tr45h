@@ -41,18 +41,7 @@ export class HelpSyntax extends Command {
       name:        'syntax',
       aliases:     [],
       args:        [],
-      subcommands: [new SubHelpSyntax()],
-    })
-  }
-}
-
-export class SubHelpSyntax extends Command {
-  constructor() {
-    super({
-      name:        'belch',
-      aliases:     [],
-      args:        [],
       subcommands: [],
     })
-  }  
+  }
 }

@@ -21,15 +21,22 @@ export const HelpPage = props => {
     }
   ))
   const tableWidth = getMaxSubCommands(commands) + 1
-  
 
+  const tableStyle = {
+    textAlign: 'left',
+    verticalAlign: 'top',
+  }
+  const tdStyle = {
+    ...tableStyle,
+    //border: `1px solid white`,
+  }
   const createCommandRow = (c, col) =>
         <tr>
         {map(
           range(tableWidth),
           i => i === col
-            ? <td>{c.name}</td>
-            : i === (tableWidth -1) ? <td>{c.description}</td> : <td></td>
+            ? <td style={tdStyle}>{c.name}</td>
+            : i === (tableWidth -1) ? <td style={tdStyle}>{c.description}</td> : <td style={tdStyle}></td>
         )}
         </tr>
   const createCmdRows = (cmds, col=0) => flatMap(
@@ -40,14 +47,12 @@ export const HelpPage = props => {
   )
   const commandTable = createCmdRows(commands)
 
-  console.log(commandTable)
-        
   return (
     <div>
       {props.name}
       <div>
         {overview}
-        <table>
+        <table style={tableStyle}>
           <tbody>
             {commandTable}
           </tbody>
