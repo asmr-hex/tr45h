@@ -24,9 +24,10 @@ export class CLIDecorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(cli, theme) {
+  constructor(cli, theme, setCurrentSuggestion) {
     this.cli         = cli
     this.highlighted = {}
+    this.setCurrentSuggestion = setCurrentSuggestion
 
     this.theme = {}
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
@@ -86,7 +87,7 @@ export class CLIDecorator {
 
     return List(decorations)
   }
-
+  
   /**
    * Given a decorator key, optionally return the props to use when rendering
    * this decorated range.

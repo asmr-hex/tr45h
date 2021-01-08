@@ -18,6 +18,8 @@ import { useUIStateContext } from '../../context/ui'
 
 import { CLI as CommandLineInterface } from '../../cli'
 
+import { AutoSuggest } from '../autosuggest'
+
 import { KeyBindingFn, KeyBoundAction } from './keybinding'
 import { CLIDecorator } from './decorator'
 import { useCLIStyles } from './styles'
@@ -35,9 +37,13 @@ export const CLI = props => {
   }
   const themeObservableRef = useRef(new BehaviorSubject(theme))
   useEffect(() => { themeObservableRef.current.next(theme) }, [theme])
+
+  // EXPERIMENTAL AUTO-COMPLETE
+  const [currentSuggestion, setCurrentSuggestion] = useState(null)
   
   const [cli, setCli] = useState(null)
   const [decorator, setDecorator] = useState(null)
+  const [autosuggest, setAutoSuggest] = useState(null)
   const [ editorState, setEditorState ] = useState(
     () => EditorState.createEmpty()
   )
@@ -50,9 +56,11 @@ export const CLI = props => {
 
   useEffect(() => {
     const cli = new CommandLineInterface()
-    const decorator = new CLIDecorator(cli, themeObservableRef.current)
+    const decorator = new CLIDecorator(cli, themeObservableRef.current, setCurrentSuggestion)
+    const autosuggest = new AutoSuggest(decorator, ['star', 'start', 'starfish', 'startlight', 'help', 'hell'])
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)
+    setAutoSuggest(autosuggest)
     setCli(cli)
   }, [])
   
@@ -64,7 +72,9 @@ export const CLI = props => {
     setEditorState(EditorState.forceSelection(emptyEditor, selection))
   }
   
-  const onChange = newEditorState => setEditorState(newEditorState)
+  const onChange = newEditorState => {
+    setEditorState(autosuggest.analyze(newEditorState))
+  }
   const handleKeyCommand = command => {
     switch (command) {
     case KeyBoundAction.CloseCLI:
