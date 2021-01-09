@@ -31,6 +31,12 @@ export class CLIDecorator {
 
     this.theme = {}
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
+
+    // EXPERIEMNTAL
+    this.suggestion = {
+      start: null,
+      end: null,
+    }
   }
 
   /**
@@ -63,15 +69,48 @@ export class CLIDecorator {
   getDecorations(block, contentState) {
     const blockKeys   = contentState.getBlocksAsArray().map(b => b.key)
     const blockKey   = block.getKey()
-    const blockText  = block.getText()
+    let   blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)
     let decorations  = Array(blockText.length).fill(null)
+
+    // EXPERIMENTAL
+    // const entities = contentState.getEntityMap()
+    // console.log(entities.__getAll())
+    // WE WANT TO EXTRACT THE INLINE-SUGGESTION ENTITY AS ITS OWN TOKEN AND REMOVE FROM TEXT TO INTERPRETER.
+    // THEN ADD IT TO TOKENS RESULTS FOR DECORATION.
+    // block.getCharacterList().map(char => {
+    //   const isSuggestion = char.getEntity()
+    //   console.log(isSuggestion)
+    //   return isSuggestion ? true : false
+    // })
+    // block.findEntityRanges(
+    //   char => {
+    //     const entityKey = char.getEntity()
+    //     return (
+    //       entityKey !== null &&
+    //       contentState.getEntity(entityKey).getType() === 'INLINE-SUGGESTION'  
+    //     )
+    //   },
+    //   (start, end) => console.log(`Suggestion At: ${start}:${end}`)
+    // )
+    console.log(this.suggestion)
+    let suggestion = null
+    if (this.suggestion.start !== null) {
+      suggestion = {
+        type: 'SUGGESTION',
+        value: blockText.substr(this.suggestion.start, this.suggestion.end),
+        start: this.suggestion.start,
+        length: this.suggestion.end - this.suggestion.start,
+      }
+      blockText = blockText.substr(0, this.suggestion.start) + blockText.substr(this.suggestion.end)
+    }
     
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted = {}
 
     // parse cli text
-    const tokens = this.cli.interpret(blockText)
+    let tokens = this.cli.interpret(blockText)
+    if (suggestion !== null) tokens.push(suggestion)
 
     for (const token of tokens) {
       const tokenId = `${token.start}`
