@@ -1,8 +1,9 @@
-import { filter } from 'lodash'
+import { filter, range, reduce } from 'lodash'
 import {
   EditorState,
   Modifier,
   SelectionState,
+  convertToRaw,
 } from 'draft-js'
 
 
@@ -41,19 +42,29 @@ export class AutoSuggest {
     return newEditorStateWithSuggestion
   }
 
-  removeOldSuggestion(editorState) {
-    if (this.decorator.suggestion.start === null) return editorState
-
-    const { start, end } = this.decorator.suggestion
-    
-    this.decorator.suggestion = {
-      start: null,
-      end: null,
-    }
-
+  removeOldSuggestion(editorState) {    
     // remove old text
     const selection    = editorState.getSelection()
     const contentState = editorState.getCurrentContent()
+    const block        = contentState.getBlockForKey(selection.getAnchorKey())
+
+    // get any entity ranges....... MUST BE A BETTER WAY....
+    const { start, end } = reduce(
+      range(0, block.getLength()),
+      (acc, i) => {
+        const entity = block.getEntityAt(i)
+        if ( entity === null ) return acc
+
+        if (acc.start === null) return {start: i, end: i+1}
+
+        return {...acc, end: i+1}
+      },
+      {start: null, end: null}
+    )
+
+    if (start === null || end === null) return editorState
+    console.log(`${start} - ${end}`)
+    
     const insertSelection = SelectionState
           .createEmpty(selection.getAnchorKey())
           .merge({anchorOffset: start, focusOffset: end})
@@ -62,8 +73,12 @@ export class AutoSuggest {
       contentState,
       insertSelection,
       '',
+      null,
+      null,
     )
 
+    console.log(`POST REMOVLA TEXT: ${contentStateWithoutSuggestion.getPlainText()}`)
+    
     const editorStateWithoutSuggestion = EditorState.set(
       editorState,
       { currentContent: contentStateWithoutSuggestion },
@@ -85,38 +100,25 @@ export class AutoSuggest {
     const insertSelection = SelectionState
           .createEmpty(selection.getAnchorKey())
           .merge({anchorOffset: endOfTokenOffset, focusOffset: endOfTokenOffset})
-
-    // set suggestion location in decorator
-    this.decorator.suggestion = {
-      start: endOfTokenOffset,
-      end:   endOfTokenOffset + remainder.length,
-    }
     
     // place remainder text after token
-    const contentStateWithSuggestionText = Modifier.insertText(
-      contentState,
-      insertSelection,
-      remainder,
-    )
-    // const editorStateWithSuggestion = EditorState.push(
-    //   editorState,
-    //   contentStateWithSuggestion,
-    // )
-
-    // EXPERIMENT insert entity rather than insert text
-    // DELETE ALL EXISTING INLINE-SUGGESTION ENTITIES BEFORE PROCEEDING
-    const contentStateWithSuggestionEntity = contentStateWithSuggestionText.createEntity('INLINE-SUGGESTION', 'IMMUTABLE')
-    const contentStateWithSuggestion = Modifier.applyEntity(
+    const contentStateWithSuggestionEntity = contentState.createEntity('INLINE-SUGGESTION', 'IMMUTABLE')
+    const contentStateWithSuggestion = Modifier.insertText(
       contentStateWithSuggestionEntity,
       insertSelection,
+      remainder,
+      null,
       contentStateWithSuggestionEntity.getLastCreatedEntityKey(),
     )
+
+    console.log("(setting editor state)")
     const editorStateWithSuggestion = EditorState.set(
       editorState,
       { currentContent: contentStateWithSuggestion },
     )
     
     // TODO update decorator highlighting!
+    console.log(token.value)
     console.log(remainder)
 
     return EditorState.forceSelection(editorStateWithSuggestion, selection)
@@ -127,7 +129,6 @@ export class AutoSuggest {
       this.decorator.highlighted,
       v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'SUGGESTION')
     )
-
     return tokens.length === 0 ? null : tokens[0]
   }
 

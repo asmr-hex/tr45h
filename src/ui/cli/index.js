@@ -3,6 +3,7 @@ import {
   ContentState,
   EditorState,
   Editor,
+  convertToRaw,
 } from 'draft-js'
 import Typography from '@material-ui/core/Typography'
 import { useTheme } from "@material-ui/core/styles"

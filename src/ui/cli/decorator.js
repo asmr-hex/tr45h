@@ -5,6 +5,7 @@ import {
   Modifier,
   EditorState,
 } from 'draft-js'
+import { reduce, range } from 'lodash'
 import { List } from 'immutable'
 
 
@@ -31,12 +32,6 @@ export class CLIDecorator {
 
     this.theme = {}
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)
-
-    // EXPERIEMNTAL
-    this.suggestion = {
-      start: null,
-      end: null,
-    }
   }
 
   /**
@@ -93,17 +88,37 @@ export class CLIDecorator {
     //   },
     //   (start, end) => console.log(`Suggestion At: ${start}:${end}`)
     // )
-    console.log(this.suggestion)
+
+    const { start, end } = reduce(
+      range(0, block.getLength()),
+      (acc, i) => {
+        const entity = block.getEntityAt(i)
+        if ( entity === null ) return acc
+
+        if (acc.start === null) return {start: i, end: i+1}
+
+        return {...acc, end: i+1}
+      },
+      {start: null, end: null}
+    )
+    
     let suggestion = null
-    if (this.suggestion.start !== null) {
+    if (start !== null && end !== null) {
       suggestion = {
         type: 'SUGGESTION',
-        value: blockText.substr(this.suggestion.start, this.suggestion.end),
-        start: this.suggestion.start,
-        length: this.suggestion.end - this.suggestion.start,
+        value: blockText.substr(start, end),
+        start,
+        length: end - start,
       }
-      blockText = blockText.substr(0, this.suggestion.start) + blockText.substr(this.suggestion.end)
+      // TODO IF THIS IS WHAT WE ARE DOING WE NEED TO REPLACE THE SUGGESTION TEXT WITH  ' ' INSTEAD OF COLLAPSING IT.
+      blockText = blockText.substr(0, start) + ' '.repeat(suggestion.length) + blockText.substr(end+1)
+
+      console.log(`SUGGESTION:     ${suggestion.value}`)
+      
     }
+    console.log(`NEW BLOCK TEXT: ${blockText}`)
+
+    ////////////////////////////////
     
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted = {}
