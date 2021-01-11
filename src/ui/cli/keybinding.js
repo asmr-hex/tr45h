@@ -3,11 +3,13 @@ import { getDefaultKeyBinding } from 'draft-js'
 export const KeyBoundAction = {
   CloseCLI: 'close-cli',
   ExecuteCommand: 'execute-command',
+  CycleSuggestions: 'cycle-suggestions',
 }
 
 export const KeyBindings = {
-  [KeyBoundAction.CloseCLI]:       e => e.keyCode === 32 && e.shiftKey,
-  [KeyBoundAction.ExecuteCommand]: e => e.keyCode == 13,
+  [KeyBoundAction.CloseCLI]:         e => e.keyCode === 32 && e.shiftKey,
+  [KeyBoundAction.ExecuteCommand]:   e => e.keyCode == 13,
+  [KeyBoundAction.CycleSuggestions]: e => e.keyCode == 9,
 }
 
 export const KeyBindingFn = event => {

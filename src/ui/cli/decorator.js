@@ -68,27 +68,8 @@ export class CLIDecorator {
     const blockIndex = blockKeys.indexOf(blockKey)
     let decorations  = Array(blockText.length).fill(null)
 
-    // EXPERIMENTAL
-    // const entities = contentState.getEntityMap()
-    // console.log(entities.__getAll())
-    // WE WANT TO EXTRACT THE INLINE-SUGGESTION ENTITY AS ITS OWN TOKEN AND REMOVE FROM TEXT TO INTERPRETER.
-    // THEN ADD IT TO TOKENS RESULTS FOR DECORATION.
-    // block.getCharacterList().map(char => {
-    //   const isSuggestion = char.getEntity()
-    //   console.log(isSuggestion)
-    //   return isSuggestion ? true : false
-    // })
-    // block.findEntityRanges(
-    //   char => {
-    //     const entityKey = char.getEntity()
-    //     return (
-    //       entityKey !== null &&
-    //       contentState.getEntity(entityKey).getType() === 'INLINE-SUGGESTION'  
-    //     )
-    //   },
-    //   (start, end) => console.log(`Suggestion At: ${start}:${end}`)
-    // )
 
+    // CHECK FOR ENTITIES (MUST BE A BETTER WAY)
     const { start, end } = reduce(
       range(0, block.getLength()),
       (acc, i) => {
@@ -110,16 +91,9 @@ export class CLIDecorator {
         start,
         length: end - start,
       }
-      // TODO IF THIS IS WHAT WE ARE DOING WE NEED TO REPLACE THE SUGGESTION TEXT WITH  ' ' INSTEAD OF COLLAPSING IT.
-      blockText = blockText.substr(0, start) + ' '.repeat(suggestion.length) + blockText.substr(end+1)
-
-      console.log(`SUGGESTION:     ${suggestion.value}`)
-      
+      blockText = blockText.substr(0, start) + ' '.repeat(suggestion.length) + blockText.substr(end+1)      
     }
-    console.log(`NEW BLOCK TEXT: ${blockText}`)
 
-    ////////////////////////////////
-    
     // initialize map for this block type for use later (in getPropsforkey)
     this.highlighted = {}
 

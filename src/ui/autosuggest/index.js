@@ -11,38 +11,101 @@ import {
 // TODO make different prefixTrees for different dictionary types
 // TODO candidates map to a list of dictionary types to search over.
 export class AutoSuggest {
-  constructor(decorator, dictionary=[], candidates=[]) {
+  constructor(decorator, setSuggestions, dictionary=[], candidates=[]) {
     this.decorator = decorator
+    this.setSuggestions = setSuggestions
     this.prefixTree = new PrefixTree(dictionary)
+    this.suggestions = {
+      current: null,
+      candidates: [],
+    }
   }
 
   analyze(editorState) {
-    const newEditorState = this.removeOldSuggestion(editorState)
+    const newEditorState = this.removeSuggestion(editorState)
     
     const selection = newEditorState.getSelection()
 
     // make sure selection is collapsed
-    if (!selection.isCollapsed()) return newEditorState
+    if (!selection.isCollapsed()) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
 
     // get selection offset
     const offset = selection.getAnchorOffset()
 
     // is offset within a token?
-    const token = this.withinToken(offset)
-    if (token === null) return newEditorState
+    const token = this.getBoundingToken(offset)
+    if (token === null) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
 
     // TODO is the token a suggestion candidate?
 
     // what are the top suggestion matches for this token?
     const suggestions = this.getSuggestions(token)
 
+    if (suggestions.length === 0) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
+    
     // take the first suggestion
-    const newEditorStateWithSuggestion = this.inlineSuggestion(token, suggestions, newEditorState)
+    const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestions[0], newEditorState)
+
+    // update suggestion list
+    this.updateSuggestions(suggestions[0], suggestions.slice(1))
     
     return newEditorStateWithSuggestion
   }
 
-  removeOldSuggestion(editorState) {    
+  updateSuggestions(current, candidates) {
+    this.suggestions = {
+      current,
+      candidates,
+    }
+    this.setSuggestions(candidates.length === 0 ? [] : candidates)
+  }
+
+  cycleSuggestions(editorState) {
+    if (this.suggestions.current === null) return editorState
+
+    // update suggestions
+    const nextSuggestion = this.suggestions.candidates.shift()
+    if (!nextSuggestion) return editorState
+    this.suggestions.candidates.push(this.suggestions.current)
+    this.suggestions.current = nextSuggestion
+
+    const newEditorState = this.removeSuggestion(editorState)
+
+    const selection = newEditorState.getSelection()
+
+    // make sure selection is collapsed
+    if (!selection.isCollapsed()) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
+
+    // get selection offset
+    const offset = selection.getAnchorOffset()
+
+    // is offset within a token?
+    const token = this.getBoundingToken(offset)
+    if (token === null) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
+    
+    const newEditorStateWithSuggestion = this.insertSuggestion(token, this.suggestions.current, newEditorState)
+
+    this.setSuggestions(this.suggestions.candidates)
+
+    return newEditorStateWithSuggestion
+  }
+  
+  removeSuggestion(editorState) {    
     // remove old text
     const selection    = editorState.getSelection()
     const contentState = editorState.getCurrentContent()
@@ -63,7 +126,6 @@ export class AutoSuggest {
     )
 
     if (start === null || end === null) return editorState
-    console.log(`${start} - ${end}`)
     
     const insertSelection = SelectionState
           .createEmpty(selection.getAnchorKey())
@@ -76,8 +138,6 @@ export class AutoSuggest {
       null,
       null,
     )
-
-    console.log(`POST REMOVLA TEXT: ${contentStateWithoutSuggestion.getPlainText()}`)
     
     const editorStateWithoutSuggestion = EditorState.set(
       editorState,
@@ -87,9 +147,9 @@ export class AutoSuggest {
     return EditorState.forceSelection(editorStateWithoutSuggestion, selection)
   }
   
-  inlineSuggestion(token, suggestions, editorState) {
-    if (suggestions.length === 0) return editorState
-    const suggestion = suggestions[0]
+  insertSuggestion(token, suggestion, editorState) {
+    // if (suggestions.length === 0) return editorState
+    // const suggestion = suggestions[0]
 
     // get non-overlapping suffix of suggestion
     const remainder = suggestion.substr(token.value.length)
@@ -111,20 +171,15 @@ export class AutoSuggest {
       contentStateWithSuggestionEntity.getLastCreatedEntityKey(),
     )
 
-    console.log("(setting editor state)")
     const editorStateWithSuggestion = EditorState.set(
       editorState,
       { currentContent: contentStateWithSuggestion },
     )
-    
-    // TODO update decorator highlighting!
-    console.log(token.value)
-    console.log(remainder)
 
     return EditorState.forceSelection(editorStateWithSuggestion, selection)
   }
   
-  withinToken(offset) {
+  getBoundingToken(offset) {
     const tokens = filter(
       this.decorator.highlighted,
       v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'SUGGESTION')

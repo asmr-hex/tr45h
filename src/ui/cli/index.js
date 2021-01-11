@@ -45,6 +45,7 @@ export const CLI = props => {
   const [cli, setCli] = useState(null)
   const [decorator, setDecorator] = useState(null)
   const [autosuggest, setAutoSuggest] = useState(null)
+  const [suggestions, setSuggestions] = useState([])
   const [ editorState, setEditorState ] = useState(
     () => EditorState.createEmpty()
   )
@@ -58,7 +59,7 @@ export const CLI = props => {
   useEffect(() => {
     const cli = new CommandLineInterface()
     const decorator = new CLIDecorator(cli, themeObservableRef.current, setCurrentSuggestion)
-    const autosuggest = new AutoSuggest(decorator, ['star', 'start', 'starfish', 'startlight', 'help', 'hell'])
+    const autosuggest = new AutoSuggest(decorator, setSuggestions, ['star', 'start', 'starfish', 'startlight', 'help', 'hell'])
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)
     setAutoSuggest(autosuggest)
@@ -85,10 +86,21 @@ export const CLI = props => {
       setInfoComponent(cli.execute())
       //handleClose()
       return 'handled'
+    case KeyBoundAction.CycleSuggestions:
+      setEditorState(autosuggest.cycleSuggestions(editorState))
+      return 'handled'
     default:
       return 'not-handled'
     }
   }
+
+  const suggestionList = suggestions.length === 0
+        ? null
+        : <div>
+            {suggestions.map(
+              suggestion => <div>{suggestion}</div>
+            )}
+          </div>
   
   return (
     <div>
@@ -106,7 +118,8 @@ export const CLI = props => {
           onChange={onChange}
           handleKeyCommand={handleKeyCommand}
           keyBindingFn={KeyBindingFn}
-          />
+        />
+        { suggestionList }
         { InfoComponent ? InfoComponent : null }
       </Dialog>
     </div>
