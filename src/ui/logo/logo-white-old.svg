@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="876.06989"
+   height="312.92929"
+   style="fill:none"
+   id="svg8"
+   sodipodi:docname="dotgrid-21A11-621809.svg"
+   inkscape:version="0.92.2 5c3e80d, 2017-08-06">
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs12" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="640"
+     inkscape:window-height="480"
+     id="namedview10"
+     showgrid="false"
+     inkscape:zoom="0.17419355"
+     inkscape:cx="633.04273"
+     inkscape:cy="125.43386"
+     inkscape:window-x="0"
+     inkscape:window-y="-22"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg8" />
+  <path
+     d=""
+     style="fill:none;stroke:#f1f1f1;stroke-width:15;stroke-linecap:round;stroke-linejoin:round"
+     id="path2"
+     inkscape:connector-curvature="0" />
+  <path
+     d=""
+     style="fill:#4a4a4a;stroke:#4a4a4a;stroke-width:1;stroke-linecap:round;stroke-linejoin:bevel"
+     id="path4"
+     inkscape:connector-curvature="0" />
+  <path
+     d="m 3.0427275,59.995437 v 0 H 183.04273 M 3.0427275,149.99544 v 0 H 183.04273 m -180.0000025,90 v 0 H 183.04273 m 0,-180.000003 q 120,0 195,120.000003 105,165 180,-105.000003 m -375,75.000003 q 135,15 195,75 90,120 165,-60 m -360,75 q 135,0 195,45 90,75 165,-75 m 0,-45 q 75,-210.000003 150,15 45,150 180,-45 m -315,-60.000003 q 60,-179.999997 150,90.000003 30,135 165,-30 m -330,75 q 75,-195.000003 150,15 45,150 180,-90"
+     style="fill:none;stroke:#ffffff;stroke-width:6;stroke-linecap:round;stroke-linejoin:round"
+     id="path6"
+     inkscape:connector-curvature="0" />
+</svg>

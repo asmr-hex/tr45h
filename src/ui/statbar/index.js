@@ -7,6 +7,7 @@ import {
   reduce,
 } from 'lodash'
 
+import logo from '../logo/logo-white.svg'
 import { useAnnotationContext } from '../../context/annotation'
 import {
   LexicalTokenType,
@@ -14,15 +15,15 @@ import {
 
 
 const DetailsBody = withTheme(styled('div')({
-  position: 'fixed',
-  bottom: 0,
+  // position: 'fixed',
+  top: 0,
   width: '100%',
-  backgroundColor: p => p.theme.palette.background.tertiary, //'#23272e',
+  backgroundColor: '#363636',//p => p.theme.palette.background.tertiary, //'#23272e',
   color: p => p.hasError ? 'red': p.theme.palette.text.tertiary,
   padding: '0.2% 0% 0.2% 0%',
   zIndex: 999999,
   display: 'flex',
-  justifyContent: 'space-between',
+  //justifyContent: 'space-between',
   // boxShadow: '0px 4px 6px',
 }))
 
@@ -68,8 +69,15 @@ export const Details = props => {
   const { currentAnnotation } = useAnnotationContext()
   const isError = false
 
+  const style = {
+    height: '15px',
+    margin: '0.2%',
+    objectFit: 'fill'
+  }
+  
   return (
     <DetailsBody hasError={isError}>
+      <img src={logo} style={style}/>
       {currentAnnotation === null ? '' : <Annotation item={currentAnnotation}/>}
     </DetailsBody>
   )

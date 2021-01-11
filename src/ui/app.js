@@ -36,7 +36,8 @@ const App = () => {
       <TransportProvider>
         <UIStateProvider>
           <AnnotationProvider>
-            <Toolbar/>
+            {/* <Toolbar/> */}
+            <Details/>
             <AppBody>
               <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
                 <MusicEditor/>
@@ -44,7 +45,6 @@ const App = () => {
               <CLI/>
               <AboutDialog/>
             </AppBody>
-            <Details/>
           </AnnotationProvider>
         </UIStateProvider>
       </TransportProvider>
