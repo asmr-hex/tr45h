@@ -104,6 +104,67 @@ export class AutoSuggest {
 
     return newEditorStateWithSuggestion
   }
+
+  complete(editorState) {
+    if (this.suggestions.current === null) return editorState
+
+    const newEditorState = this.removeSuggestion(editorState)
+
+    const selection = newEditorState.getSelection()
+
+    // make sure selection is collapsed
+    if (!selection.isCollapsed()) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
+
+    // get selection offset
+    const offset = selection.getAnchorOffset()
+
+    // is offset within a token?
+    const token = this.getBoundingToken(offset)
+    if (token === null) {
+      this.updateSuggestions(null, [])
+      return newEditorState 
+    }
+
+    const newEditorStateWithCompletion = this.insertAutoCompletion(token, this.suggestions.current, newEditorState)
+
+    return newEditorStateWithCompletion
+  }
+
+  insertAutoCompletion(token, suggestion, editorState) {
+    // get non-overlapping suffix of suggestion
+    const remainder = suggestion.substr(token.value.length)
+    const endOfTokenOffset = token.start + token.length
+
+    const selection    = editorState.getSelection()
+    const contentState = editorState.getCurrentContent()
+    const insertSelection = SelectionState
+          .createEmpty(selection.getAnchorKey())
+          .merge({anchorOffset: endOfTokenOffset, focusOffset: endOfTokenOffset})
+    const endSelection = SelectionState
+          .createEmpty(selection.getAnchorKey())
+          .merge({anchorOffset: endOfTokenOffset + remainder.length, focusOffset: endOfTokenOffset + remainder.length})
+    
+    // place remainder text after token
+    const contentStateWithSuggestion = Modifier.insertText(
+      contentState,
+      insertSelection,
+      remainder,
+      null,
+      null
+    )
+
+    this.updateSuggestions(null, [])
+    
+    const editorStateWithSuggestion = EditorState.set(
+      editorState,
+      { currentContent: contentStateWithSuggestion },
+    )
+
+    return EditorState.forceSelection(editorStateWithSuggestion, endSelection)    
+  }
   
   removeSuggestion(editorState) {    
     // remove old text

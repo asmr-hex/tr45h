@@ -89,6 +89,9 @@ export const CLI = props => {
     case KeyBoundAction.CycleSuggestions:
       setEditorState(autosuggest.cycleSuggestions(editorState))
       return 'handled'
+    case KeyBoundAction.AutoComplete:
+      setEditorState(autosuggest.complete(editorState))
+      return 'handled'
     default:
       return 'not-handled'
     }
