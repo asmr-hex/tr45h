@@ -8,6 +8,7 @@ import {
 } from 'lodash'
 
 import logo from '../logo/logo-white.svg'
+import { Logo } from '../logo'
 import { useAnnotationContext } from '../../context/annotation'
 import {
   LexicalTokenType,
@@ -74,10 +75,11 @@ export const Details = props => {
     margin: '0.2%',
     objectFit: 'fill'
   }
-  
+
+  // <img src={logo} style={style}/>
   return (
     <DetailsBody hasError={isError}>
-      <img src={logo} style={style}/>
+      <Logo/>
       {currentAnnotation === null ? '' : <Annotation item={currentAnnotation}/>}
     </DetailsBody>
   )
