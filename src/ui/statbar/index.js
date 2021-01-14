@@ -7,7 +7,6 @@ import {
   reduce,
 } from 'lodash'
 
-import logo from '../logo/logo-white.svg'
 import { Logo } from '../logo'
 import { useAnnotationContext } from '../../context/annotation'
 import {
@@ -70,13 +69,6 @@ export const Details = props => {
   const { currentAnnotation } = useAnnotationContext()
   const isError = false
 
-  const style = {
-    height: '15px',
-    margin: '0.2%',
-    objectFit: 'fill'
-  }
-
-  // <img src={logo} style={style}/>
   return (
     <DetailsBody hasError={isError}>
       <Logo/>

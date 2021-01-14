@@ -1,7 +1,9 @@
 import React from 'react'
 
+import logo from '../logo/logo-white.svg'
 
-export const Logo = props => {
+
+export const ExperimentalLogo = props => {
   const {
     width  = 300,
     height = 300,
@@ -31,5 +33,17 @@ export const Logo = props => {
         <path d={qbcurve(cc)} fill={'green'}/>
       </g>
     </svg>
+  )
+}
+
+export const Logo = props => {
+  const style = {
+    height: '15px',
+    margin: '0.2%',
+    objectFit: 'fill'
+  }
+
+  return (
+    <img src={logo} style={style}/>
   )
 }
