@@ -139,6 +139,9 @@ export const MusicEditor = props => {
       console.log("Cycle Autocompletion")
       // TODO
       return 'handled'
+    case KeyBoundAction.FocusCLI:
+      console.log('FOCUS CLI')
+      return 'handled'
     default:
       return 'not-handled'
     }

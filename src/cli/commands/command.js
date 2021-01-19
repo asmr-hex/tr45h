@@ -2,6 +2,7 @@ import { reduce, values } from 'lodash'
 
 import { NotImplementedError } from '../../interpreter/types/error'
 import { CLITokenTypes } from './types'
+// import { CLIArg } from './arg'
 
 
 export class Command {
@@ -61,7 +62,7 @@ export class Command {
     if (this.requiredArgs.length !== 0) {
       // is the next token an argument?
       if (this.isArgument(token)) {
-        
+        // validate the argument
       } else {
         // ERROR
       }
@@ -82,16 +83,20 @@ export class Command {
   }
 
   isArgument(token) {
+    // what type is this?
+    // check the argumentTypes -> checker map
     return false
   }
   
   getExecutable(context) { throw new NotImplementedError('getExecutable()') }
 }
 
-
 export class CLIArg {
   constructor({ types, optional }) {
     this.types    = types    || []
     this.optional = optional || true
   }
+
+  check(argument){}
 }
+
