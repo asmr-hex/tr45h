@@ -7,6 +7,9 @@ import {
   reduce,
 } from 'lodash'
 
+import { useUIStateContext } from '../../context/ui'
+import { CLI } from '../cli/index-new'
+
 import { Logo } from '../logo'
 import { useAnnotationContext } from '../../context/annotation'
 import {
@@ -65,13 +68,25 @@ export const Annotation = props => {
   )
 }
 
+
+/*
+ what do we want in the stat bar?
+
+ <LOGO> <Project Name>   <SOUND DETAILS>/<ERROR MSG>  <CLI>   <TRANSPORT>
+*/
 export const Details = props => {
+  const {
+    isCliFocused,
+    blurCLI,
+  } = useUIStateContext()
+
   const { currentAnnotation } = useAnnotationContext()
   const isError = false
 
   return (
     <DetailsBody hasError={isError}>
       <Logo/>
+      <CLI/>
       {currentAnnotation === null ? '' : <Annotation item={currentAnnotation}/>}
     </DetailsBody>
   )

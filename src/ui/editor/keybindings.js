@@ -11,7 +11,7 @@ export const KeyBoundAction = {
 const KeyRepetitions = {}
 const KeyRepetitionsTimeout = {}
 const detectDoubleTap = (event, keyCode) => {
-  const threshold = 800 // ms
+  const threshold = 500 // ms
 
   if (event.keyCode !== keyCode) return false
   

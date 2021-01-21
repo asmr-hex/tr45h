@@ -17,6 +17,7 @@ export const UIStateProvider = props => {
   const [isEditorOpen, setIsEditorOpen] = useState(true)
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false)
   const [isCLIOpen, setIsCLIOpen] = useState(false)
+  const [isCliFocused, setIsCliFocused] = useState(false)
 
   const context = {
     isEditorOpen,
@@ -31,6 +32,16 @@ export const UIStateProvider = props => {
     },
     closeCLI: () => {
       setIsCLIOpen(false)
+      setIsEditorOpen(true)
+    },
+
+    isCliFocused,
+    focusCLI: () => {
+      setIsCliFocused(true)
+      setIsEditorOpen(false)
+    },
+    blurCLI: () => {
+      setIsCliFocused(false)
       setIsEditorOpen(true)
     },
   }

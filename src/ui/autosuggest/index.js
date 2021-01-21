@@ -99,8 +99,8 @@ export class AutoSuggest {
     }
     
     const newEditorStateWithSuggestion = this.insertSuggestion(token, this.suggestions.current, newEditorState)
-
-    this.setSuggestions(this.suggestions.candidates)
+    
+    this.setSuggestions([...this.suggestions.candidates])
 
     return newEditorStateWithSuggestion
   }

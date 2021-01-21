@@ -25,10 +25,9 @@ export class CLIDecorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(cli, theme, setCurrentSuggestion) {
+  constructor(cli, theme) {
     this.cli         = cli
     this.highlighted = {}
-    this.setCurrentSuggestion = setCurrentSuggestion
 
     this.theme = {}
     theme.subscribe(t => this.theme = t)  // subscribe to theme BehaviorSubject (rxjs)

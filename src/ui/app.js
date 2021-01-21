@@ -8,25 +8,12 @@ import { TransportProvider } from '../context/transport'
 import { UIStateProvider } from '../context/ui'
 import { AnnotationProvider } from '../context/annotation'
 
-import { MusicEditor } from './editor/index'
-import { Toolbar } from  './toolbar'
-import { Details } from './statbar'
-import { AboutDialog } from  './toolbar/dialog/about'
-import { CLI } from  './cli'
+import { Menu } from './menu'
+import { Body } from './body'
 
 
 const AppContainer = withTheme(styled('div')({
   textAlign: 'center',
-}))
-
-const AppBody = withTheme(styled('header')({
-  minHeight: '100vh',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  justifyContent: 'flex-start',
-  fontSize: 'calc(10px + 2vmin)',
-  paddingTop: '100px',
 }))
 
 
@@ -36,15 +23,8 @@ const App = () => {
       <TransportProvider>
         <UIStateProvider>
           <AnnotationProvider>
-            {/* <Toolbar/> */}
-            <Details/>
-            <AppBody>
-              <div style={{display: 'flex', flexDirection: 'row', height: '100%', width: '100%', justifyContent: 'center'}}>
-                <MusicEditor/>
-              </div>
-              <CLI/>
-              <AboutDialog/>
-            </AppBody>
+            <Menu/>
+            <Body/>
           </AnnotationProvider>
         </UIStateProvider>
       </TransportProvider>

@@ -47,7 +47,12 @@ export const MusicEditor = props => {
   const transport = useTransportContext()
 
   // ui state
-  const { isEditorOpen, openCLI } = useUIStateContext()
+  const {
+    isEditorOpen,  // DEPRECATE THIS
+    openCLI,       // DEPRECATE THIS
+    focusCLI,
+    isCliFocused,
+  } = useUIStateContext()
 
   // get annotation setter
   const { currentAnnotation, setCurrentAnnotation } = useAnnotationContext()
@@ -140,7 +145,7 @@ export const MusicEditor = props => {
       // TODO
       return 'handled'
     case KeyBoundAction.FocusCLI:
-      console.log('FOCUS CLI')
+      focusCLI()
       return 'handled'
     default:
       return 'not-handled'
