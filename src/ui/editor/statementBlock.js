@@ -1,5 +1,13 @@
 import React from 'react'
+import { withTheme, styled } from "@material-ui/core/styles"
 
+
+const LnNumber = withTheme(styled('span')({
+  color: 'grey',
+  marginRight: '35px',
+  contentEditable: false,  // TODO figure this out...its not working (can still select line numbers...)
+  userSelect: 'none',
+}))
 
 /**
  * a wrapper component for all editor blocks.
@@ -17,22 +25,32 @@ export const StatementBlock = props => {
   return (
     <div>
       {
-        props.children.map(editorBlock => {
+        props.children.map((editorBlock, ln) => {
           // get ContentBlock for this editorBlock
           const contentBlock = editorBlock.props.children.props.block
           const text = contentBlock.getText()
           const key = contentBlock.getKey()
-
+          
           // TODO lookup color of this editor block in symbol table
           const isEmpty = text.trim() === ''
           
 
           const style = {
+            display: 'flex',
             borderLeft: `3px ${isEmpty ? '#ffffff00' : interpreter.mem.getMetaData(key).color} solid`,
             paddingLeft: '10px',
           }        
 
-          return <div key={key} style={style}>{editorBlock}</div>
+          const onLnClick = () => {
+            console.log(`Solo/Mute: Ln${ln+1} (${key})`)
+          }
+          
+          return (
+            <div key={key} style={style}>
+              <LnNumber onClick={onLnClick}>{ln+1}</LnNumber>
+              {editorBlock}
+            </div> 
+          )
         })
       }
     </div>

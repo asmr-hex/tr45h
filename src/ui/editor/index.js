@@ -151,9 +151,15 @@ export const MusicEditor = props => {
       return 'not-handled'
     }
   }
+
+  const styles = {
+    width: '100%',
+    height: '100%',
+    margin: '10% 5% 2% 2%',
+  }
   
   return (
-    <div style={{width: '50%', height: '50%'}}>
+    <div style={styles}>
       <Editor
         ref={editorRef}
         editorState={editorState}
