@@ -7,6 +7,7 @@ const Container = withTheme(styled('div')({
   flexDirection: 'column',
   alignItems: 'flex-start',
   width: '100%',
+  height: '100%',
   backgroundColor: '#e3e3e3',
 }))
 
@@ -36,20 +37,52 @@ const Body = withTheme(styled('div')({
   alignItems: 'flex-start',
   width: '100%',
   padding: '1% 1% 1% 1%',
+  overflow: 'scroll',
 }))
 
 export const Explorer = props => {
-
+  const {
+    close,
+  } = props
+  
   const title = 'collections'
+  const description = (
+    <div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+      <div>yo</div>
+    </div>
+  )
   
   return (
     <Container>
       <Header>
         <Title>{title}</Title>
-        <CloseButton>x</CloseButton>
+        <CloseButton onClick={close}>x</CloseButton>
       </Header>
       <Body>
-        kool
+        {description}
       </Body>
     </Container>
   )

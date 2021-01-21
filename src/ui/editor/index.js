@@ -153,9 +153,13 @@ export const MusicEditor = props => {
   }
 
   const styles = {
-    width: '100%',
-    height: '100%',
-    margin: '10% 5% 2% 2%',
+    position: 'relative',
+    width: 'calc(100% - 20px)',
+    height: '93%',
+    top: '6%',
+    left: '20px',
+    display: 'flex',
+    overflowY: 'scroll',
   }
   
   return (

@@ -1,8 +1,5 @@
 import React from 'react'
-import {
-  withTheme,
-  styled
-} from "@material-ui/core/styles"
+import { withTheme, styled } from "@material-ui/core/styles"
 
 import { TransportProvider } from '../context/transport'
 import { UIStateProvider } from '../context/ui'
@@ -13,7 +10,10 @@ import { Body } from './body'
 
 
 const AppContainer = withTheme(styled('div')({
+  display: 'flex',
+  flexDirection: 'column',
   textAlign: 'center',
+  height: '100vh',
 }))
 
 

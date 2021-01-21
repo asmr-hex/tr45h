@@ -1,26 +1,33 @@
 import React from 'react'
 import { withTheme, styled } from "@material-ui/core/styles"
 
+import { useUIStateContext } from '../../context/ui'
+
 import { MusicEditor } from '../editor/index'
 import { Explorer } from '../explorer'
 
 
-const AppBodyStyled = withTheme(styled('header')({
-  minHeight: '100vh',
+const AppBodyStyled = withTheme(styled('div')({
+  height: '100%',
   display: 'flex',
   justifyContent: 'flex-start',
   fontSize: 'calc(4px + 2vmin)',
+  overflow: 'hidden',
 }))
 
 const FlexibleHalf = withTheme(styled('div')({
   display: 'flex',
   width: '100%',
   flexDirection: 'column',
+  justifyContent: 'flex-start',
   alignItems: 'flex-start',
 }))
 
 export const Body = props => {
-  const isExplorerVisible = true
+  const {
+    isExplorerOpen,
+    closeExplorer,
+  } = useUIStateContext()
 
   return (
     <AppBodyStyled>
@@ -28,8 +35,8 @@ export const Body = props => {
         <MusicEditor/>
       </FlexibleHalf>
       {
-        isExplorerVisible
-          ? <FlexibleHalf>{Explorer}</FlexibleHalf>
+        isExplorerOpen
+          ? <FlexibleHalf sticky><Explorer close={closeExplorer}/></FlexibleHalf>
           : null
       }
     </AppBodyStyled>
