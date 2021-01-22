@@ -19,7 +19,7 @@ const CommandInterface = withTheme(styled('div')({
   alignItems: 'flex-start',
   width: '100%',
   position: 'absolute',
-  backgroundColor: 'pink',
+  backgroundColor: 'grey',
 }))
 
 const CommandLine = withTheme(styled('div')({

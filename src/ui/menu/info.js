@@ -1,11 +1,9 @@
 import React from 'react'
 import { withTheme, styled } from '@material-ui/core/styles'
 
-const truncateText = {
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  textOverflow: 'ellipsis',  
-}
+import { useAnnotationContext } from '../../context/annotation'
+import { SemanticTokenType } from '../../interpreter/types/tokens'
+
 
 const InfoContainer = withTheme(styled('div')({
   display: 'flex',
@@ -51,20 +49,12 @@ const InfoDetail = props => {
 }
 
 
-export const Info = props => {  
-  
-  return (
-    <InfoContainer>
-      <InfoType>𝄆</InfoType>
-      <SoundInfo/>
-    </InfoContainer>
-  )
-}
-
 export const SoundInfo = props => {
-  const status = 'downloading'
-  const name = 'tin whistle of some sort'
-  const description = 'the sound of a tin whistle on the blarney stone of something'
+  const { details } = props
+  
+  const status = details.symbol.status.toLowerCase() //'downloading'
+  const name = details.symbol.metadata ? details.symbol.metadata.name : '' //'tin whistle of some sort'
+  const description = details.symbol.metadata ? details.symbol.metadata.description : '' //'the sound of a tin whistle on the blarney stone of something'
   
   return (
     <InfoDetails>
@@ -78,5 +68,23 @@ export const SoundInfo = props => {
 export const ErrorInfo = props => {
   return (
     <div>error</div> 
+  )
+}
+
+const DetailTypes = {
+  [SemanticTokenType.SoundLiteral]: d => <SoundInfo details={d}/>
+}
+
+export const Info = props => {  
+  const { currentAnnotation } = useAnnotationContext()
+  const type = currentAnnotation === null ? null : currentAnnotation.token.type
+
+  if (!(type in DetailTypes)) return null
+
+  return (
+    <InfoContainer>
+      <InfoType>𝄆</InfoType>
+      { DetailTypes[type](currentAnnotation) }
+    </InfoContainer>
   )
 }

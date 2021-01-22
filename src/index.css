@@ -8,3 +8,8 @@ code {
     font-family: 'gilbert';
     src: local('gilbert-color'), url(./ui/themes/fonts/gilbert-color.otf) format('opentype');
 }
+
+/* div.DraftEditor-root { */
+/*     width: 100%; */
+/*     overflow-y: auto; */
+/* } */
