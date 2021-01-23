@@ -41,11 +41,12 @@ export const Analyser = props => {
     canvas.height = height * ratio
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
+    
     let requestId
     const render = () => {
       analysis.getByteTimeDomainData(buffer)
 
+      // set background color
       ctx.fillStyle = '#434343ff'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -68,7 +69,18 @@ export const Analyser = props => {
         x += sliceWidth
       }
 
+      // draw frequency lines
       ctx.lineTo(canvas.width, canvas.height/2)
+      ctx.stroke()
+
+      // draw side brackets
+      ctx.lineWidth = 1
+      ctx.strokeStyle = 'cornflowerblue'
+      ctx.beginPath()
+      ctx.moveTo(0, (canvas.height/2) * 0.4)
+      ctx.lineTo(0, (canvas.height/2) * 1.6)
+      ctx.moveTo(canvas.width, (canvas.height/2) * 0.4)
+      ctx.lineTo(canvas.width, (canvas.height/2) * 1.6)
       ctx.stroke()
       
       requestId = requestAnimationFrame(render)

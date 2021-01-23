@@ -48,30 +48,7 @@ export const Explorer = props => {
   const title = 'collections'
   const description = (
     <div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
-      <div>yo</div>
+      <div>blah blah blah</div>
     </div>
   )
   
