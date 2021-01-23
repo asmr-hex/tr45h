@@ -92,10 +92,9 @@ export const MusicEditor = props => {
     setAudioScheduler(interpreter.scheduler)
   }, [])
 
-  // TODO for some reason this prevents parsing from happening??
-  // useEffect(() => {
-  //   if (isEditorOpen) editorRef.current.focus()
-  // }, [isEditorOpen])
+  useEffect(() => {
+    if (isEditorOpen) editorRef.current.focus()
+  }, [isEditorOpen])
   
   const onChange = newEditorState => {
     // prevent changes until decorator has been set

@@ -74,7 +74,6 @@ export const CLI = props => {
 
   useEffect(() => {
     if (isCliFocused) {
-      console.log("FOCUSING CLI")
       editorRef.current.focus()
     }
   }, [isCliFocused])
@@ -97,8 +96,8 @@ export const CLI = props => {
       handleClose()
       return 'handled'
     case KeyBoundAction.ExecuteCommand:
-      setInfoComponent(cli.execute())
-      //handleClose()
+      // setInfoComponent(cli.execute())
+      handleClose()
       return 'handled'
     case KeyBoundAction.CycleSuggestions:
       setEditorState(autosuggest.cycleSuggestions(editorState))

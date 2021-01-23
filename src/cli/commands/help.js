@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { Command, CLIArg } from './command'
-import { CLIArgTypes } from './types'
+import { Command } from './command'
+import { Parameter } from './parameters'
+import { ParameterTypes } from './types'
 
 import { HelpPage } from '../../ui/dialogs/help'
 
@@ -12,9 +13,9 @@ export class Help extends Command {
       name: 'help',
       aliases: ['?'],
       description: `will display this page. or some other page for specific commands`,
-      args: [
-        new CLIArg({
-          types: [ CLIArgTypes.Command, CLIArgTypes.Sound ],
+      params: [
+        new Parameter({
+          types: [ ParameterTypes.Command, ParameterTypes.Sound ],
           optional: true
         })
       ],
@@ -40,7 +41,7 @@ export class HelpSyntax extends Command {
     super({
       name:        'syntax',
       aliases:     [],
-      args:        [],
+      params:      [],
       subcommands: [],
     })
   }

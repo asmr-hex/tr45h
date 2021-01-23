@@ -1,12 +1,13 @@
 
 
-export const CLIArgTypes = {
-  Command: 'COMMAND',
-  Sound:   'SOUND',
+export const ParameterTypes = {
+  Command:    'COMMAND',
+  Sound:      'SOUND',
+  Collection: 'COLLECTION',
 }
 
 
-export const CLITokenTypes = {
+export const TokenTypes = {
   Command:  'COMMAND',
   Error:    'ERROR',
   Argument: 'ARGUMENT',

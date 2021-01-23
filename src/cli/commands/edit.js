@@ -1,25 +1,26 @@
 import React from 'react'
 
-import { Command, CLIArg } from './command'
-import { CLIArgTypes } from './types'
+import { Command } from './command'
+import { Parameter } from './parameters'
+import { ParameterTypes } from './types'
 
-import { SoundPage } from '../../ui/dialogs/sound'
+// import { SoundPage } from '../../ui/dialogs/sound'
 
-
+// edit <sound>|<collection>|project
 export class Edit extends Command {
   constructor() {
     super({
       name: 'edit',
       aliases: ['show'],
       description: `show or edit a sound, collection, or project`,
-      args: [
-        new CLIArg({
-          types: [ CLIArgTypes.Sound ],
-          optional: false
+      params: [
+        new Parameter({
+          types: [ ParameterTypes.Sound, ParameterTypes.Collection ],
+          optional: false,
         })
       ],
       subcommands: [
-        new EditSound(),
+        new EditProject(),
       ],
     })
   }
@@ -30,18 +31,24 @@ export class Edit extends Command {
     
     return () => {
       const name = info
-      return props => <HelpPage name={name} commands={commands} props={props}/>
+      return props => <div>editing</div>
     }
   }
 }
 
-export class EditSound extends Command {
+export class EditProject extends Command {
   constructor() {
     super({
-      name:        'someSound',
+      name:        'project',
       aliases:     [],
-      args:        [],
+      params:      [],
       subcommands: [],
     })
+  }
+
+  getExecutable(context) {
+    return () => {
+      return props => <div>project page</div>
+    }
   }
 }

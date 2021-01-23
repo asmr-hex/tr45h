@@ -1,16 +1,15 @@
 import { reduce, values } from 'lodash'
 
 import { NotImplementedError } from '../../interpreter/types/error'
-import { CLITokenTypes } from './types'
-// import { CLIArg } from './arg'
+import { TokenTypes } from './types'
 
 
 export class Command {
-  constructor({name, aliases, description, args, subcommands, context}) {
+  constructor({name, aliases, description, params, subcommands, context}) {
     this.name        = name        || ''
     this.aliases     = aliases     || []
     this.description = description || ''
-    this.args        = args        || []
+    this.params      = params      || []
     this.subcommands = reduce(
       subcommands || [],
       (acc, c) => ({
@@ -28,7 +27,7 @@ export class Command {
     )
     this.setContext(context || {})
     
-    this.requiredArgs = this.args.filter(a => !a.optional)
+    this.requiredParams = this.params.filter(a => !a.optional)
   }
 
   setContext(context={}) {
@@ -42,16 +41,17 @@ export class Command {
   parse(tokens, index=0) {
     // are there no more tokens?
     if (index >= tokens.length) {
-      if (this.requiredArgs.length === 0) {
+      if (this.requiredParams.length === 0) {
         // no mo required arguments, this is a string of commands
         return {
           command: this.getExecutable(this.context),
-          tokens: tokens.map(t => ({...t, type: CLITokenTypes.Command }))
+          tokens: tokens.map(t => ({...t, type: TokenTypes.Command }))
         }
       } else {
+        // ERROR
         return {
           command: null,
-          tokens: tokens.map(t => ({...t, type: CLITokenTypes.Error }))
+          tokens: tokens.map(t => ({...t, type: TokenTypes.Error }))
         }
       }
     }
@@ -59,9 +59,9 @@ export class Command {
     const token = tokens[index]
 
     // are there required arguments?
-    if (this.requiredArgs.length !== 0) {
+    if (this.requiredParams.length !== 0) {
       // is the next token an argument?
-      if (this.isArgument(token)) {
+      if (this.isValidArgument(token)) {
         // validate the argument
       } else {
         // ERROR
@@ -70,33 +70,30 @@ export class Command {
       // is the next token a subcommand?
       if (token.value in this.subcommands) {
         // okay parse it further.
-        tokens[index].type = CLITokenTypes.Command
+        tokens[index].type = TokenTypes.Command
         return this.subcommands[token.value].parse(tokens, index+1)
       } 
     }
 
-    tokens[index].type = CLITokenTypes.Error
+    tokens[index].type = TokenTypes.Error
     return {
       command: null,
       tokens: tokens,
     }
   }
 
-  isArgument(token) {
-    // what type is this?
-    // check the argumentTypes -> checker map
+  isValidArgument(token) {
+    for (const param in this.params) {
+      if (param.check(token, this.context)) return true
+    }
     return false
   }
   
   getExecutable(context) { throw new NotImplementedError('getExecutable()') }
 }
 
-export class CLIArg {
-  constructor({ types, optional }) {
-    this.types    = types    || []
-    this.optional = optional || true
-  }
 
-  check(argument){}
-}
+// we want to be able to have sub-commands and arguments.
+// if the arguments are non-optional and there are subcommands,
+// we want to check amongst all of them.
 

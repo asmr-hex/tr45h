@@ -14,7 +14,7 @@ export const useUIStateContext = () => {
 
 export const UIStateProvider = props => {
   // UI states
-  const [isEditorOpen, setIsEditorOpen] = useState(true)
+  const [isEditorOpen, setIsEditorOpen] = useState(true)  // TODO rename to isEditorFocused
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false)
   const [isCLIOpen, setIsCLIOpen] = useState(false)
   const [isCliFocused, setIsCliFocused] = useState(false)

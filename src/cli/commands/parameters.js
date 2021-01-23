@@ -1,3 +1,5 @@
+import { ParameterTypes } from './types'
+
 // types of possible arguments
 // sound/variables
 // variable (that resolves to a sound or sequence)
@@ -17,47 +19,44 @@
 // lines - idk
 // collection ?
 // project ?
-export class CLIArg {
-  constructor({ types, optional }) {
-    this.types    = types    || []
-    this.optional = optional || true
-  }
-
-  check(argument){}
-}
 
 const ArgTypeChecker = {
-  [CliArgTypes.Sound]: (arg, {symbols}) =>
+  [ParameterTypes.Sound]: (arg, {symbols}) =>
     !(arg instanceof Array) &&
     ( symbols.isSound(arg.value) || symbols.isVariable(arg.value)),
-  [CliArgTypes.Sounds]: (args, {symbols}) =>
+  [ParameterTypes.Sounds]: (args, {symbols}) =>
     (args instanceof Array)
     ? args.map(arg => symbols.isSound(arg.value) || symbols.isVariable(arg.value))
     : false,
-  [CliArgTypes.Line]: (arg, {somethingThatKeepsTrackOfLines}) => false,
-  [CliArgTypes.Lines]: (arg, {ditto}) => false,
-  [CliArgTypes.Collection]: (arg, {collectionManager}) => false,
-  [CliArgTypes.Collections]: (arg, {collectionManager}) => false,
-  [CliArgTypes.Project]: (arg, {projectManager}) => false,
-  [CliArgTypes.Projects]: (arg, {projectManager}) => false,
-  [CliArgTypes.Command]: (arg, {cli}) => false,
+  [ParameterTypes.Line]: (arg, {somethingThatKeepsTrackOfLines}) => false,
+  [ParameterTypes.Lines]: (arg, {ditto}) => false,
+  [ParameterTypes.Collection]: (arg, {collectionManager}) => false,
+  [ParameterTypes.Collections]: (arg, {collectionManager}) => false,
+  [ParameterTypes.Project]: (arg, {projectManager}) => false,
+  [ParameterTypes.Projects]: (arg, {projectManager}) => false,
+  [ParameterTypes.Command]: (arg, {cli}) => false,
 }
 
-export class CommandParams {
+export class Parameter {
   constructor({ types, optional }) {
     this.types    = types    || []
     this.optional = optional || true
   }
 
-  check(arguments, context) {
-    let potentialTypes = []
+  check(args, context) {
+    let candidateTypes = []
+
+    // check against each type
     for (const type of this.types) {
-      if (ArgTypeChecker[type](arguments, context))
-        potentialTypes.push(type)
+      if (ArgTypeChecker[type](args, context))
+        candidateTypes.push(type)
     }
 
+    if (candidateTypes.length === 0) return false
+    
     // TODO if there are more than one potential types, then we need to disambiguate
-
-    // return the type
+    console.log(candidateTypes)
+    
+    return true
   }
 }

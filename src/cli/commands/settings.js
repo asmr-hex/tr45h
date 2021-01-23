@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { Command, CLIArg } from './command'
-import { CLIArgTypes } from './types'
+import { Command } from './command'
+import { Parameter } from './parameters'
+import { ParameterTypes } from './types'
 
 import { SettingsPage } from '../../ui/dialogs/settings'
 
@@ -11,9 +12,9 @@ export class Settings extends Command {
     super({
       name: 'settings',
       aliases: [],
-      args: [
-        new CLIArg({
-          types: [ CLIArgTypes.Command, CLIArgTypes.Sound ],
+      params: [
+        new Parameter({
+          types: [ ParameterTypes.Command, ParameterTypes.Sound ],
           optional: true
         })
       ],
@@ -42,7 +43,7 @@ export class SoundSettings extends Command {
     super({
       name:        'sound',
       aliases:     [],
-      args:        [],
+      params:      [],
       subcommands: [],
     })
   }
@@ -53,7 +54,7 @@ export class UISettings extends Command {
     super({
       name:        'ui',
       aliases:     [],
-      args:        [],
+      params:      [],
       subcommands: [],
     })
   }

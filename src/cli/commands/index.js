@@ -1,9 +1,11 @@
 import { Command } from './command'
 import { Help } from './help'
 import { Settings } from './settings'
+import { Edit } from './edit'
 
 const commands = [
   new Help(),
+  new Edit(),
   new Settings(),
 ]
 
@@ -28,6 +30,7 @@ export class BuiltInCommands extends Command {
 // --- collections ---
 // list collections
 // new collection
+// show <collection>
 // export collection
 // delete collection
 //
@@ -56,6 +59,7 @@ export class BuiltInCommands extends Command {
 //
 // --- project ---
 // save project
+// show project
 // export project
 // load project
 // list projects
@@ -74,7 +78,7 @@ export class BuiltInCommands extends Command {
 // settings
 //
 // show colections|sounds|commands|projects
-// edit <sound>|<collection>
+// edit <sound>|<collection>|project
 // open <project>
 // save project|<sound>
 // export project|<collection>|<sound>
