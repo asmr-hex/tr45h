@@ -74,6 +74,7 @@ export const CLI = props => {
 
   useEffect(() => {
     if (isCliFocused) {
+      console.log("FOCUSING CLI")
       editorRef.current.focus()
     }
   }, [isCliFocused])

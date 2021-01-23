@@ -13,6 +13,7 @@ import { useTheme } from "@material-ui/core/styles"
 import { BehaviorSubject } from 'rxjs'
 
 import { useUIStateContext } from '../../context/ui'
+import { useAudioContext } from '../../context/audio'
 import { useTransportContext } from '../../context/transport'
 import { useAnnotationContext } from '../../context/annotation'
 
@@ -54,6 +55,9 @@ export const MusicEditor = props => {
     isCliFocused,
   } = useUIStateContext()
 
+  // get audio context
+  const { setAudioScheduler } = useAudioContext()
+  
   // get annotation setter
   const { currentAnnotation, setCurrentAnnotation } = useAnnotationContext()
   
@@ -85,6 +89,7 @@ export const MusicEditor = props => {
     setEditorState(EditorState.set(editorState, {decorator}))
     setDecorator(decorator)
     setInterpreter(interpreter)
+    setAudioScheduler(interpreter.scheduler)
   }, [])
 
   // TODO for some reason this prevents parsing from happening??
@@ -93,6 +98,9 @@ export const MusicEditor = props => {
   // }, [isEditorOpen])
   
   const onChange = newEditorState => {
+    // prevent changes until decorator has been set
+    if (newEditorState.getDecorator() === null) return
+    
     // // detect block deletions
     // const newBlockKeys = newEditorState.getCurrentContent().getBlocksAsArray().map(b => b.key)
     // const oldBlockKeys = editorState.getCurrentContent().getBlocksAsArray().map(b => b.key)
@@ -116,7 +124,7 @@ export const MusicEditor = props => {
 
     if (annotator !== null)
       annotator.check(newEditorState.getSelection())
-    
+
     setEditorState(newEditorState)
   }
 

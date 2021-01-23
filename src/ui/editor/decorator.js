@@ -92,7 +92,7 @@ export class SyntaxHighlightDecorator {
     // we simply create a decoratorKey for each character?
     // const { errors, tokens } = this.interpreter.lexer.tokenize(blockText)
     const { errors, tokens } = this.interpreter.analyzeBlock(blockKey, blockIndex, blockText)
-
+    
     let annotations = []
     
     for (const token of [...tokens, ...errors]) {

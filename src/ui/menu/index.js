@@ -1,10 +1,13 @@
 import React from  'react'
 import { withTheme, styled } from "@material-ui/core/styles"
 
+import { useUIStateContext } from '../../context/ui'
+
 import { Logo } from '../logo'
 import { Info } from './info'
 import { Playback } from './playback'
 import { Commands } from './commands'
+import { Analyser } from './analyser'
 
 
 const MenuBar = withTheme(styled('div')({
@@ -25,7 +28,10 @@ const Half = withTheme(styled('div')({
 }))
 
 export const Menu = props => {
-
+  const {
+    isCliFocused,
+  } = useUIStateContext()
+  
   return (
     <MenuBar>
       <Half>
@@ -33,7 +39,7 @@ export const Menu = props => {
         <Info/>
       </Half>
       <Half justifyContent="space-between">
-        <Commands/>
+        { isCliFocused ? <Commands/> : <Analyser/> }
         <Playback/>
       </Half>
     </MenuBar>

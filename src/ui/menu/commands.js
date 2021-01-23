@@ -6,11 +6,10 @@ import { CLI } from '../cli/index-new'
 
 const CommandInterfaceRoot = withTheme(styled('div')({
   display: 'flex',
-  flexGrow: 1,
+  width: '85%',
   // flexDirection: 'column',
   // alignItems: 'flex-start',
   position: 'relative',
-  backgroundColor: 'violet'
 }))
 
 const CommandInterface = withTheme(styled('div')({
@@ -23,7 +22,9 @@ const CommandInterface = withTheme(styled('div')({
 }))
 
 const CommandLine = withTheme(styled('div')({
-  
+  width: '100%',
+  overflow: 'hidden',
+  overflowX: 'scroll',
 }))
 
 const Suggestions = withTheme(styled('div')({

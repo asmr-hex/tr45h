@@ -53,7 +53,7 @@ export class SymbolTable {
     // symbol update stream
     this.updates = new BehaviorSubject(null)
 
-    this.updates.subscribe(s => console.log(s))
+    this.updates.subscribe(s => {}) // TODO....do something with this?
   }
 
   

@@ -45,15 +45,17 @@ export class Scheduler {
     this.audio = {
       context: audioContext,
       output: {
-        main:   audioContext.createGain(),                           // main audio line out (GainNode).
-        record: audioContext.createMediaStreamDestination(),         // recording audio line out (MediaStream).
+        main:     audioContext.createGain(),                           // main audio line out (GainNode).
+        record:   audioContext.createMediaStreamDestination(),         // recording audio line out (MediaStream).
+        analysis: audioContext.createAnalyser(),                       // analysis node (AnalyserNode).
       },
-      recorder: null,                                                // declare audio recorder.
-      filename: 'untitled',                                          // recording output default filename.
+      recorder: null,                                                  // declare audio recorder.
+      filename: 'untitled',                                            // recording output default filename.
     }
-    this.audio.output.main.connect(this.audio.context.destination)   // connect global gain to speakers.
-    this.audio.recorder = new Recorder(this.audio.context)           // create a new recorder.
-    this.audio.recorder.init(this.audio.output.record.stream)        // initialize the recorder.
+    this.audio.output.main.connect(this.audio.output.analysis)         // connect global gain to analyser node.
+    this.audio.output.analysis.connect(this.audio.context.destination) // connect analyser to speakers.
+    this.audio.recorder = new Recorder(this.audio.context)             // create a new recorder.
+    this.audio.recorder.init(this.audio.output.record.stream)          // initialize the recorder.
     
     ////////////////////
     //                //
@@ -177,6 +179,10 @@ export class Scheduler {
 }
 
 
+
+
+// TODO remove stuff below.
+// i think it has been replaced by Thread.js
 class Sequence {
   constructor(ast, symbolTable, audioContext, output, mediaStreamDestination, theme, transport, bpm = 128) {
     this.ast = ast
