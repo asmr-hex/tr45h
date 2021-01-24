@@ -23,7 +23,7 @@ import { ParameterTypes } from './types'
 const ArgTypeChecker = {
   [ParameterTypes.Sound]: (arg, {symbols}) =>
     !(arg instanceof Array) &&
-    ( symbols.isSound(arg.value) || symbols.isVariable(arg.value)),
+    ( symbols.isSound(arg.value + '__') || symbols.isVariable(arg.value)), // TODO do some sort of canonicalization for sounds...
   [ParameterTypes.Sounds]: (args, {symbols}) =>
     (args instanceof Array)
     ? args.map(arg => symbols.isSound(arg.value) || symbols.isVariable(arg.value))
@@ -38,13 +38,16 @@ const ArgTypeChecker = {
 }
 
 export class Parameter {
-  constructor({ types, optional }) {
-    this.types    = types    || []
-    this.optional = optional || true
+  constructor({ types = [], optional = true }) {
+    this.types    = types
+    this.optional = optional
   }
 
   check(args, context) {
+    console.log(`checking arg: ${args}`)
     let candidateTypes = []
+
+    console.log(context.symbols)
 
     // check against each type
     for (const type of this.types) {

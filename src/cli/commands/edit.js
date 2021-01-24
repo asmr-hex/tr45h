@@ -25,13 +25,22 @@ export class Edit extends Command {
     })
   }
 
-  getExecutable(context) {
+  getExecutable(args, context) {
     // TODO memoize command list and transfomration.
-    const { commands, info } = context
+    const { symbols, commands, info, actions} = context
+
+    console.log(args[0])
     
     return () => {
+      const symbol = symbols.getSound(args[0].value + '__')
       const name = info
-      return props => <div>editing</div>
+
+      actions.openExplorer({
+        title: `edit ${args[0].value}`,
+        body: props => <div>{symbol.metadata.description}</div>,
+      })
+      
+      // return props => <div>editing</div>
     }
   }
 }

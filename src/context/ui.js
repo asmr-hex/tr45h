@@ -18,7 +18,8 @@ export const UIStateProvider = props => {
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false)
   const [isCLIOpen, setIsCLIOpen] = useState(false)
   const [isCliFocused, setIsCliFocused] = useState(false)
-  const [isExplorerOpen, setIsExplorerOpen] = useState(true)
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false)
+  const [explorerContent, setExplorerContent] = useState(null)
 
   const context = {
     isEditorOpen,
@@ -47,8 +48,15 @@ export const UIStateProvider = props => {
     },
 
     isExplorerOpen,
-    openExplorer: () => setIsExplorerOpen(true),
-    closeExplorer: () => setIsExplorerOpen(false),
+    explorerContent,
+    openExplorer: component => {
+      setIsExplorerOpen(true)
+      setExplorerContent(component)
+    },
+    closeExplorer: () => {
+      setIsExplorerOpen(false)
+      setExplorerContent(null)
+    },
   }
   
   return (

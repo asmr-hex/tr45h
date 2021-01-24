@@ -43,6 +43,7 @@ const Body = withTheme(styled('div')({
 export const Explorer = props => {
   const {
     close,
+    content,
   } = props
   
   const title = 'collections'
@@ -55,11 +56,11 @@ export const Explorer = props => {
   return (
     <Container>
       <Header>
-        <Title>{title}</Title>
+        <Title>{content.title}</Title>
         <CloseButton onClick={close}>x</CloseButton>
       </Header>
       <Body>
-        {description}
+        {content.body}
       </Body>
     </Container>
   )

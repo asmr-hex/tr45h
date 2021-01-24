@@ -14,6 +14,7 @@ import { BehaviorSubject } from 'rxjs'
 
 import { useUIStateContext } from '../../context/ui'
 import { useAudioContext } from '../../context/audio'
+import { useSymbolContext } from '../../context/symbols'
 import { useTransportContext } from '../../context/transport'
 import { useAnnotationContext } from '../../context/annotation'
 
@@ -46,6 +47,8 @@ export const MusicEditor = props => {
   
   // get playback observables to pass to the interpreter
   const transport = useTransportContext()
+
+  const { setSymbolTable } = useSymbolContext()
 
   // ui state
   const {
@@ -90,6 +93,7 @@ export const MusicEditor = props => {
     setDecorator(decorator)
     setInterpreter(interpreter)
     setAudioScheduler(interpreter.scheduler)
+    setSymbolTable(interpreter.sym)
   }, [])
 
   useEffect(() => {

@@ -27,6 +27,7 @@ export const Body = props => {
   const {
     isExplorerOpen,
     closeExplorer,
+    explorerContent,
   } = useUIStateContext()
 
   return (
@@ -36,7 +37,7 @@ export const Body = props => {
       </FlexibleHalf>
       {
         isExplorerOpen
-          ? <FlexibleHalf sticky><Explorer close={closeExplorer}/></FlexibleHalf>
+          ? <FlexibleHalf sticky><Explorer close={closeExplorer} content={explorerContent}/></FlexibleHalf>
           : null
       }
     </AppBodyStyled>

@@ -11,4 +11,5 @@ export const TokenTypes = {
   Command:  'COMMAND',
   Error:    'ERROR',
   Argument: 'ARGUMENT',
+  Sound:    'SOUND',
 }

@@ -27,7 +27,7 @@ export class Command {
     )
     this.setContext(context || {})
     
-    this.requiredParams = this.params.filter(a => !a.optional)
+    this.requiredParams = this.params.filter(p => !p.optional)
   }
 
   setContext(context={}) {
@@ -63,8 +63,16 @@ export class Command {
       // is the next token an argument?
       if (this.isValidArgument(token)) {
         // validate the argument
+        // TODO parse lists of arguments
+        console.log("VALID ARGUMENT!")
+        tokens[index].type = TokenTypes.Sound
+        return {
+          command: this.getExecutable([token], this.context),
+          tokens: tokens,
+        }
       } else {
         // ERROR
+        console.log("ERROR (OR A SUB COMMAND WE NEED TO CHECK FURTHER)")
       }
     } else {
       // is the next token a subcommand?
@@ -83,13 +91,13 @@ export class Command {
   }
 
   isValidArgument(token) {
-    for (const param in this.params) {
+    for (const param of this.params) {
       if (param.check(token, this.context)) return true
     }
     return false
   }
   
-  getExecutable(context) { throw new NotImplementedError('getExecutable()') }
+  getExecutable(args, context) { throw new NotImplementedError('getExecutable()') }
 }
 
 

@@ -2,11 +2,12 @@ import { BuiltInCommands } from './commands'
 
 
 export class CLI {
-  constructor() {
+  constructor(context) {
     // instantiate built-in commands
     this.builtin = {
       commands: new BuiltInCommands({
-        info: 'i have no ideas',
+        ...context,
+        info: 'some info...',
       }),
     }
     

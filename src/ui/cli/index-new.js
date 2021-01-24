@@ -15,7 +15,9 @@ import {
   DialogActions,
   Dialog,
 } from './dialog'
+
 import { useUIStateContext } from '../../context/ui'
+import { useSymbolContext } from '../../context/symbols'
 
 import { CLI as CommandLineInterface } from '../../cli'
 
@@ -35,7 +37,10 @@ export const CLI = props => {
     closeCLI,
     isCliFocused,
     blurCLI,
+    openExplorer,
   } = useUIStateContext()
+
+  const { symbols } = useSymbolContext()
 
   const theme = {
     styles: useTheme(),
@@ -58,7 +63,7 @@ export const CLI = props => {
   const handleClose = () => { blurCLI() }
 
   useEffect(() => {
-    const cli = new CommandLineInterface()
+    const cli = new CommandLineInterface({ symbols, actions: { openExplorer } })
     const decorator = new CLIDecorator(cli, themeObservableRef.current)
     const autosuggest = new AutoSuggest(decorator, setSuggestions, ['star', 'start', 'starfish', 'startlight', 'help', 'hell'])
 
@@ -96,7 +101,7 @@ export const CLI = props => {
       handleClose()
       return 'handled'
     case KeyBoundAction.ExecuteCommand:
-      // setInfoComponent(cli.execute())
+      cli.execute()
       handleClose()
       return 'handled'
     case KeyBoundAction.CycleSuggestions:
