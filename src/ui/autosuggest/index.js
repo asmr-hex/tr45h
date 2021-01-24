@@ -11,7 +11,7 @@ import {
 // TODO make different prefixTrees for different dictionary types
 // TODO candidates map to a list of dictionary types to search over.
 export class AutoSuggest {
-  constructor(decorator, setSuggestions, dictionary=[], candidates=[]) {
+  constructor(decorator, setSuggestions, symbolUpdates, dictionary=[], candidates=[]) {
     this.decorator = decorator
     this.setSuggestions = setSuggestions
     this.prefixTree = new PrefixTree(dictionary)
@@ -19,6 +19,11 @@ export class AutoSuggest {
       current: null,
       candidates: [],
     }
+
+    // TODO....do something with this?
+    symbolUpdates.subscribe(s => {
+      console.log(s)
+    })
   }
 
   analyze(editorState) {

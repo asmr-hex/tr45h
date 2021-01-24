@@ -36,11 +36,9 @@ export class Edit extends Command {
       const name = info
 
       actions.openExplorer({
-        title: `edit ${args[0].value}`,
+        title: `edit ${args[0].value}`, // TODO title should be like: moss (sound)
         body: props => <div>{symbol.metadata.description}</div>,
       })
-      
-      // return props => <div>editing</div>
     }
   }
 }

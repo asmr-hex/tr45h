@@ -27,7 +27,6 @@ import { VariableSymbol } from '../types/symbols/variable'
  *
  */
 export class SymbolTable {
-
   /**
    * constructs a new symbol table.
    * @param {BehaviorSubject} theme an rxjs BehaviorSubject for subscribing to theme changes.
@@ -52,8 +51,6 @@ export class SymbolTable {
 
     // symbol update stream
     this.updates = new BehaviorSubject(null)
-
-    this.updates.subscribe(s => {}) // TODO....do something with this?
   }
 
   
