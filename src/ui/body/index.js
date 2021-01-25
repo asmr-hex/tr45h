@@ -3,6 +3,7 @@ import { withTheme, styled } from "@material-ui/core/styles"
 
 import { useUIStateContext } from '../../context/ui'
 
+import { Editor } from '../../editor'
 import { MusicEditor } from '../editor/index'
 import { Explorer } from '../explorer'
 
@@ -33,7 +34,7 @@ export const Body = props => {
   return (
     <AppBodyStyled>
       <FlexibleHalf>
-        <MusicEditor/>
+        <Editor/>
       </FlexibleHalf>
       {
         isExplorerOpen
