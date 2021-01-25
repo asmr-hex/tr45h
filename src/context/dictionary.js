@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
+import { Dictionary } from '../dictionary'
+
 
 const DictionaryContext = createContext()
 
@@ -13,11 +15,10 @@ export const useDictionaryContext = () => {
 
 
 export const DictionaryProvider = props => {
-  const [symbols, setSymbolTable] = useState(null)
+  const [dictionary, setDictionary] = useState(new Dictionary())
 
   const context = {
-    symbols,
-    setSymbolTable,
+    dictionary
   }
   
   return (

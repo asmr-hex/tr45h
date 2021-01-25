@@ -17,6 +17,7 @@ import {
 } from './dialog'
 
 import { useUIStateContext } from '../../context/ui'
+import { useDictionaryContext } from '../../context/dictionary'
 import { useSymbolContext } from '../../context/symbols'
 
 import { CLI as CommandLineInterface } from '../../cli'
@@ -41,6 +42,7 @@ export const CLI = props => {
   } = useUIStateContext()
 
   const { symbols } = useSymbolContext()
+  const { dictionary } = useDictionaryContext()
 
   const theme = {
     styles: useTheme(),
@@ -65,7 +67,7 @@ export const CLI = props => {
   useEffect(() => {
     const cli = new CommandLineInterface({ symbols, actions: { openExplorer } })
     const decorator = new CLIDecorator(cli, themeObservableRef.current)
-    const autosuggest = new AutoSuggest(decorator, setSuggestions, symbols.updates, ['star', 'start', 'starfish', 'startlight', 'help', 'hell'])
+    const autosuggest = new AutoSuggest(decorator, setSuggestions, dictionary)
 
     const emptyEditor = EditorState.push(editorState, ContentState.createFromText(''))
     const selection = emptyEditor.getSelection()

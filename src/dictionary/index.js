@@ -23,6 +23,8 @@ export class Dictionary {
     for (const word of words) {
       trie.add(word)
     }
+
+    console.log(this.contexts)
   }
 
   remove(context, words) {

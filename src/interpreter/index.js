@@ -9,6 +9,8 @@ import { MemorySystem } from './memory'
 import { SymbolTable } from './symbolTable'
 import { AST } from './types/ast'
 
+import { SemanticTokenType } from './types/tokens'
+
 
 /**
  * the Interpreter is the main orchestrator for text analysis and evaluation.
@@ -19,7 +21,7 @@ import { AST } from './types/ast'
  * text to interpret and transmitting information about syntax highlighting.
  */
 export class Interpreter {
-  constructor(observables) {
+  constructor(observables, dictionary=null) {
     const {
       theme,
       transport,
@@ -36,6 +38,21 @@ export class Interpreter {
 
     //this.debouncedParse = debounce(this.parseBlock, 1000)
     this.memoizedParse = {}
+
+    // TODO maybe there is a better place for this.
+    if (dictionary) {
+      // create new contexts in the dictionary for stuff
+      dictionary.new('symbols.sounds')
+      dictionary.new('symbols.variables')
+      dictionary.new('symbols.functions')
+
+      // subscribe to updates for stuff
+      this.sym.updates.subscribe(s => {
+        if (s === null) return
+        if (s.type !== SemanticTokenType.SoundLiteral) return
+        dictionary.add('symbols.sounds', [s.keyword])
+      })
+    }
   }
 
   /**

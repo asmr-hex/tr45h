@@ -14,6 +14,7 @@ import { BehaviorSubject } from 'rxjs'
 
 import { useUIStateContext } from '../../context/ui'
 import { useAudioContext } from '../../context/audio'
+import { useDictionaryContext } from '../../context/dictionary'
 import { useSymbolContext } from '../../context/symbols'
 import { useTransportContext } from '../../context/transport'
 import { useAnnotationContext } from '../../context/annotation'
@@ -50,6 +51,8 @@ export const MusicEditor = props => {
 
   const { setSymbolTable } = useSymbolContext()
 
+  const { dictionary } = useDictionaryContext()
+
   // ui state
   const {
     isEditorOpen,  // DEPRECATE THIS
@@ -82,10 +85,13 @@ export const MusicEditor = props => {
   // API (e.g. on initial component mount)
   useEffect(() => {
     editorRef.current.focus()
-    const interpreter = new Interpreter({
+    const interpreter = new Interpreter(
+      {
       transport: transport.observables,
       theme: themeObservableRef.current,
-    })
+      },
+      dictionary,
+    )
     const _annotator = new Annotator(setCurrentAnnotation, interpreter.sym)
     const decorator = new SyntaxHighlightDecorator(interpreter, themeObservableRef.current, _annotator)
     setAnnotator(_annotator)

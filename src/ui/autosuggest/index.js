@@ -11,19 +11,15 @@ import {
 // TODO make different prefixTrees for different dictionary types
 // TODO candidates map to a list of dictionary types to search over.
 export class AutoSuggest {
-  constructor(decorator, setSuggestions, symbolUpdates, dictionary=[], candidates=[]) {
-    this.decorator = decorator
+  constructor(decorator, setSuggestions, dictionary) {
+    this.decorator      = decorator
     this.setSuggestions = setSuggestions
-    this.prefixTree = new PrefixTree(dictionary)
+    this.dictionary     = dictionary
+    
     this.suggestions = {
       current: null,
       candidates: [],
     }
-
-    // TODO....do something with this?
-    symbolUpdates.subscribe(s => {
-      console.log(s)
-    })
   }
 
   analyze(editorState) {
@@ -48,9 +44,10 @@ export class AutoSuggest {
     }
 
     // TODO is the token a suggestion candidate?
+    const context = 'symbols.sounds'
 
     // what are the top suggestion matches for this token?
-    const suggestions = this.getSuggestions(token)
+    const suggestions = this.getSuggestions(context, token)
 
     if (suggestions.length === 0) {
       this.updateSuggestions(null, [])
@@ -253,75 +250,7 @@ export class AutoSuggest {
     return tokens.length === 0 ? null : tokens[0]
   }
 
-  getSuggestions(token) {
-    return this.prefixTree.suggest(token.value)
-  }
-}
-
-export class PrefixTrieNode {
-  constructor(char) {
-    this.children = {}
-    this.end = false
-    this.char = char
-  }
-}
-
-export class PrefixTree extends PrefixTrieNode {
-  constructor(dictionary=[], config={}) {
-    super(null)
-    
-    for (const word of dictionary) {
-      this.add(word)
-    }
-  }
-
-  add(word) {
-    const addFn = (node, str) => {
-      if (!node.children[str[0]]) {
-        node.children[str[0]] = new PrefixTrieNode(str[0])
-        if (str.length === 1) {
-          node.children[str[0]].end = true
-        }
-      }
-
-      if (str.length > 1) {
-        addFn(node.children[str[0]], str.slice(1))
-      }
-    }
-    
-    addFn(this, word)
-  }
-
-  // TODO
-  remove(word) {}
-
-  suggest(str) {
-    const getSubTree = (string, tree) => {
-      let node = tree
-      while (string) {
-        node = node.children[string[0]]
-        if (!node) return node
-        string = string.substr(1)
-      }
-      return node
-    }
-
-    let suggestions = []
-
-    const getSuggestions = (string, tree) => {
-      for (const k in tree.children) {
-        const child = tree.children[k]
-        const newString = string + child.char
-        if (child.end) {
-          suggestions.push(newString)
-        }
-        getSuggestions(newString, child)
-      }
-    }
-
-    const subTree = getSubTree(str, this)
-    if (subTree) getSuggestions(str, subTree)
-
-    return suggestions.sort()
+  getSuggestions(context, token) {
+    return this.dictionary.suggest(token.value, [context])
   }
 }
