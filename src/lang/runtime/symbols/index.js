@@ -31,7 +31,7 @@ export class SymbolTable {
    * constructs a new symbol table.
    * @param {BehaviorSubject} theme an rxjs BehaviorSubject for subscribing to theme changes.
    */
-  constructor(theme) {
+  constructor({theme}) {
     // registry of all known symbols
     this.registry = {
       refs:      {},                 // Map<BlockKey, Array<SymbolId> > references to symbols by block

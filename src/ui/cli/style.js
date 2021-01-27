@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/core/styles'
 import { TokenTypes } from '../../cli/commands/types'
 
 
-export const useCLIStyles = makeStyles(theme => ({
+export const useCliStyles = makeStyles(theme => ({
   [TokenTypes.Command]: { color: theme.palette.text.cli.command },
   [TokenTypes.Argument]: { color: theme.palette.text.cli.argument },
   [TokenTypes.Error]: {

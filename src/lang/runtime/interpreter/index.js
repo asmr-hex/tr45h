@@ -1,15 +1,14 @@
-// import { BehaviorSubject } from 'rxjs' TODO uncomment when ready to use
 import { debounce, map } from 'lodash'
 
 import { Scheduler } from '../scheduler'
 
 import { Lexer } from './lexer'
 import { Parser } from './parser'
-import { MemorySystem } from './memory'
-import { SymbolTable } from './symbolTable'
-import { AST } from './types/ast'
+import { MemorySystem } from '../memory'
+import { SymbolTable } from '../symbols'
+import { AST } from '../types/ast'
 
-import { SemanticTokenType } from './types/tokens'
+import { SemanticTokenType } from '../types/tokens'
 
 
 /**
@@ -21,38 +20,27 @@ import { SemanticTokenType } from './types/tokens'
  * text to interpret and transmitting information about syntax highlighting.
  */
 export class Interpreter {
-  constructor(observables, dictionary=null) {
+  constructor(modules) {
     const {
-      theme,
-      transport,
-    } = observables
+      memory    = new MemorySystem(),
+      symbols   = new SymbolTable(),
+      scheduler = null,
+      transport = null,
+      theme     = null,
+    } = modules
 
-    this.mem       = new MemorySystem()
-    this.sym       = new SymbolTable(theme)
+    this.mem       = memory
+    this.sym       = symbols
+    this.scheduler = scheduler || new Scheduler(this.mem, this.sym, transport, theme)
+    
     this.lexer     = new Lexer()
     this.parser    = new Parser(this.sym)
-    this.scheduler = new Scheduler(this.mem, this.sym, transport, theme)
 
     
     this.scheduler.start()
 
     //this.debouncedParse = debounce(this.parseBlock, 1000)
     this.memoizedParse = {}
-
-    // TODO maybe there is a better place for this.
-    if (dictionary) {
-      // create new contexts in the dictionary for stuff
-      dictionary.new('symbols.sounds')
-      dictionary.new('symbols.variables')
-      dictionary.new('symbols.functions')
-
-      // subscribe to updates for stuff
-      this.sym.updates.subscribe(s => {
-        if (s === null) return
-        if (s.type !== SemanticTokenType.SoundLiteral) return
-        dictionary.add('symbols.sounds', [s.keyword])
-      })
-    }
   }
 
   /**

@@ -1,25 +1,22 @@
 import React, { createContext, useContext, useState } from 'react'
 import './audioMonkeyPatch'
 
-// TODO eventually, put this in the context...?
-export const audioContext = new AudioContext()
 
 const AudioReactContext = createContext()
 
-export const useAudioContext = () => {
+export const useAudio = () => {
   const ctx = useContext(AudioReactContext)
   if (ctx === undefined) {
-    throw new Error(`useAudioContext must be invoked in a child component of AudioProvider`)
+    throw new Error(`useAudio must be invoked in a child component of AudioProvider`)
   }
   return ctx
 }
 
 export const AudioProvider = props => {
-  const [audioScheduler, setAudioScheduler] = useState(null)
+  const [audioContext, setAudioContext] = useState(new AudioContext())
   
   const context = {
-    audioScheduler,
-    setAudioScheduler,
+    audioContext,
   }
 
   return (

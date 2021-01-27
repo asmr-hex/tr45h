@@ -1,7 +1,7 @@
 import React from 'react'
 import { withTheme, styled } from '@material-ui/core/styles'
 
-import { useAnnotationContext } from '../../context/annotation'
+import { useAnnotations } from '../../state'
 import { SemanticTokenType } from '../../interpreter/types/tokens'
 
 
@@ -76,7 +76,7 @@ const DetailTypes = {
 }
 
 export const Info = props => {  
-  const { currentAnnotation } = useAnnotationContext()
+  const { currentAnnotation } = useAnnotations()
   const type = currentAnnotation === null ? null : currentAnnotation.token.type
 
   if (!(type in DetailTypes)) return null

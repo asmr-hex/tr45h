@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const AnnotationContext = createContext()
 
-export const useAnnotationContext = () => {
+export const useAnnotations = () => {
   const ctx = useContext(AnnotationContext)
   if (ctx === undefined) {
     throw new Error(`AnnotationContext must be invoked in a child component of AnnotationProvider`)

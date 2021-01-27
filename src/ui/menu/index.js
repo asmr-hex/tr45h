@@ -1,7 +1,7 @@
 import React from  'react'
 import { withTheme, styled } from "@material-ui/core/styles"
 
-import { useUIStateContext } from '../../context/ui'
+import { useUIState } from '../../state'
 
 import { Logo } from '../logo'
 import { Info } from './info'
@@ -30,7 +30,7 @@ const Half = withTheme(styled('div')({
 export const Menu = props => {
   const {
     isCliFocused,
-  } = useUIStateContext()
+  } = useUIState()
   
   return (
     <MenuBar>

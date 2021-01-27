@@ -4,10 +4,10 @@ import { BehaviorSubject } from 'rxjs'
 
 const TransportContext = createContext()
 
-export const useTransportContext = () => {
+export const useTransport = () => {
   const ctx = useContext(TransportContext)
   if (ctx === undefined) {
-    throw new Error(`useTransportContext must be invoked in a child component of TransportProvider`)
+    throw new Error(`useTransport must be invoked in a child component of TransportProvider`)
   }
   return ctx
 }

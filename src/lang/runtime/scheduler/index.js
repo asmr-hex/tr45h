@@ -1,7 +1,6 @@
 import { values } from 'lodash'
 import Recorder from 'recorder-js'
 
-import { audioContext } from '../context/audio'
 import { Thread } from './thread'
 
 
@@ -11,7 +10,7 @@ import { Thread } from './thread'
  *
  */
 export class Scheduler {
-  constructor(mem, sym, transport, theme) {
+  constructor({audioContext, memory, symbols, transport, theme}) {
 
     ////////////////////////
     //                    //
@@ -19,8 +18,8 @@ export class Scheduler {
     //                    //
     ////////////////////////
 
-    this.mem     = mem                                               // memory system. 
-    this.sym     = sym                                               // symbol table.
+    this.mem     = memory                                            // memory system. 
+    this.sym     = symbols                                           // symbol table.
     this.threads = {}                                                // execution threads.
 
     // subscribe to memory changes.

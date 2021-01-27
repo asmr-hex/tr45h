@@ -3,10 +3,10 @@ import React, { createContext, useContext, useState } from 'react'
 
 const UIStateContext = createContext()
 
-export const useUIStateContext = () => {
+export const useUIState = () => {
   const ctx = useContext(UIStateContext)
   if (ctx === undefined) {
-    throw new Error(`useUIStateContext must be invoked in a child component of UIStateProvider`)
+    throw new Error(`useUIState must be invoked in a child component of UIStateProvider`)
   }
   return ctx
 }
