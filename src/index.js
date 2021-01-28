@@ -2,17 +2,18 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import CssBaseline from '@material-ui/core/CssBaseline'
 
-import { CustomThemeProvider } from './ui/themes/provider'
-import App from './ui/app'
+import { ThemeProvider } from 'A0/ui/themes/provider'
+import { App } from 'A0/app'
+
 import './index.css'
 
 
 ReactDOM.render(
   <React.StrictMode>
-    <CustomThemeProvider>
+    <ThemeProvider>
       <CssBaseline />
       <App />
-    </CustomThemeProvider>
+    </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )
