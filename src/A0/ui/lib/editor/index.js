@@ -34,10 +34,12 @@ export const Editor = forwardRef((props, ref) => {
   )
 
   const _onChange = newEditorState => {
+    const decorator = newEditorState.getDecorator()
+    
     // prevent changes until decorator has been set
-    if (newEditorState.getDecorator() === null) return
+    if (decorator === null) return
 
-    setEditorState(onChange(newEditorState))
+    setEditorState(decorator.suggest(onChange(newEditorState)))
   }
 
   return (

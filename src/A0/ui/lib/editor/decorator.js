@@ -2,6 +2,7 @@ import React from  'react'
 import { SelectionState } from 'draft-js'
 import { List } from 'immutable'
 
+import { AutoSuggest } from './autosuggest'
 
 
 /**
@@ -23,13 +24,15 @@ export class Decorator {
   constructor(interpret, getTokenStyles, dictionary, setSuggestions, triggerSuggest) {
     this.interpret      = interpret
     this.getTokenStyles = getTokenStyles
-    this.dictionary     = dictionary
-    this.suggestions    = {
-      set:     setSuggestions,
-      trigger: triggerSuggest,
-    }
-
-    this.tokens = []
+    this.tokens         = {}
+    this.autosuggest    = new AutoSuggest({
+      tokens: this.tokens,
+      dictionary,
+      suggestions: {
+        set:     setSuggestions,
+        trigger: triggerSuggest,
+      }
+    })
   }
   
   /**
@@ -64,11 +67,12 @@ export class Decorator {
     const blockKey   = block.getKey()
     const blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)
-
-    if (blockText.trim() === '') return    
-    
+    if (blockText.trim() === '') return
     let decorations  = Array(blockText.length).fill(null)
 
+    // handle autosuggestion entities
+    const { suggestions, text } = this.extractSuggestions(block)
+    
     // initialize map for this block type for use later (in getPropsforkey)
     this.tokens[blockKey] = {}
     
@@ -76,7 +80,7 @@ export class Decorator {
     // TODO standardize output....include metadata output (something to control like line style??)
     const { tokens = [] } = this.interpret(blockKey, blockIndex, blockText)
     
-    for (const token of tokens) {
+    for (const token of [ ...suggestions, ...tokens ]) {
       const tokenId      = `${token.start}`             // block-relative token id
       const componentKey = `${blockKey}-${token.start}` // block-scoped token id
 
@@ -92,6 +96,47 @@ export class Decorator {
     return List(decorations)
   }
 
+  extractSuggestions(block) {
+    const blockText = block.getText()
+    let suggestions = []
+    let text        = blockText
+
+    const push = s => {
+      s.value  = blockText.substr(s.start, s.end)
+      s.length = s.end - s.start
+      suggestions.push(s)
+
+      // replace entity characters with empty space (so its not parsed)
+      text = text.substr(0, s.start) + ' '.repeat(s.length) + text.substr(s.end+1)
+
+      return {type: null, start: null, end: null}
+    }
+    
+    let suggestion = {type: null, start: null, end: null}
+    for (let i = 0; i < block.getLength(); i++) {
+      const entity = block.getEntityAt(i)
+
+      // if there is no entity or the entity type is different from the current suggestion
+      // then we will push the current suggestion and begin a new one.
+      if (entity === null || entity.getType() !== suggestion.type) {
+        if (suggestion.start !== null & suggestion.end !== null)
+          suggestion = push(suggestion)
+        continue
+      }
+
+      if (suggestion.start === null) {
+        suggestion.start = i
+        suggestion.type  = entity.getType()
+      }
+
+      suggestion.end = i + 1
+
+      if (i === block.getLength() - 1) push(suggestion)
+    }
+
+    return { suggestions, text }
+  }
+  
   /**
    * Given a decorator key, optionally return the props to use when rendering
    * this decorated range.
@@ -123,5 +168,9 @@ export class Decorator {
         <span className={classes.join(' ')}>{props.children}</span>
       ) 
     }
+  }
+
+  suggest(newEditorState) {
+    return this.autosuggest.analyze(newEditorState)
   }
 }
