@@ -11,7 +11,6 @@ const AppBodyStyled = withTheme(styled('div')({
   height: '100%',
   display: 'flex',
   justifyContent: 'flex-start',
-  fontSize: 'calc(4px + 2vmin)',
   overflow: 'hidden',
 }))
 

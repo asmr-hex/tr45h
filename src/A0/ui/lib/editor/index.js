@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, forwardRef } from 'react'
 import { Editor as DraftEditor, EditorState } from 'draft-js'
 import 'draft-js/dist/Draft.css'
 
@@ -6,7 +6,7 @@ import { Dictionary } from './dictionary'
 import { Decorator } from './decorator'
 
 
-export const Editor = props => {
+export const Editor = forwardRef((props, ref) => {
   const {
     contentState   = null,
     interpret      = (blockKey, blockIndex, blockText) => [],
@@ -42,9 +42,10 @@ export const Editor = props => {
 
   return (
     <DraftEditor
+      ref={ref}
       editorState={editorState}
       onChange={_onChange}
       {...otherProps}
     />
   )
-}
+})

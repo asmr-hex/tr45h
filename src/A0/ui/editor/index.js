@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { DefaultDraftBlockRenderMap } from 'draft-js'
 import { Map } from 'immutable'
 
@@ -18,11 +18,12 @@ import { KeyBindingFn, KeyBoundAction } from './keybindings'
 
 export const MusicEditor = props => {
   const { theme }                       = useStyles()
-  const { focusCLI }                    = useUIState()
   const { dictionary }                  = useDictionary()
   const { interpreter, symbols }        = useRuntime()
   const { annotator, annotation }       = useAnnotations()
+  const { focusCLI, isEditorFocused }   = useUIState()
   const [ currentLine, setCurrentLine ] = useState(null)
+  const editorRef                       = useRef(null)
 
   
   const interpret = (key, index, text) => annotator.update(key, interpreter.analyzeBlock(key, index, text))
@@ -34,9 +35,8 @@ export const MusicEditor = props => {
     return newEditorState
   }
 
-  useEffect(() => {
-    if (currentLine) visuallyMark(currentLine, theme)
-  }, [currentLine])
+  useEffect(() => { if (currentLine) visuallyMark(currentLine, theme) }, [currentLine])
+  useEffect(() => { if (isEditorFocused) editorRef.current.focus() }, [isEditorFocused])
   
   
   const getTokenStyles = (key, token) => {
@@ -100,6 +100,7 @@ export const MusicEditor = props => {
   return (
     <div style={styles}>
       <Editor
+        ref={editorRef}
         interpret={interpret}
         getTokenStyles={getTokenStyles}
         dictionary={dictionary}

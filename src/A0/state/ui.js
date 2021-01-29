@@ -11,40 +11,27 @@ export const useUIState = () => {
   return ctx
 }
 
-
 export const UIStateProvider = props => {
-  // UI states
-  const [isEditorOpen, setIsEditorOpen] = useState(true)  // TODO rename to isEditorFocused
+  const [isEditorFocused, setIsEditorFocused]     = useState(true)
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false)
-  const [isCLIOpen, setIsCLIOpen] = useState(false)
-  const [isCliFocused, setIsCliFocused] = useState(false)
-  const [isExplorerOpen, setIsExplorerOpen] = useState(false)
-  const [explorerContent, setExplorerContent] = useState(null)
+  const [isCliFocused, setIsCliFocused]           = useState(false)
+  const [isExplorerOpen, setIsExplorerOpen]       = useState(false)
+  const [explorerContent, setExplorerContent]     = useState(null)
 
   const context = {
-    isEditorOpen,
+    isEditorFocused,
     
     isAboutDialogOpen,
     setIsAboutDialogOpen,
 
-    isCLIOpen,
-    openCLI: () => {
-      setIsCLIOpen(true)
-      setIsEditorOpen(false)
-    },
-    closeCLI: () => {
-      setIsCLIOpen(false)
-      setIsEditorOpen(true)
-    },
-
     isCliFocused,
     focusCLI: () => {
       setIsCliFocused(true)
-      setIsEditorOpen(false)
+      setIsEditorFocused(false)
     },
     blurCLI: () => {
       setIsCliFocused(false)
-      setIsEditorOpen(true)
+      setIsEditorFocused(true)
     },
 
     isExplorerOpen,

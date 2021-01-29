@@ -1,7 +1,7 @@
 import { reduce, values } from 'lodash'
 
-import { NotImplementedError } from '../../interpreter/types/error'
-import { TokenTypes } from './types'
+import { NotImplementedError } from 'A0/lang/types'
+import { TokenTypes } from './types' // TODO somehow merge these cli types with lang types?
 
 
 export class Command {

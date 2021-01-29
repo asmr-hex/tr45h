@@ -12,6 +12,7 @@ const AppContainer = withTheme(styled('div')({
   flexDirection: 'column',
   textAlign: 'center',
   height: '100vh',
+  fontSize: 'calc(4px + 2vmin)',
 }))
 
 

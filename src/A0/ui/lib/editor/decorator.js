@@ -74,7 +74,7 @@ export class Decorator {
     
     // interpret text in this block.
     // TODO standardize output....include metadata output (something to control like line style??)
-    const { tokens } = this.interpret(blockKey, blockIndex, blockText)
+    const { tokens = [] } = this.interpret(blockKey, blockIndex, blockText)
     
     for (const token of tokens) {
       const tokenId      = `${token.start}`             // block-relative token id
