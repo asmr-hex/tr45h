@@ -52,7 +52,7 @@ export class CLI {
   interpret(input) {
     const { command, tokens } = this.parse(this.lex(input))
     this.command = command
-    return tokens
+    return { tokens }
   }
 
   execute() {

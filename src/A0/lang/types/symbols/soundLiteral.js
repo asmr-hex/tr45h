@@ -106,6 +106,9 @@ export class SoundSymbol extends Symbol {
   }
 
   async search() {
+    // update initial search status
+    this.updateStatus(SoundStatusType.Searching)
+    
     // perform initial search
     const { count, results } = await fetch(
       this.makeSearchQueryUrl(),

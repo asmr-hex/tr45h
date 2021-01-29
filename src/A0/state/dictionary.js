@@ -28,6 +28,7 @@ export const DictionaryProvider = props => {
     dictionary.new('symbols.variables')
     dictionary.new('symbols.functions')
 
+    dictionary.add('symbols.sounds', ['star', 'starfish', 'starlight', 'starting'])
     
     // TODO subscribe dictionary to updates from runtime.
     symbols.updates.subscribe(s => {  // TODO rewrite with RxJs filtering and stuff.

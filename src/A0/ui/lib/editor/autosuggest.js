@@ -23,7 +23,7 @@ export class AutoSuggest {
     const newEditorState = this.removeSuggestion(editorState)
     
     const selection = newEditorState.getSelection()
-
+    
     // make sure selection is collapsed
     if (!selection.isCollapsed()) {
       this.updateSuggestions(null, [])
@@ -31,15 +31,16 @@ export class AutoSuggest {
     }
 
     // get selection offset
+    const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
-
+    
     // is offset within a token?
-    const token = this.getBoundingToken(offset)
+    const token = this.getBoundingToken(key, offset)
     if (token === null) {
       this.updateSuggestions(null, [])
       return newEditorState 
     }
-
+    
     // TODO is the token a suggestion candidate?
     const context = 'symbols.sounds'
 
@@ -239,9 +240,9 @@ export class AutoSuggest {
     return EditorState.forceSelection(editorStateWithSuggestion, selection)
   }
   
-  getBoundingToken(offset) {
+  getBoundingToken(key, offset) {
     const tokens = filter(
-      this.tokens,
+      this.tokens[key],
       v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'INLINE-SUGGESTION')
     )
     return tokens.length === 0 ? null : tokens[0]

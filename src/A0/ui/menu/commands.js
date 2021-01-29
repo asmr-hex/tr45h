@@ -41,7 +41,7 @@ const Suggestion = withTheme(styled('div')({
 
 export const Commands = props => {
   const [suggestions, setSuggestions] = useState([])
-
+  
   return (
     <CommandInterfaceRoot>
       <CommandInterface>

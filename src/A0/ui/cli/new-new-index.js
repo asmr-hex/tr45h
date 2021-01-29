@@ -15,6 +15,7 @@ import { KeyBindingFn, KeyBoundAction } from './keybinding'
 
 
 export const CLI = props => {
+  const { setSuggestions } = props
   const { theme } = useStyles()
   const { cli }   = useCLI()
   const { dictionary } = useDictionary()
@@ -28,7 +29,7 @@ export const CLI = props => {
   useEffect(() => { if (isCliFocused) editorRef.current.focus() }, [isCliFocused])
 
   
-  const interpret = () => ({})
+  const interpret = (block, index, text) => cli.interpret(text)
   const getTokenStyles = () => ({})
   const onChange = n => n
   const handleClose = () => blurCLI()
@@ -59,6 +60,7 @@ export const CLI = props => {
       interpret={interpret}
       getTokenStyles={getTokenStyles}
       dictionary={dictionary}
+      setSuggestions={setSuggestions}
       onChange={onChange}
       handleKeyCommand={handleKeyCommand}
       keyBindingFn={KeyBindingFn}

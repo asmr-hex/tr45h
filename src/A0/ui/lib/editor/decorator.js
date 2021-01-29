@@ -71,14 +71,14 @@ export class Decorator {
     let decorations  = Array(blockText.length).fill(null)
 
     // handle autosuggestion entities
-    const { suggestions, text } = this.extractSuggestions(block)
-    
+    const { suggestions, text } = this.extractSuggestions(block, contentState)
+
     // initialize map for this block type for use later (in getPropsforkey)
     this.tokens[blockKey] = {}
     
     // interpret text in this block.
     // TODO standardize output....include metadata output (something to control like line style??)
-    const { tokens = [] } = this.interpret(blockKey, blockIndex, blockText)
+    const { tokens = [] } = this.interpret(blockKey, blockIndex, text)
     
     for (const token of [ ...suggestions, ...tokens ]) {
       const tokenId      = `${token.start}`             // block-relative token id
@@ -96,7 +96,7 @@ export class Decorator {
     return List(decorations)
   }
 
-  extractSuggestions(block) {
+  extractSuggestions(block, contentState) {
     const blockText = block.getText()
     let suggestions = []
     let text        = blockText
@@ -114,11 +114,12 @@ export class Decorator {
     
     let suggestion = {type: null, start: null, end: null}
     for (let i = 0; i < block.getLength(); i++) {
-      const entity = block.getEntityAt(i)
+      const entityKey = block.getEntityAt(i)
+      const entity    = entityKey !== null ? contentState.getEntity(entityKey) : null
 
       // if there is no entity or the entity type is different from the current suggestion
       // then we will push the current suggestion and begin a new one.
-      if (entity === null || entity.getType() !== suggestion.type) {
+      if (entity === null ) { //|| ( entity !== null && entity.getType() !== suggestion.type )) {
         if (suggestion.start !== null & suggestion.end !== null)
           suggestion = push(suggestion)
         continue
