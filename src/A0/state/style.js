@@ -3,7 +3,7 @@ import { useTheme } from "@material-ui/core/styles"
 import { BehaviorSubject } from 'rxjs'
 
 import { useCliStyles } from '../ui/cli/style'
-import { useSyntaxStyles } from '../ui/editor/style'
+import { useSyntaxStyles, useEditorStyles } from '../ui/editor/style'
 
 
 const StyleContext = createContext()
@@ -22,6 +22,7 @@ export const StyleProvider = props => {
     classes: {
       lang: useSyntaxStyles(),
       cli:  useCliStyles(),
+      editor: useEditorStyles(),
     }
   }
   const [observable, _] = useState(new BehaviorSubject(theme))

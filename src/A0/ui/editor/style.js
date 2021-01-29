@@ -45,3 +45,8 @@ export const useSyntaxStyles = makeStyles(theme => ({
   [SoundStatusType.Unavailable]: { color: theme.palette.text.status.unavailable },
   currentStep: { borderBottom: `2px ${theme.palette.divider} solid` },
 }))
+
+export const useEditorStyles = makeStyles(theme => ({
+  currentLine:       { backgroundColor: '#edf7f7' },
+  currentLineNumber: { color: 'black !important' },
+}))

@@ -64,8 +64,11 @@ export class Decorator {
     const blockKey   = block.getKey()
     const blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)
-    let decorations  = Array(blockText.length).fill(null)
+
+    if (blockText.trim() === '') return    
     
+    let decorations  = Array(blockText.length).fill(null)
+
     // initialize map for this block type for use later (in getPropsforkey)
     this.tokens[blockKey] = {}
     

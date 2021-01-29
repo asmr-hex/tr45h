@@ -1,27 +1,42 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { DefaultDraftBlockRenderMap } from 'draft-js'
+import { Map } from 'immutable'
 
 import { Editor } from '../lib/editor'
 
 import {
   useStyles,
   useRuntime,
+  useUIState,
   useDictionary,
   useAnnotations,
-} from '../../state'
+} from 'A0/state'
+
+import { LineBlock, visuallyMark} from './line'
+import { KeyBindingFn, KeyBoundAction } from './keybindings'
 
 
 export const MusicEditor = props => {
-  const { theme }                = useStyles()
-  const { dictionary }           = useDictionary()
-  const { interpreter, symbols } = useRuntime()
-  const { annotator }            = useAnnotations()
+  const { theme }                       = useStyles()
+  const { focusCLI }                    = useUIState()
+  const { dictionary }                  = useDictionary()
+  const { interpreter, symbols }        = useRuntime()
+  const { annotator, annotation }       = useAnnotations()
+  const [ currentLine, setCurrentLine ] = useState(null)
+
   
   const interpret = (key, index, text) => annotator.update(key, interpreter.analyzeBlock(key, index, text))
 
   const onChange = newEditorState => {
-    annotator.check(newEditorState.getSelection())
+    const selection = newEditorState.getSelection()
+    annotator.check(selection)
+    setCurrentLine(selection.getAnchorKey())
     return newEditorState
   }
+
+  useEffect(() => {
+    if (currentLine) visuallyMark(currentLine, theme)
+  }, [currentLine])
   
   
   const getTokenStyles = (key, token) => {
@@ -43,12 +58,56 @@ export const MusicEditor = props => {
     }
   }
 
+  const blockRenderMap = DefaultDraftBlockRenderMap.merge(
+    Map({
+      'unstyled': {
+        element: 'div',
+        wrapper: <LineBlock/>
+      }
+    })
+  )
+
+  const handleKeyCommand = command => {
+    switch (command) {
+    case KeyBoundAction.GetNewSound:
+      if (annotation.symbol) {
+        annotation.symbol.reFetch({symbolTable: symbols})
+      }
+      return 'handled'
+    case KeyBoundAction.CycleAutoCompletion:
+      console.log("Cycle Autocompletion")
+      // TODO
+      return 'handled'
+    case KeyBoundAction.FocusCLI:
+      focusCLI()
+      return 'handled'
+    default:
+      return 'not-handled'
+    }
+  }
+  
+  // TODO refactor as css class with styled div
+  const styles = {
+    position: 'relative',
+    width: 'calc(100% - 20px)',
+    height: '93%',
+    top: '6%',
+    left: '20px',
+    display: 'flex',
+    overflowY: 'scroll',
+  }
+  
   return (
-    <Editor
-      interpret={interpret}
-      getTokenStyles={getTokenStyles}
-      dictionary={dictionary}
-      onChange={onChange}
-    />
+    <div style={styles}>
+      <Editor
+        interpret={interpret}
+        getTokenStyles={getTokenStyles}
+        dictionary={dictionary}
+        onChange={onChange}
+        blockRenderMap={blockRenderMap}
+        handleKeyCommand={handleKeyCommand}
+        keyBindingFn={KeyBindingFn}
+      />
+    </div>
   )
 }

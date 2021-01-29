@@ -33,7 +33,7 @@ export const StatementBlock = props => {
           
           // TODO lookup color of this editor block in symbol table
           const isEmpty = text.trim() === ''
-          
+
 
           const style = {
             display: 'flex',
