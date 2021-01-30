@@ -24,7 +24,6 @@ export const MusicEditor = props => {
   const { focusCLI, isEditorFocused }   = useUIState()
   const [ currentLine, setCurrentLine ] = useState(null)
   const editorRef                       = useRef(null)
-
   
   const interpret = (key, index, text) => annotator.update(key, interpreter.analyzeBlock(key, index, text))
 
@@ -37,7 +36,6 @@ export const MusicEditor = props => {
 
   useEffect(() => { if (currentLine) visuallyMark(currentLine, theme) }, [currentLine])
   useEffect(() => { if (isEditorFocused) editorRef.current.focus() }, [isEditorFocused])
-  
   
   const getTokenStyles = (key, token) => {
     const symbol        = symbols.get(token)
@@ -54,7 +52,7 @@ export const MusicEditor = props => {
         symbol === null ? '' : theme.classes.lang[symbol.status],  // symbol status
         isCurrentStep ? theme.classes.lang.currentStep : '',       // current step
       ],
-      styles: {}
+      styles: {},
     }
   }
 
@@ -74,10 +72,10 @@ export const MusicEditor = props => {
         annotation.symbol.reFetch({symbolTable: symbols})
       }
       return 'handled'
-    case KeyBoundAction.CycleAutoCompletion:
-      console.log("Cycle Autocompletion")
-      // TODO
-      return 'handled'
+    // case KeyBoundAction.CycleAutoCompletion:
+    //   console.log("Cycle Autocompletion")
+    //   // TODO
+    //   return 'handled'
     case KeyBoundAction.FocusCLI:
       focusCLI()
       return 'handled'

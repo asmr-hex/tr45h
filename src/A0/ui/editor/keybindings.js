@@ -32,7 +32,6 @@ const detectDoubleTap = (event, keyCode) => {
 const KeyBindings = {
   [KeyBoundAction.GetNewSound]:         e => e.keyCode === 13 && e.shiftKey,
   [KeyBoundAction.OpenCLI]:             e => e.keyCode === 32 && e.shiftKey,
-  [KeyBoundAction.CycleAutoCompletion]: e => e.keyCode === 9,
   [KeyBoundAction.FocusCLI]:            e => detectDoubleTap(e, 16),
 }
 
@@ -41,5 +40,5 @@ export const KeyBindingFn = event => {
     if (isAction(event)) return action
   }
 
-  return getDefaultKeyBinding(event)
+  return null
 }

@@ -21,7 +21,7 @@ export class Decorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpret, getTokenStyles, dictionary, setSuggestions, triggerSuggest) {
+  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, triggerSuggest) {
     this.interpret      = interpret
     this.getTokenStyles = getTokenStyles
     this.tokens         = {}
@@ -31,6 +31,7 @@ export class Decorator {
       suggestions: {
         set:     setSuggestions,
         trigger: triggerSuggest,
+        inline:  inlineSuggestions,
       }
     })
   }
@@ -84,6 +85,9 @@ export class Decorator {
       const tokenId      = `${token.start}`             // block-relative token id
       const componentKey = `${blockKey}-${token.start}` // block-scoped token id
 
+      // set instance key on token
+      token.key = componentKey
+      
       // store information about this token in map (for use in getPropsforKey)
       this.tokens[blockKey][tokenId] = token
 
@@ -164,9 +168,28 @@ export class Decorator {
         classes = [],
         styles  = {},
       } = this.getTokenStyles(key, props.token)
+      const anchor = this.autosuggest.anchorToken
 
+      const suggestionStyles = {
+        position: 'absolute',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'grey',
+        paddingRight: '10px',
+      }
+      const suggestionStyle = {
+        whiteSpace: 'nowrap'
+      }
+      const suggestions =
+            <div style={suggestionStyles}>
+              {this.autosuggest.suggestions.candidates.map(s => <div style={suggestionStyle}>{s}</div>)}
+            </div>
+      
       return (
-        <span className={classes.join(' ')}>{props.children}</span>
+        <span className={classes.join(' ')}>
+            { props.children }
+            {anchor !== null && anchor.key === key ? suggestions : null}
+        </span>
       ) 
     }
   }

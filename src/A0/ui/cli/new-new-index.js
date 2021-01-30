@@ -43,12 +43,6 @@ export const CLI = props => {
       cli.execute()
       handleClose()
       return 'handled'
-    // case KeyBoundAction.CycleSuggestions:
-    //   setEditorState(autosuggest.cycleSuggestions(editorState))
-    //   return 'handled'
-    // case KeyBoundAction.AutoComplete:
-    //   setEditorState(autosuggest.complete(editorState))
-    //   return 'handled'
     default:
       return 'not-handled'
     }

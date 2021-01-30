@@ -7,11 +7,16 @@ import {
 } from 'draft-js'
 
 
+// TODO refactor this....to be more understandable...
+
 export class AutoSuggest {
   constructor({ tokens, dictionary, suggestions }) {
     this.tokens         = tokens
     this.setSuggestions = suggestions.set
+    this.inline         = suggestions.inline
     this.dictionary     = dictionary
+
+    this.anchorToken = null
     
     this.suggestions = {
       current: null,
@@ -69,7 +74,7 @@ export class AutoSuggest {
     this.setSuggestions(candidates.length === 0 ? [] : candidates)
   }
 
-  cycleSuggestions(editorState) {
+  cycle(editorState) {
     if (this.suggestions.current === null) return editorState
 
     // update suggestions
@@ -89,10 +94,11 @@ export class AutoSuggest {
     }
 
     // get selection offset
+    const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
 
     // is offset within a token?
-    const token = this.getBoundingToken(offset)
+    const token = this.getBoundingToken(key, offset)
     if (token === null) {
       this.updateSuggestions(null, [])
       return newEditorState 
@@ -119,10 +125,11 @@ export class AutoSuggest {
     }
 
     // get selection offset
+    const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
 
     // is offset within a token?
-    const token = this.getBoundingToken(offset)
+    const token = this.getBoundingToken(key, offset)
     if (token === null) {
       this.updateSuggestions(null, [])
       return newEditorState 
@@ -245,7 +252,8 @@ export class AutoSuggest {
       this.tokens[key],
       v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'INLINE-SUGGESTION')
     )
-    return tokens.length === 0 ? null : tokens[0]
+    this.anchorToken = tokens.length === 0 ? null : tokens[0]
+    return this.anchorToken
   }
 
   getSuggestions(context, token) {

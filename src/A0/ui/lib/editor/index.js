@@ -4,17 +4,21 @@ import 'draft-js/dist/Draft.css'
 
 import { Dictionary } from './dictionary'
 import { Decorator } from './decorator'
+import { KeyBindingFn, KeyBoundAction } from './keybindings'
 
 
 export const Editor = forwardRef((props, ref) => {
   const {
-    contentState   = null,
-    interpret      = (blockKey, blockIndex, blockText) => [],
-    getTokenStyles = (key, token) => ({}),
-    dictionary     = new Dictionary(),
-    setSuggestions = suggestions => {},
-    triggerSuggest = () => {},
-    onChange       = newEditorState => newEditorState,
+    contentState      = null,
+    interpret         = (blockKey, blockIndex, blockText) => [],
+    getTokenStyles    = (key, token) => ({}),
+    dictionary        = new Dictionary(),
+    setSuggestions    = suggestions => {},
+    inlineSuggestions = true,
+    triggerSuggest    = () => {},
+    onChange          = newEditorState => newEditorState,
+    handleKeyCommand  = cmd => 'not-handled',
+    keyBindingFn      = e => null,
     ...otherProps
   } = props
 
@@ -23,6 +27,7 @@ export const Editor = forwardRef((props, ref) => {
     getTokenStyles,
     dictionary,
     setSuggestions,
+    inlineSuggestions,
     triggerSuggest,
   )
   
@@ -42,11 +47,28 @@ export const Editor = forwardRef((props, ref) => {
     setEditorState(decorator.suggest(onChange(newEditorState)))
   }
 
+  const _handleKeyCommand = command => {
+    if (handleKeyCommand(command) === 'handled') return 'handled'
+    
+    switch(command) {
+    case KeyBoundAction.CycleSuggestions:
+      setEditorState(editorState.getDecorator().autosuggest.cycle(editorState))
+      return 'handled'
+    case KeyBoundAction.AutoComplete:
+      setEditorState(editorState.getDecorator().autosuggest.complete(editorState))
+      return 'handled'
+    default:
+      return 'not-handled'
+    }
+  }
+  
   return (
     <DraftEditor
       ref={ref}
       editorState={editorState}
       onChange={_onChange}
+      handleKeyCommand={_handleKeyCommand}
+      keyBindingFn={KeyBindingFn(keyBindingFn)}
       {...otherProps}
     />
   )
