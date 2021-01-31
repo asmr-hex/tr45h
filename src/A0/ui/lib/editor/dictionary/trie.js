@@ -1,22 +1,34 @@
+// dictionary.add('my.context', ['help', [ 'help', 'settings' ], [ 'help', 'edit' ], [ 'edit', { sound: 'symbols.sounds' } ] ] )
+
+// NOTE: we need to be able to distinguish between the end of a word and the end of a segment.
+// e.g. ['help', 'helpme', ['help', 'me']] are three different things
+// need to be able to tell if it is the end of a word or a segment peice
 
 export class PrefixTrieNode {
-  constructor(char) {
+  constructor(char, meta={}) {
     this.children = {}
-    this.end = false
-    this.char = char
+    this.child    = { chars: {}, segments: {} }
+    this.end      = false
+    this.char     = char
+    this.meta     = meta
   }
 }
 
 export class PrefixTree extends PrefixTrieNode {
-  constructor(dictionary=[], config={}) {
+  constructor(suggestions=[]) {
     super(null)
     
-    for (const word of dictionary) {
-      this.add(word)
+    for (const suggestion of suggestions) {
+      this.add(suggestion)
     }
   }
 
-  add(word) {
+  add(suggestion) {
+    // TODO parse suggestion. could be a single word
+    this._add(suggestion)
+  }
+  
+  _add(word) {
     const addFn = (node, str) => {
       if (!node.children[str[0]]) {
         node.children[str[0]] = new PrefixTrieNode(str[0])
@@ -36,6 +48,12 @@ export class PrefixTree extends PrefixTrieNode {
   // TODO
   remove(word) {}
 
+  _suggest(str) {
+    // rework suggest method
+  }
+  
+  // the output of suggest will either be a list of objects
+  // or a list of lists of objects (i.e. on suggestion can have multiple segments)
   suggest(str) {
     const getSubTree = (string, tree) => {
       let node = tree
@@ -66,3 +84,5 @@ export class PrefixTree extends PrefixTrieNode {
     return suggestions.sort()
   }
 }
+
+

@@ -14,9 +14,11 @@ export class AutoSuggest {
     this.tokens         = tokens
     this.setSuggestions = suggestions.set
     this.inline         = suggestions.inline
-    this.suggestOnEmpty = suggestions.suggestOnEmpty
+    this.defaultSuggestions = suggestions.default
     this.dictionary     = dictionary
 
+    this.showDefaults = suggestions.default.length === 0 ? false : true
+    
     this.anchorToken = null
     
     this.suggestions = {
@@ -55,10 +57,10 @@ export class AutoSuggest {
     }
     
     // TODO is the token a suggestion candidate?
-    let contexts = ['symbols.sounds']
-    // if ('contexts' in token.suggest) {
-    //   contexts = token.suggest.contexts
-    // }
+    let contexts
+    if ('contexts' in token.suggest) {
+      contexts = token.suggest.contexts
+    }
     
     // what are the top suggestion matches for this token?
     const suggestions = this.getSuggestions(contexts, token)
@@ -262,8 +264,8 @@ export class AutoSuggest {
   
   getBoundingToken(key, offset) {
     // handle default suggestions (on empty)
-    if (this.suggestOnEmpty && (this.tokens[key] === undefined || this.tokens[key].length === 0)) {
-      this.anchorToken = { value: '', suggest: { contexts: ['symbols.sounds'] }, start: 0, length: 0 }
+    if (this.defaultSuggestions.length !== 0 && (this.tokens[key] === undefined || this.tokens[key].length === 0)) {
+      this.anchorToken = this.getDefaultSuggestionToken()
       return this.anchorToken
     }
     
@@ -277,5 +279,16 @@ export class AutoSuggest {
 
   getSuggestions(contexts, token) {
     return this.dictionary.suggest(token.value, contexts)
+  }
+
+  getDefaultSuggestionToken() {
+    return {  // TODO formalize this
+      value:  '',
+      start:  0,
+      length: 0,
+      suggest: {
+        contexts: this.defaultSuggestions,
+      }
+    }
   }
 }

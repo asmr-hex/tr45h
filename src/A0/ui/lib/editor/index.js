@@ -9,16 +9,16 @@ import { KeyBindingFn, KeyBoundAction } from './keybindings'
 
 export const Editor = forwardRef((props, ref) => {
   const {
-    contentState      = null,
-    interpret         = (blockKey, blockIndex, blockText) => [],
-    getTokenStyles    = (key, token) => ({}),
-    dictionary        = new Dictionary(),
-    setSuggestions    = suggestions => {},
-    inlineSuggestions = true,
-    suggestOnEmpty    = false,
-    onChange          = newEditorState => newEditorState,
-    handleKeyCommand  = cmd => 'not-handled',
-    keyBindingFn      = e => null,
+    contentState       = null,
+    interpret          = (blockKey, blockIndex, blockText) => [],
+    getTokenStyles     = (key, token) => ({}),
+    dictionary         = new Dictionary(),
+    setSuggestions     = suggestions => {},
+    inlineSuggestions  = true,
+    defaultSuggestions = [],
+    onChange           = newEditorState => newEditorState,
+    handleKeyCommand   = cmd => 'not-handled',
+    keyBindingFn       = e => null,
     ...otherProps
   } = props
 
@@ -28,7 +28,7 @@ export const Editor = forwardRef((props, ref) => {
     dictionary,
     setSuggestions,
     inlineSuggestions,
-    suggestOnEmpty,
+    defaultSuggestions,
   )
   
   // setup editor state
@@ -68,7 +68,7 @@ export const Editor = forwardRef((props, ref) => {
       editorState={editorState}
       onChange={_onChange}
       handleKeyCommand={_handleKeyCommand}
-      keyBindingFn={KeyBindingFn(keyBindingFn)}
+      keyBindingFn={KeyBindingFn(keyBindingFn)} // TODO refactor this as an override function.
       {...otherProps}
     />
   )

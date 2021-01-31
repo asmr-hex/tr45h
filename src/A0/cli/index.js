@@ -53,7 +53,7 @@ export class CLI {
   interpret(input) {
     const { command, tokens } = this.parse(this.lex(input))
     this.command = command
-    return { tokens: tokens.length === 0 ? [{value: '', suggest: { contexts: ['symbols.sounds']}, start: 0, length: 0}] : tokens }
+    return { tokens } //{ tokens: tokens.length === 0 ? [{value: '', suggest: { contexts: ['symbols.sounds']}, start: 0, length: 0}] : tokens }
   }
 
   execute() {

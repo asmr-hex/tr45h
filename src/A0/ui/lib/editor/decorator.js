@@ -21,7 +21,7 @@ export class Decorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, suggestOnEmpty) {
+  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, defaultSuggestions) {
     this.interpret      = interpret
     this.getTokenStyles = getTokenStyles
     this.tokens         = {}
@@ -29,9 +29,9 @@ export class Decorator {
       tokens: this.tokens,
       dictionary,
       suggestions: {
-        set:            setSuggestions,
-        suggestOnEmpty: suggestOnEmpty,
-        inline:         inlineSuggestions,
+        set:     setSuggestions,
+        inline:  inlineSuggestions,
+        default: defaultSuggestions,
       }
     })
   }
@@ -78,7 +78,9 @@ export class Decorator {
     
     // interpret text in this block.
     // TODO standardize output....include metadata output (something to control like line style??)
-    const { tokens = [] } = this.interpret(blockKey, blockIndex, text)
+    let { tokens = [] } = this.interpret(blockKey, blockIndex, text)
+
+    if ( tokens.length === 0 ) tokens = this.getDefaultTokens()
     
     for (const token of [ ...suggestions, ...tokens ]) {
       const tokenId      = `${token.start}`             // block-relative token id
@@ -99,6 +101,12 @@ export class Decorator {
     return List(decorations)
   }
 
+  getDefaultTokens() {
+    if (this.autosuggest.showDefaults)
+      return [ this.autosuggest.getDefaultSuggestionToken() ]
+    return []
+  }
+  
   extractSuggestions(block, contentState) {
     const blockText = block.getText()
     let suggestions = []
