@@ -21,7 +21,7 @@ export class Decorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, triggerSuggest) {
+  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, suggestOnEmpty) {
     this.interpret      = interpret
     this.getTokenStyles = getTokenStyles
     this.tokens         = {}
@@ -29,9 +29,9 @@ export class Decorator {
       tokens: this.tokens,
       dictionary,
       suggestions: {
-        set:     setSuggestions,
-        trigger: triggerSuggest,
-        inline:  inlineSuggestions,
+        set:            setSuggestions,
+        suggestOnEmpty: suggestOnEmpty,
+        inline:         inlineSuggestions,
       }
     })
   }
@@ -68,7 +68,6 @@ export class Decorator {
     const blockKey   = block.getKey()
     const blockText  = block.getText()
     const blockIndex = blockKeys.indexOf(blockKey)
-    if (blockText.trim() === '') return
     let decorations  = Array(blockText.length).fill(null)
 
     // handle autosuggestion entities
@@ -195,6 +194,13 @@ export class Decorator {
   }
 
   suggest(newEditorState) {
-    return this.autosuggest.analyze(newEditorState)
+    return this.autosuggest.analyze(this.removeBlockTokensOnEmpty(newEditorState))
+  }
+
+  removeBlockTokensOnEmpty(editorState) {
+    const block = editorState.getSelection().getAnchorKey()
+    const text  = editorState.getCurrentContent().getBlockForKey(block).getText()
+    if (text.trim() === '') delete this.tokens[block]
+    return editorState
   }
 }

@@ -22,6 +22,12 @@ export class BuiltInCommands extends Command {
       },
     })
   }
+
+  parse(tokens, index=0) {
+    if (tokens.length === 0) return { command: null, tokens: []}
+
+    return super.parse(tokens, index)
+  }
 }
 
 

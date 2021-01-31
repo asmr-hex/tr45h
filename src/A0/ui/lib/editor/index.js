@@ -15,7 +15,7 @@ export const Editor = forwardRef((props, ref) => {
     dictionary        = new Dictionary(),
     setSuggestions    = suggestions => {},
     inlineSuggestions = true,
-    triggerSuggest    = () => {},
+    suggestOnEmpty    = false,
     onChange          = newEditorState => newEditorState,
     handleKeyCommand  = cmd => 'not-handled',
     keyBindingFn      = e => null,
@@ -28,7 +28,7 @@ export const Editor = forwardRef((props, ref) => {
     dictionary,
     setSuggestions,
     inlineSuggestions,
-    triggerSuggest,
+    suggestOnEmpty,
   )
   
   // setup editor state

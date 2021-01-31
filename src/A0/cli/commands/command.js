@@ -98,6 +98,10 @@ export class Command {
   }
   
   getExecutable(args, context) { throw new NotImplementedError('getExecutable()') }
+
+  addEntriesTo(dictionary, context) {
+    // add suggestion entries to dictionary at context
+  }
 }
 
 

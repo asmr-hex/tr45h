@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
+import { useCLI } from './cli'
 import { useRuntime } from './runtime'
 
 import { SemanticTokenType } from '../lang/types'
@@ -19,11 +20,13 @@ export const useDictionary = () => {
 
 
 export const DictionaryProvider = props => {
+  const { cli }     = useCLI()
   const { symbols } = useRuntime()
   const [dictionary, setDictionary] = useState(new Dictionary())
 
   useEffect(() => {
     // create new contexts in the dictionary for stuff
+    cli.addEntriesTo(dictionary)
     dictionary.new('symbols.sounds')
     dictionary.new('symbols.variables')
     dictionary.new('symbols.functions')

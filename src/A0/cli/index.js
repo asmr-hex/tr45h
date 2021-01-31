@@ -37,7 +37,8 @@ export class CLI {
         tokens.push({
           value: identifier,
           start,
-          length: identifier.length
+          length: identifier.length,
+          suggest: { contexts: ['symbols.sounds']},
         })
       }
     }
@@ -52,7 +53,7 @@ export class CLI {
   interpret(input) {
     const { command, tokens } = this.parse(this.lex(input))
     this.command = command
-    return { tokens }
+    return { tokens: tokens.length === 0 ? [{value: '', suggest: { contexts: ['symbols.sounds']}, start: 0, length: 0}] : tokens }
   }
 
   execute() {
@@ -60,5 +61,12 @@ export class CLI {
     if (this.command !== null) return this.command()
 
     return null
+  }
+
+  addEntriesTo(dictionary) {
+    const context = 'cli.commands'
+    
+    dictionary.new(context)
+    this.builtin.commands.addEntriesTo(dictionary, context)
   }
 }

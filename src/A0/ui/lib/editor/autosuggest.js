@@ -14,6 +14,7 @@ export class AutoSuggest {
     this.tokens         = tokens
     this.setSuggestions = suggestions.set
     this.inline         = suggestions.inline
+    this.suggestOnEmpty = suggestions.suggestOnEmpty
     this.dictionary     = dictionary
 
     this.anchorToken = null
@@ -38,6 +39,7 @@ export class AutoSuggest {
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
+
     
     // is offset within a token?
     const token = this.getBoundingToken(key, offset)
@@ -45,17 +47,28 @@ export class AutoSuggest {
       this.updateSuggestions(null, [])
       return newEditorState 
     }
+
+    // make sure token is a suggestion trigger.
+    if (!('suggest' in token)) {  // TODO formalize this notion of a suggestion trigger token.
+      this.updateSuggestions(null, [])
+      return newEditorState       
+    }
     
     // TODO is the token a suggestion candidate?
-    const context = 'symbols.sounds'
-
+    let contexts = ['symbols.sounds']
+    // if ('contexts' in token.suggest) {
+    //   contexts = token.suggest.contexts
+    // }
+    
     // what are the top suggestion matches for this token?
-    const suggestions = this.getSuggestions(context, token)
+    const suggestions = this.getSuggestions(contexts, token)
 
     if (suggestions.length === 0) {
       this.updateSuggestions(null, [])
       return newEditorState 
     }
+
+    console.log(suggestions)
     
     // take the first suggestion
     const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestions[0], newEditorState)
@@ -218,7 +231,7 @@ export class AutoSuggest {
   insertSuggestion(token, suggestion, editorState) {
     // if (suggestions.length === 0) return editorState
     // const suggestion = suggestions[0]
-
+    
     // get non-overlapping suffix of suggestion
     const remainder = suggestion.substr(token.value.length)
     const endOfTokenOffset = token.start + token.length
@@ -248,6 +261,12 @@ export class AutoSuggest {
   }
   
   getBoundingToken(key, offset) {
+    // handle default suggestions (on empty)
+    if (this.suggestOnEmpty && (this.tokens[key] === undefined || this.tokens[key].length === 0)) {
+      this.anchorToken = { value: '', suggest: { contexts: ['symbols.sounds'] }, start: 0, length: 0 }
+      return this.anchorToken
+    }
+    
     const tokens = filter(
       this.tokens[key],
       v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'INLINE-SUGGESTION')
@@ -256,7 +275,7 @@ export class AutoSuggest {
     return this.anchorToken
   }
 
-  getSuggestions(context, token) {
-    return this.dictionary.suggest(token.value, [context])
+  getSuggestions(contexts, token) {
+    return this.dictionary.suggest(token.value, contexts)
   }
 }

@@ -45,9 +45,7 @@ export class Annotator {
     const token = this.index[block].get(offset)
 
     if (!token) {
-      this.setAnnotation(null)
-      if (this.subscription !== null) this.subscription.unsubscribe()
-      this.previousTokenId = null
+      this.unsubscribe()
       return
     }
     else if (token.id === this.previousTokenId) {
@@ -58,6 +56,10 @@ export class Annotator {
 
     // get symbol observable from symbol table and subscribe to it
     const observable = this.sym.getObservable(token)
+    if (observable === null) {
+      this.unsubscribe()
+      return
+    }
     if (this.subscription !== null) this.subscription.unsubscribe()
     this.subscription = observable.updates.subscribe(sym => this.setAnnotation({token, symbol: sym}))
 
@@ -65,5 +67,11 @@ export class Annotator {
     // use token Instance and symbol observable as value in setAnnotation
     // e.g. { instance: token, symbol: observable }
     this.setAnnotation({token, symbol: observable.symbol})
+  }
+
+  unsubscribe() {
+    this.setAnnotation(null)
+    if (this.subscription !== null) this.subscription.unsubscribe()
+    this.previousTokenId = null    
   }
 }

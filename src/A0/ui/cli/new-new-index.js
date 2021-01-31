@@ -55,6 +55,8 @@ export const CLI = props => {
       getTokenStyles={getTokenStyles}
       dictionary={dictionary}
       setSuggestions={setSuggestions}
+      inlineSuggestions={false}
+      suggestOnEmpty={true}
       onChange={onChange}
       handleKeyCommand={handleKeyCommand}
       keyBindingFn={KeyBindingFn}

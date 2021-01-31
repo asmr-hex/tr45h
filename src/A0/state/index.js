@@ -25,13 +25,14 @@ export const GlobalStateProvider = props => (
       <TransportProvider>
         <UIStateProvider>
           <RuntimeProvider>
-            <DictionaryProvider>
-              <AnnotationProvider>
-                <CLIProvider>
+            <CLIProvider>
+              <DictionaryProvider>
+                <AnnotationProvider>
+
                   {props.children}
-                </CLIProvider>
-              </AnnotationProvider>
-            </DictionaryProvider>
+                </AnnotationProvider>
+              </DictionaryProvider>
+            </CLIProvider>
           </RuntimeProvider>
         </UIStateProvider>
       </TransportProvider>
