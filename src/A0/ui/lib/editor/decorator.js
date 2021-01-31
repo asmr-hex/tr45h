@@ -186,7 +186,7 @@ export class Decorator {
             </div>
       
       return (
-        <span className={classes.join(' ')}>
+        <span style={{display: 'inline-block'}} className={classes.join(' ')}>
             { props.children }
             {anchor !== null && anchor.key === key ? suggestions : null}
         </span>
