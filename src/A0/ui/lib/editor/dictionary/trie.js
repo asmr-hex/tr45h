@@ -4,11 +4,16 @@
 // e.g. ['help', 'helpme', ['help', 'me']] are three different things
 // need to be able to tell if it is the end of a word or a segment peice
 
+const InputTypes = {
+  Segments: 'SEGMENTS',
+  Word:     'WORD',
+  Redirect: 'REDIRECT',
+}
+
 export class PrefixTrieNode {
   constructor(char, meta={}) {
-    this.children = {}
-    this.child    = { chars: {}, segments: {} }
-    this.end      = false
+    this.child    = { words: {}, segments: {} }
+    this.end      = { word: false, segment: false }
     this.char     = char
     this.meta     = meta
   }
@@ -48,8 +53,72 @@ export class PrefixTree extends PrefixTrieNode {
   // TODO
   remove(word) {}
 
-  _suggest(str) {
-    // rework suggest method
+  getInputType(input) {
+    if ( Array.isArray(pattern) )                                  return InputTypes.Segments
+    if ( typeof pattern === 'string' || pattern instanceofString ) return InputTypes.Word
+    if ( typeof pattern === 'object' && pattern !== null )         return InputTypes.Redirect
+
+    return null
+  }
+
+  getSubTreeMatchingSegments(segments, tree) {
+    let node = tree
+  }
+
+  getSubTreeMatchingWord(word, tree) {
+    let node = tree
+  }
+  
+  getMatchingSubTree(pattern, tree) {
+    switch (this.getInputType(pattern)) {
+    case InputTypes.Segments:
+      return this.getSubTreeMatchingSegments(pattern, tree)
+    case InputTypes.Word:
+      return this.getSubTreeMatchingWord(pattern, tree)
+    default:
+      throw new Error('pattern is invalid type') // TODO update with more formalized error message
+    }
+  }
+  
+  // suggest should accept either a single word, or a array of tokens
+  // if an array of tokens, the subtree we get should match all segments
+  // leading up to the final segment we gave.
+  _suggest(input) {
+    let suggestions = []
+
+    const getSuggestions = (pattern, tree) => {
+      for (const w in tree.child.words) {
+        const child = tree.child.words[w]
+        let patternType = this.getInputType(pattern)
+        let newPattern
+        switch (this.getInputType(pattern)) {
+        case InputTypes.Word:
+          newPattern = pattern + child.char
+          if (child.end.word) {
+            suggestions.push(newPattern)
+          }
+          break
+        case InputTypes.Segments:
+          newPattern = [...pattern.slice(0, pattern.length-1), pattern[pattern.length-1] + child.char]
+          if (child.end.segment) {
+            newPattern.push('')
+            suggestions.push(newPattern)
+          }
+          break
+        default:
+          throw new Error('invalid pattern type') // TODO update with better error
+        }
+      }
+      for (const s in tree.child.segments) {
+        const child = tree.child.segments[s]
+        
+      }
+    }
+
+    const subTree = this.getMatchingSubTree(input, this)
+    if (subTree) getSuggestions(input, subTree)
+
+    return suggestions // TODO sort somehow
   }
   
   // the output of suggest will either be a list of objects
