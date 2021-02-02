@@ -12,8 +12,9 @@ const InputTypes = {
 
 export class PrefixTrieNode {
   constructor(char, meta={}) {
+    this.next     = { char: {}, segment: {} }
     this.child    = { words: {},    segments: {} }
-    this.end      = { word:  false, segment:  false }
+    this.end      = false
     this.char     = char
     this.meta     = meta
   }
@@ -29,41 +30,43 @@ export class PrefixTree extends PrefixTrieNode {
   }
 
   add(suggestion) {
-    const addWord = (node, pattern) => {
-      if (!node.child.words[pattern[0]]) {
-        node.child.words[pattern[0]] = new PrefixTrieNode(pattern[0])
-        if (pattern.length === 1) {
-          node.child.words[pattern[0]].end.word = true
-        }
+    const addWord = (node, str) => {
+      if ( str.length === 0) return node
+      if (!node.next.char[str[0]]) {
+        node.next.char[str[0]] = new PrefixTrieNode(str[0])
+        if (str.length === 1) node.next.char[str[0]].end = true
       }
 
-      if (pattern.length > 1) {
-        return addWord(node.child.words[pattern[0]], pattern.slice(1))
-      }
+      if (str.length > 1) return addWord(node.next.char[str[0]], str.slice(1))
 
-      return node.child.words[pattern[0]]
+      return node.next.char[str[0]]
     }
 
     const addSegments = (tree, segments) => {
       if (segments.length === 0) return
-      let node = tree
-      node = addWord(node, segments[0])
+      let node = addWord(tree, segments[0])
       if (segments.length === 1) return
-      if (!node.child.segments[segments[1][0]]) {
-        node.child.segments[segments[1][0]] = new PrefixTrieNode(segments[1][0])
-      }
-      node = node.child.segments[segments[1][0]]
+
+      if (segments[1].length === 0) return
+      
+      const c = segments[1][0]
+      if (!node.next.segment[c]) node.next.segment[c] = new PrefixTrieNode(c)
+      node = node.next.segment[c]
       const newSegments = [segments[1].slice(1)].concat(segments.length > 2 ? segments.slice(2) : [])
       addSegments(node, newSegments)
     }
 
+    // decide how to handle input
     switch (this.getInputType(suggestion)) {
     case InputTypes.Segments:
-      addSegments(this, suggestion)
+      if (suggestion.length === 1) { addWord(this, suggestion[0])  }          // treat just as a word.
+      else                         { addSegments(this, suggestion) }          // more than just a word.
       break
     case InputTypes.Word:
       addWord(this, suggestion)
       break
+    default:
+      throw new Error('bad input to PrefixTrieNode.add(...)')  // TODO make better errors
     }
   }
   
@@ -121,8 +124,8 @@ export class PrefixTree extends PrefixTrieNode {
   //   let suggestions = []
 
   //   const getSuggestions = (pattern, tree) => {
-  //     for (const w in tree.child.words) {
-  //       const child = tree.child.words[w]
+  //     for (const w in tree.next.char) {
+  //       const child = tree.next.char[w]
   //       let patternType = this.getInputType(pattern)
   //       let newPattern
   //       switch (this.getInputType(pattern)) {
