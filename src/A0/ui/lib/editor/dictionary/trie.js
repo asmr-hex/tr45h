@@ -12,8 +12,8 @@ const InputTypes = {
 
 export class PrefixTrieNode {
   constructor(char, meta={}) {
-    this.child    = { words: {}, segments: {} }
-    this.end      = { word: false, segment: false }
+    this.child    = { words: {},    segments: {} }
+    this.end      = { word:  false, segment:  false }
     this.char     = char
     this.meta     = meta
   }
@@ -29,8 +29,42 @@ export class PrefixTree extends PrefixTrieNode {
   }
 
   add(suggestion) {
-    // TODO parse suggestion. could be a single word
-    this._add(suggestion)
+    const addWord = (node, pattern) => {
+      if (!node.child.words[pattern[0]]) {
+        node.child.words[pattern[0]] = new PrefixTrieNode(pattern[0])
+        if (pattern.length === 1) {
+          node.child.words[pattern[0]].end.word = true
+        }
+      }
+
+      if (pattern.length > 1) {
+        return addWord(node.child.words[pattern[0]], pattern.slice(1))
+      }
+
+      return node.child.words[pattern[0]]
+    }
+
+    const addSegments = (tree, segments) => {
+      if (segments.length === 0) return
+      let node = tree
+      node = addWord(node, segments[0])
+      if (segments.length === 1) return
+      if (!node.child.segments[segments[1][0]]) {
+        node.child.segments[segments[1][0]] = new PrefixTrieNode(segments[1][0])
+      }
+      node = node.child.segments[segments[1][0]]
+      const newSegments = [segments[1].slice(1)].concat(segments.length > 2 ? segments.slice(2) : [])
+      addSegments(node, newSegments)
+    }
+
+    switch (this.getInputType(suggestion)) {
+    case InputTypes.Segments:
+      addSegments(this, suggestion)
+      break
+    case InputTypes.Word:
+      addWord(this, suggestion)
+      break
+    }
   }
   
   _add(word) {
@@ -53,10 +87,10 @@ export class PrefixTree extends PrefixTrieNode {
   // TODO
   remove(word) {}
 
-  getInputType(input) {
-    if ( Array.isArray(pattern) )                                  return InputTypes.Segments
-    if ( typeof pattern === 'string' || pattern instanceofString ) return InputTypes.Word
-    if ( typeof pattern === 'object' && pattern !== null )         return InputTypes.Redirect
+  getInputType(pattern) {
+    if ( Array.isArray(pattern) )                                   return InputTypes.Segments
+    if ( typeof pattern === 'string' || pattern instanceof String ) return InputTypes.Word
+    if ( typeof pattern === 'object' && pattern !== null )          return InputTypes.Redirect
 
     return null
   }
@@ -83,75 +117,75 @@ export class PrefixTree extends PrefixTrieNode {
   // suggest should accept either a single word, or a array of tokens
   // if an array of tokens, the subtree we get should match all segments
   // leading up to the final segment we gave.
-  _suggest(input) {
-    let suggestions = []
+  // _suggest(input) {
+  //   let suggestions = []
 
-    const getSuggestions = (pattern, tree) => {
-      for (const w in tree.child.words) {
-        const child = tree.child.words[w]
-        let patternType = this.getInputType(pattern)
-        let newPattern
-        switch (this.getInputType(pattern)) {
-        case InputTypes.Word:
-          newPattern = pattern + child.char
-          if (child.end.word) {
-            suggestions.push(newPattern)
-          }
-          break
-        case InputTypes.Segments:
-          newPattern = [...pattern.slice(0, pattern.length-1), pattern[pattern.length-1] + child.char]
-          if (child.end.segment) {
-            newPattern.push('')
-            suggestions.push(newPattern)
-          }
-          break
-        default:
-          throw new Error('invalid pattern type') // TODO update with better error
-        }
-      }
-      for (const s in tree.child.segments) {
-        const child = tree.child.segments[s]
+  //   const getSuggestions = (pattern, tree) => {
+  //     for (const w in tree.child.words) {
+  //       const child = tree.child.words[w]
+  //       let patternType = this.getInputType(pattern)
+  //       let newPattern
+  //       switch (this.getInputType(pattern)) {
+  //       case InputTypes.Word:
+  //         newPattern = pattern + child.char
+  //         if (child.end.word) {
+  //           suggestions.push(newPattern)
+  //         }
+  //         break
+  //       case InputTypes.Segments:
+  //         newPattern = [...pattern.slice(0, pattern.length-1), pattern[pattern.length-1] + child.char]
+  //         if (child.end.segment) {
+  //           newPattern.push('')
+  //           suggestions.push(newPattern)
+  //         }
+  //         break
+  //       default:
+  //         throw new Error('invalid pattern type') // TODO update with better error
+  //       }
+  //     }
+  //     for (const s in tree.child.segments) {
+  //       const child = tree.child.segments[s]
         
-      }
-    }
+  //     }
+  //   }
 
-    const subTree = this.getMatchingSubTree(input, this)
-    if (subTree) getSuggestions(input, subTree)
+  //   const subTree = this.getMatchingSubTree(input, this)
+  //   if (subTree) getSuggestions(input, subTree)
 
-    return suggestions // TODO sort somehow
-  }
+  //   return suggestions // TODO sort somehow
+  // }
   
   // the output of suggest will either be a list of objects
   // or a list of lists of objects (i.e. on suggestion can have multiple segments)
-  suggest(str) {
-    const getSubTree = (string, tree) => {
-      let node = tree
-      while (string) {
-        node = node.children[string[0]]
-        if (!node) return node
-        string = string.substr(1)
-      }
-      return node
-    }
+  // suggest(str) {
+  //   const getSubTree = (string, tree) => {
+  //     let node = tree
+  //     while (string) {
+  //       node = node.children[string[0]]
+  //       if (!node) return node
+  //       string = string.substr(1)
+  //     }
+  //     return node
+  //   }
 
-    let suggestions = []
+  //   let suggestions = []
 
-    const getSuggestions = (string, tree) => {
-      for (const k in tree.children) {
-        const child = tree.children[k]
-        const newString = string + child.char
-        if (child.end) {
-          suggestions.push(newString)
-        }
-        getSuggestions(newString, child)
-      }
-    }
+  //   const getSuggestions = (string, tree) => {
+  //     for (const k in tree.children) {
+  //       const child = tree.children[k]
+  //       const newString = string + child.char
+  //       if (child.end) {
+  //         suggestions.push(newString)
+  //       }
+  //       getSuggestions(newString, child)
+  //     }
+  //   }
 
-    const subTree = getSubTree(str, this)
-    if (subTree) getSuggestions(str, subTree)
+  //   const subTree = getSubTree(str, this)
+  //   if (subTree) getSuggestions(str, subTree)
 
-    return suggestions.sort()
-  }
+  //   return suggestions.sort()
+  // }
 }
 
 
