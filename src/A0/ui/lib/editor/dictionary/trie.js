@@ -11,11 +11,10 @@ const InputTypes = {
 }
 
 export class PrefixTrieNode {
-  constructor(char, meta={}) {
-    this.next     = { char: {}, segment: {} }
-    this.child    = { words: {},    segments: {} }
+  constructor(key, meta={}) {
+    this.next     = { char: {}, segment: {}, redirect: {} }
     this.end      = false
-    this.char     = char
+    this.key      = key
     this.meta     = meta
   }
 }
@@ -34,7 +33,7 @@ export class PrefixTree extends PrefixTrieNode {
       if ( str.length === 0) return node
       if (!node.next.char[str[0]]) {
         node.next.char[str[0]] = new PrefixTrieNode(str[0])
-        if (str.length === 1) node.next.char[str[0]].end = true
+        if (str.length === 1) node.next.char[str[0]].end = true // TODO maybe add metadata to each word.
       }
 
       if (str.length > 1) return addWord(node.next.char[str[0]], str.slice(1))
@@ -42,13 +41,35 @@ export class PrefixTree extends PrefixTrieNode {
       return node.next.char[str[0]]
     }
 
+    const addRedirect = (tree, segments) => {
+      for (const [type, contexts] of Object.entries(segments[0])) {
+        tree.next.redirect[type] = new PrefixTrieNode(type, { contexts })
+
+        if (segments.length > 1) {
+          switch (this.getInputType(segments[1])) {
+          case InputTypes.Redirect:
+            addRedirect(tree.next.redirect[type], segments.slice(1))
+            break
+          case InputTypes.Word:
+            addSegments(tree.next.redirect[type], segments.slice(1))
+            break
+          }
+        }
+      }      
+    }
+    
     const addSegments = (tree, segments) => {
       if (segments.length === 0) return
       let node = addWord(tree, segments[0])
       if (segments.length === 1) return
 
-      if (segments[1].length === 0) return
+      if (this.getInputType(segments[1]) === InputTypes.Redirect) {
+        addRedirect(node, segments.slice(1))
+        return
+      }
       
+      if (segments[1].length === 0) return
+
       const c = segments[1][0]
       if (!node.next.segment[c]) node.next.segment[c] = new PrefixTrieNode(c)
       node = node.next.segment[c]
@@ -69,23 +90,11 @@ export class PrefixTree extends PrefixTrieNode {
       throw new Error('bad input to PrefixTrieNode.add(...)')  // TODO make better errors
     }
   }
-  
-  _add(word) {
-    const addFn = (node, str) => {
-      if (!node.children[str[0]]) {
-        node.children[str[0]] = new PrefixTrieNode(str[0])
-        if (str.length === 1) {
-          node.children[str[0]].end = true
-        }
-      }
 
-      if (str.length > 1) {
-        addFn(node.children[str[0]], str.slice(1))
-      }
-    }
+  suggest(input) {
     
-    addFn(this, word)
   }
+  
 
   // TODO
   remove(word) {}

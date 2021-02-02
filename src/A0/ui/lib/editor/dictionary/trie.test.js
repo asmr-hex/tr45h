@@ -68,6 +68,49 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char)).toEqual(['i'])
     })
 
+    it('inserts a segment with a redirection suggestion segment into the tree', () => {
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }])
+
+      expect(keys(tree.next.char)).toEqual(['e'])
+      expect(keys(tree.next.char['e'].next.char)).toEqual(['d'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char)).toEqual(['i'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char)).toEqual(['t'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect)).toEqual(['sound'])
+    })
+
+    it('inserts a segment with multiple redirection suggestion segment into the tree', () => {
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds', collection: 'collections' }])
+
+      expect(keys(tree.next.char)).toEqual(['e'])
+      expect(keys(tree.next.char['e'].next.char)).toEqual(['d'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char)).toEqual(['i'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char)).toEqual(['t'])
+      expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect)).toEqual(['sound', 'collection'])
+    })
+
+    it('inserts a sequence of redirection suggestion segments into the tree', () => {
+      const tree = new PrefixTree()
+      tree.add(['ab', { sound: 'symbols.sounds' }, { collection: 'collections'} ])
+
+      expect(keys(tree.next.char)).toEqual(['a'])
+      expect(keys(tree.next.char['a'].next.char)).toEqual(['b'])
+      expect(keys(tree.next.char['a'].next.char['b'].next.redirect)).toEqual(['sound'])
+      expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.redirect)).toEqual(['collection'])
+    })
+
+    it('inserts a sequence of non-consecutive redirection suggestion segments into the tree', () => {
+      const tree = new PrefixTree()
+      tree.add(['ab', { sound: 'symbols.sounds' }, 'c', { collection: 'collections'} ])
+
+      expect(keys(tree.next.char)).toEqual(['a'])
+      expect(keys(tree.next.char['a'].next.char)).toEqual(['b'])
+      expect(keys(tree.next.char['a'].next.char['b'].next.redirect)).toEqual(['sound'])
+      expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char)).toEqual(['c'])
+      expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char['c'].next.redirect)).toEqual(['collection'])
+    })
+    
     it('gracefully handles an empty string as input', () => {
       const tree = new PrefixTree()
       tree.add('')
@@ -105,7 +148,7 @@ describe('PrefixTree', () => {
   })
   
   describe('.suggest(...)', () => {
-    it.todo('works')    
+    it.todo('DO THIS NEXT')    
   })
 
 })
