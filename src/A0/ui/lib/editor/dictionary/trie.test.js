@@ -148,7 +148,19 @@ describe('PrefixTree', () => {
   })
   
   describe('.suggest(...)', () => {
-    it.todo('DO THIS NEXT')    
+    it('suggests a word given a char and a trie populated with one word', () => {
+      const tree = new PrefixTree()
+      tree.add('starfish')
+
+      expect(tree.suggest('s')).toEqual(['starfish'])
+    })
+
+    it('suggests a sequence given a char and a trie populated with a sequence', () => {
+      const tree = new PrefixTree()
+      tree.add(['become', 'empty', 'enter', 'the', 'void'])
+
+      expect(tree.suggest('b')).toEqual(['become', 'empty', 'enter', 'the', 'void'])
+    })
   })
 
 })

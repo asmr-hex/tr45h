@@ -91,8 +91,27 @@ export class PrefixTree extends PrefixTrieNode {
     }
   }
 
+  // input can be a single string (word)
+  // an arrray of strings (segments)
   suggest(input) {
-    
+    let suggestions = []
+
+    // TODO update this to handle segmented inputs
+      const getSuggestions = (string, tree) => {
+        for (const k in tree.next.char) {
+          const child = tree.next.char[k]
+          const newString = string + child.key
+          if (child.end) {
+            suggestions.push(newString)
+          }
+          getSuggestions(newString, child)
+        }
+      }
+
+    const subTree = this.getMatchingSubTree(input, this)
+    if (subTree) getSuggestions(input, subTree)
+
+    return suggestions.sort()    
   }
   
 
@@ -109,10 +128,22 @@ export class PrefixTree extends PrefixTrieNode {
 
   getSubTreeMatchingSegments(segments, tree) {
     let node = tree
+    while (segments.length > 0) {
+      node = this.getSubTreeMatchingWord(segments[0], node)
+      if (!node) return node
+      segments = segments.slice(1) || []
+    }
+    return node
   }
 
   getSubTreeMatchingWord(word, tree) {
     let node = tree
+    while (word) {
+      node = node.next.char[word[0]]
+      if (!node) return node
+      word = word.substr(1)
+    }
+    return node
   }
   
   getMatchingSubTree(pattern, tree) {
