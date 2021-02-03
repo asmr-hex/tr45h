@@ -44,11 +44,12 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char)).toEqual(['c'])
       expect(keys(tree.next.char['c'].next.char)).toEqual(['i'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char)).toEqual(['n'])
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].end).toBeFalsy()
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment)).toEqual(['q'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char)).toEqual(['u'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char)).toEqual(['a'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char)).toEqual(['i'])
-      expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char['i'].end)).toBeTruthy()
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char['i'].end).toBeTruthy()
     })
 
     it('inserts multiple segments into the tree when given an consecutive arrays', () => {
@@ -59,13 +60,16 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char)).toEqual(['c'])
       expect(keys(tree.next.char['c'].next.char)).toEqual(['i'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char)).toEqual(['n'])
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].end).toBeFalsy()
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.char)).toEqual(['o'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.char['o'].next.segment)).toEqual(['q'])
-      expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.char['o'].next.segment['q'].end)).toBeTruthy()
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].next.char['o'].end).toBeFalsy()
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].next.char['o'].next.segment['q'].end).toBeTruthy()
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment)).toEqual(['q'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char)).toEqual(['u'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char)).toEqual(['a'])
       expect(keys(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char)).toEqual(['i'])
+      expect(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char['i'].end).toBeTruthy()
     })
 
     it('inserts a segment with a redirection suggestion segment into the tree', () => {
@@ -76,7 +80,9 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char['e'].next.char)).toEqual(['d'])
       expect(keys(tree.next.char['e'].next.char['d'].next.char)).toEqual(['i'])
       expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char)).toEqual(['t'])
+      expect(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].end).toBeFalsy()
       expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect)).toEqual(['sound'])
+      expect(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect['sound'].end).toBeTruthy()
     })
 
     it('inserts a segment with multiple redirection suggestion segment into the tree', () => {
@@ -87,7 +93,10 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char['e'].next.char)).toEqual(['d'])
       expect(keys(tree.next.char['e'].next.char['d'].next.char)).toEqual(['i'])
       expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char)).toEqual(['t'])
+      expect(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].end).toBeFalsy()
       expect(keys(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect)).toEqual(['sound', 'collection'])
+      expect(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect['sound'].end).toBeTruthy()
+      expect(tree.next.char['e'].next.char['d'].next.char['i'].next.char['t'].next.redirect['collection'].end).toBeTruthy()
     })
 
     it('inserts a sequence of redirection suggestion segments into the tree', () => {
@@ -96,8 +105,11 @@ describe('PrefixTree', () => {
 
       expect(keys(tree.next.char)).toEqual(['a'])
       expect(keys(tree.next.char['a'].next.char)).toEqual(['b'])
+      expect(tree.next.char['a'].next.char['b'].end).toBeFalsy()
       expect(keys(tree.next.char['a'].next.char['b'].next.redirect)).toEqual(['sound'])
+      expect(tree.next.char['a'].next.char['b'].next.redirect['sound'].end).toBeFalsy()
       expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.redirect)).toEqual(['collection'])
+      expect(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.redirect['collection'].end).toBeTruthy()
     })
 
     it('inserts a sequence of non-consecutive redirection suggestion segments into the tree', () => {
@@ -107,8 +119,12 @@ describe('PrefixTree', () => {
       expect(keys(tree.next.char)).toEqual(['a'])
       expect(keys(tree.next.char['a'].next.char)).toEqual(['b'])
       expect(keys(tree.next.char['a'].next.char['b'].next.redirect)).toEqual(['sound'])
+      expect(tree.next.char['a'].next.char['b'].end).toBeFalsy()
+      expect(tree.next.char['a'].next.char['b'].next.redirect['sound'].end).toBeFalsy()
       expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char)).toEqual(['c'])
+      expect(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char['c'].end).toBeFalsy()
       expect(keys(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char['c'].next.redirect)).toEqual(['collection'])
+      expect(tree.next.char['a'].next.char['b'].next.redirect['sound'].next.char['c'].next.redirect['collection'].end).toBeTruthy()
     })
     
     it('gracefully handles an empty string as input', () => {
@@ -152,7 +168,7 @@ describe('PrefixTree', () => {
       const tree = new PrefixTree()
       tree.add('starfish')
 
-      expect(tree.suggest('s')).toEqual(['starfish'])
+      expect(tree.suggest('s')).toEqual([ ['starfish'] ])
     })
 
     it('suggests a sequence given a char and a trie populated with a sequence', () => {

@@ -29,14 +29,14 @@ export class PrefixTree extends PrefixTrieNode {
   }
 
   add(suggestion) {
-    const addWord = (node, str) => {
+    const addWord = (node, str, ends=true) => {
       if ( str.length === 0) return node
       if (!node.next.char[str[0]]) {
         node.next.char[str[0]] = new PrefixTrieNode(str[0])
-        if (str.length === 1) node.next.char[str[0]].end = true // TODO maybe add metadata to each word.
+        if (str.length === 1) node.next.char[str[0]].end = ends // TODO maybe add metadata to each word.
       }
 
-      if (str.length > 1) return addWord(node.next.char[str[0]], str.slice(1))
+      if (str.length > 1) return addWord(node.next.char[str[0]], str.slice(1), ends)
 
       return node.next.char[str[0]]
     }
@@ -54,13 +54,15 @@ export class PrefixTree extends PrefixTrieNode {
             addSegments(tree.next.redirect[type], segments.slice(1))
             break
           }
+        } else {
+          tree.next.redirect[type].end = true
         }
       }      
     }
     
     const addSegments = (tree, segments) => {
       if (segments.length === 0) return
-      let node = addWord(tree, segments[0])
+      let node = addWord(tree, segments[0], segments.length === 1)
       if (segments.length === 1) return
 
       if (this.getInputType(segments[1]) === InputTypes.Redirect) {
@@ -73,6 +75,10 @@ export class PrefixTree extends PrefixTrieNode {
       const c = segments[1][0]
       if (!node.next.segment[c]) node.next.segment[c] = new PrefixTrieNode(c)
       node = node.next.segment[c]
+      if (segments[1].length === 1 && segments.length === 2) {
+        node.end = true
+        return
+      }
       const newSegments = [segments[1].slice(1)].concat(segments.length > 2 ? segments.slice(2) : [])
       addSegments(node, newSegments)
     }
@@ -93,20 +99,31 @@ export class PrefixTree extends PrefixTrieNode {
 
   // input can be a single string (word)
   // an arrray of strings (segments)
+  //
+  // output will be an array of arrays
+  // each inner array will be a segment sequence
+  // each item in the inner array will be an object with the value and some metadata
+  // [ [ {...}, {...}], [{...}] ]
   suggest(input) {
+    // normalize input to always be an array
+    if (this.getInputType(input) === InputTypes.Word) input = [ input ]
+    
     let suggestions = []
 
     // TODO update this to handle segmented inputs
-      const getSuggestions = (string, tree) => {
-        for (const k in tree.next.char) {
-          const child = tree.next.char[k]
-          const newString = string + child.key
-          if (child.end) {
-            suggestions.push(newString)
-          }
-          getSuggestions(newString, child)
-        }
+    const getSuggestions = (pattern, tree) => {
+      for (const i in tree.next.char) {
+        const c = tree.next.char[i]
+        const newPattern = [...pattern.slice(0, -1), pattern[pattern.length-1] + c.key]
+        if (c.end) suggestions.push(newPattern)
+        getSuggestions(newPattern, c)
       }
+      for (const i in tree.next.segment) {
+        const s = tree.next.segment[i]
+        getSuggestions([...pattern, ''], s)
+      }
+      for (const r in tree.next.redirect) {}
+    }
 
     const subTree = this.getMatchingSubTree(input, this)
     if (subTree) getSuggestions(input, subTree)
