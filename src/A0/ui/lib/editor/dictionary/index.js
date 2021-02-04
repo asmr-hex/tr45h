@@ -40,4 +40,12 @@ export class Dictionary {
 
     return suggestions
   }
+
+  // given a sequence of tokens, this finds the first matching complete word/phrases
+  // in the provded contexts. the remaining segments in the sequence are returned also
+  findMatchingSubTrees(segments, contexts) {
+    for (const context of contexts) {
+      // TODO
+    }
+  }
 }

@@ -1,3 +1,5 @@
+import { keys } from 'lodash'
+
 // dictionary.add('my.context', ['help', [ 'help', 'settings' ], [ 'help', 'edit' ], [ 'edit', { sound: 'symbols.sounds' } ] ] )
 
 // NOTE: we need to be able to distinguish between the end of a word and the end of a segment.
@@ -106,7 +108,7 @@ export class PrefixTree extends PrefixTrieNode {
   // each inner array will be a segment sequence
   // each item in the inner array will be an object with the value and some metadata
   // [ [ {...}, {...}], [{...}] ]
-  suggest(input) {
+  suggest(input, dictionary=null) {
     // normalize input to always be an array
     if (this.getInputType(input) === InputTypes.Word) input = [ input ]
     
@@ -130,8 +132,9 @@ export class PrefixTree extends PrefixTrieNode {
         getSuggestions(newPattern, tree.next.redirect[r])
       }
     }
-    
-    const subTree = this.getMatchingSubTree(input, this) // TODO IF NEXT SUBTREE IS A REDIRECT... how will this work?
+
+    // TODO there may be multiple subtrees (due to redirects)
+    const subTree = this.getMatchingSubTree(input, this, dictionary) // TODO IF NEXT SUBTREE IS A REDIRECT... how will this work?
     if (subTree) getSuggestions(input, subTree)
 
     return suggestions.sort()    
@@ -149,13 +152,23 @@ export class PrefixTree extends PrefixTrieNode {
     return null
   }
 
-  getSubTreeMatchingSegments(segments, tree) {
+  getSubTreeMatchingSegments(segments, tree, dictionary) {
     let node = tree
     while (segments.length > 0) {
       node = this.getSubTreeMatchingWord(segments[0], node)
       if (!node)                 return node
       if (segments.length === 1) return node
 
+      // if the current node is a redirect....
+      if (keys(node.next.redirect).length !== 0) {
+        // search other prefix trees!
+        for (const [type, segment] of Object.entries(node.next.redirect)) {
+          console.log(dictionary.suggest(segments[1], segment.meta.contexts))
+        }
+        
+      }
+      
+      
       const firstChar = segments[1][0]
       if (!firstChar) return null
 
@@ -177,11 +190,11 @@ export class PrefixTree extends PrefixTrieNode {
     return node
   }
   
-  getMatchingSubTree(pattern, tree) {
+  getMatchingSubTree(pattern, tree, dictionary=null) {
     switch (this.getInputType(pattern)) {
     case InputTypes.Segments:
-      if (pattern.length === 1) return this.getSubTreeMatchingWord(pattern[0], tree)   // treat just as a word.
-      else                      return this.getSubTreeMatchingSegments(pattern, tree)  // more than just a word.
+      if (pattern.length === 1) return this.getSubTreeMatchingWord(pattern[0], tree)               // treat just as a word.
+      else                      return this.getSubTreeMatchingSegments(pattern, tree, dictionary)  // more than just a word.
     case InputTypes.Word:
       return this.getSubTreeMatchingWord(pattern, tree)
     default:
