@@ -52,6 +52,34 @@ describe('PrefixTree', () => {
       expect(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char['i'].end).toBeTruthy()
     })
 
+    it('inserts a longer segment into the tree given an array', () => {
+      const tree = new PrefixTree()
+      tree.add(['become', 'empty', 'enter'])
+
+      expect(keys(tree.next.char)).toEqual(['b'])
+      expect(keys(tree.next.char['b'].next.char)).toEqual(['e'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char)).toEqual(['c'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char)).toEqual(['o'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char)).toEqual(['m'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char)).toEqual(['e'])
+      expect(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].end).toBeFalsy()
+
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment)).toEqual(['e'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char)).toEqual(['m'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char)).toEqual(['p'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char)).toEqual(['t'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char)).toEqual(['y'])
+      expect(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].end).toBeFalsy()
+
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment)).toEqual(['e'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment['e'].next.char)).toEqual(['n'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment['e'].next.char['n'].next.char)).toEqual(['t'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment['e'].next.char['n'].next.char['t'].next.char)).toEqual(['e'])
+      expect(keys(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment['e'].next.char['n'].next.char['t'].next.char['e'].next.char)).toEqual(['r'])
+      expect(tree.next.char['b'].next.char['e'].next.char['c'].next.char['o'].next.char['m'].next.char['e'].next.segment['e'].next.char['m'].next.char['p'].next.char['t'].next.char['y'].next.segment['e'].next.char['n'].next.char['t'].next.char['e'].next.char['r'].end).toBeTruthy()
+    })
+
+    
     it('inserts multiple segments into the tree when given an consecutive arrays', () => {
       const tree = new PrefixTree()
       tree.add(['cin', 'quai'])
@@ -178,12 +206,27 @@ describe('PrefixTree', () => {
       expect(tree.suggest('b')).toEqual([ ['become', 'empty', 'enter', 'the', 'void'] ])
     })
 
+    it('suggests a sequence given a partial sequence and a trie populated with a sequence', () => {
+      const tree = new PrefixTree()
+      tree.add(['become', 'zmpty', 'enter', 'the', 'void'])
+
+      expect(tree.suggest(['become', 'zmpty'])).toEqual([ ['become', 'zmpty', 'enter', 'the', 'void'] ])
+    })
+
     it('suggests a sequence with a redirect', () => {
       const tree = new PrefixTree()
       tree.add(['edit', { sound: 'symbols.sounds' }])
 
       expect(tree.suggest('e')).toEqual([ ['edit', { value: 'sound', redirect: true, contexts: ['symbols.sounds']}]])
     })
+
+    it('suggests nothing when given a partial, non-matching sequence', () => {
+      const tree = new PrefixTree()
+      tree.add(['become', 'zmpty', 'enter', 'the', 'void'])
+
+      expect(tree.suggest(['become', 'zmz'])).toEqual([])
+    })
+
   })
 
 })
