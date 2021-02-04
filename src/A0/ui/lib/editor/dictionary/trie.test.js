@@ -175,7 +175,14 @@ describe('PrefixTree', () => {
       const tree = new PrefixTree()
       tree.add(['become', 'empty', 'enter', 'the', 'void'])
 
-      expect(tree.suggest('b')).toEqual(['become', 'empty', 'enter', 'the', 'void'])
+      expect(tree.suggest('b')).toEqual([ ['become', 'empty', 'enter', 'the', 'void'] ])
+    })
+
+    it('suggests a sequence with a redirect', () => {
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }])
+
+      expect(tree.suggest('e')).toEqual([ ['edit', { value: 'sound', redirect: true, contexts: ['symbols.sounds']}]])
     })
   })
 

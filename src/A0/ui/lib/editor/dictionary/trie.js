@@ -43,7 +43,9 @@ export class PrefixTree extends PrefixTrieNode {
 
     const addRedirect = (tree, segments) => {
       for (const [type, contexts] of Object.entries(segments[0])) {
-        tree.next.redirect[type] = new PrefixTrieNode(type, { contexts })
+        // normalize contexts to an array
+        const ctx = Array.isArray(contexts) ? contexts : [ contexts ]
+        tree.next.redirect[type] = new PrefixTrieNode(type, { contexts: ctx })
 
         if (segments.length > 1) {
           switch (this.getInputType(segments[1])) {
@@ -112,20 +114,24 @@ export class PrefixTree extends PrefixTrieNode {
 
     // TODO update this to handle segmented inputs
     const getSuggestions = (pattern, tree) => {
-      for (const i in tree.next.char) {
+      for (const i in tree.next.char) {  // getting a word
         const c = tree.next.char[i]
         const newPattern = [...pattern.slice(0, -1), pattern[pattern.length-1] + c.key]
         if (c.end) suggestions.push(newPattern)
         getSuggestions(newPattern, c)
       }
-      for (const i in tree.next.segment) {
+      for (const i in tree.next.segment) {  // getting a segment
         const s = tree.next.segment[i]
-        getSuggestions([...pattern, ''], s)
+        getSuggestions([...pattern, i], s)
       }
-      for (const r in tree.next.redirect) {}
+      for (const r in tree.next.redirect) {
+        const newPattern = [...pattern, {value: r, redirect: true, contexts: tree.next.redirect[r].meta.contexts}]
+        if (tree.next.redirect[r].end) suggestions.push(newPattern)
+        getSuggestions(newPattern, tree.next.redirect[r])
+      }
     }
 
-    const subTree = this.getMatchingSubTree(input, this)
+    const subTree = this.getMatchingSubTree(input, this) // TODO IF NEXT SUBTREE IS A REDIRECT... how will this work?
     if (subTree) getSuggestions(input, subTree)
 
     return suggestions.sort()    
