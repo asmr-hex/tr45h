@@ -1,5 +1,6 @@
 import { keys } from 'lodash'
 
+import { Dictionary } from './index'
 import { PrefixTree } from './trie'
 
 
@@ -218,6 +219,19 @@ describe('PrefixTree', () => {
       tree.add(['edit', { sound: 'symbols.sounds' }])
 
       expect(tree.suggest('e')).toEqual([ ['edit', { value: 'sound', redirect: true, contexts: ['symbols.sounds']}]])
+    })
+
+    it('suggests a sequence with a redirect that is filled in', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }])
+
+      expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
+        ['edit', 'flute'],
+        ['edit', 'flugelhorn'],
+      ])
     })
 
     it('suggests nothing when given a partial, non-matching sequence', () => {
