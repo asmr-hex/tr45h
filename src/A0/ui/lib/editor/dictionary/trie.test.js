@@ -221,7 +221,7 @@ describe('PrefixTree', () => {
       expect(tree.suggest('e')).toEqual([ ['edit', { value: 'sound', redirect: true, contexts: ['symbols.sounds']}]])
     })
 
-    it('suggests a sequence with a redirect that is filled in', () => {
+    it('suggests sequences given a pattern with a partially completed redirect', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
       
@@ -231,6 +231,85 @@ describe('PrefixTree', () => {
       expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
         ['edit', 'flute'],
         ['edit', 'flugelhorn'],
+      ])
+    })
+
+    it('suggests sequences given a partially completed redirect followed by a concrete match', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
+        ['edit', 'flute', 'now'],
+        ['edit', 'flugelhorn', 'now'],
+      ])
+    })
+    
+    it('suggests sequences given a fully completed redirect followed by a concrete match', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'flute'], dictionary)).toEqual([
+        ['edit', 'flute', 'now'],
+      ])
+    })
+
+    it('suggests sequences given a fully completed redirect followed by a concrete match', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flu', 'flugelhorn'])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'flu'], dictionary)).toEqual([
+        ['edit', 'flu', 'now'],
+        ['edit', 'flugelhorn', 'now'],
+      ])
+    })
+
+    it('suggests sequences ...', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flute', ['flugelhorn', 'now'] ])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
+        ['edit', 'flute', 'now'],
+        ['edit', 'flugelhorn', 'now', 'now'],
+      ])      
+    })
+
+    it('suggests sequences ... ', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('collections', ['one', 'two'])
+      dictionary.new('symbols.sounds', ['flute', ['flugelhorn', {collection: 'collections'}] ])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
+        ['edit', 'flute', 'now'],
+        ['edit', 'flugelhorn', {value: 'collection', redirect: true, contexts: ['collections']}, 'now'],
+      ])
+    })
+
+    it('suggests sequences ... ', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('collections', ['now'])
+      dictionary.new('symbols.sounds', ['flute', ['flute', {collection: 'collections'}] ])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
+
+      expect(tree.suggest(['edit', 'flute', 'n'], dictionary)).toEqual([
+        ['edit', 'flute', 'now'],
+        ['edit', 'flute', 'now', 'now'],
       ])
     })
 

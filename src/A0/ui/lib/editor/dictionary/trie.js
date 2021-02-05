@@ -139,7 +139,25 @@ export class PrefixTree extends PrefixTrieNode {
 
     return suggestions.sort()    
   }
-  
+
+  // works just like suggest, but instead of returning no results, it returns the best
+  // suggestions and their tailing remainders (the input that doesnt quite match)
+  // to it returns an array like,
+  // [
+  //   { suggestion: [...], remainder: [...]}
+  //   ...
+  // ]
+  getBestSuggestion(input, dictionary) {
+    let suggestions = []
+
+    const getSuggestions = (pattern, tree) => {
+      
+    }
+
+
+    
+    return suggestions
+  }
 
   // TODO
   remove(word) {}
@@ -161,7 +179,8 @@ export class PrefixTree extends PrefixTrieNode {
 
       // if the current node is a redirect....
       if (keys(node.next.redirect).length !== 0) {
-        // search other prefix trees!
+        // search other prefix trees! JUST PARSE HERE AND NOW and somehow add thes results (annotated) to the return results
+        // this way we can recursively parse suggestions!
         for (const [type, segment] of Object.entries(node.next.redirect)) {
           console.log(dictionary.suggest(segments[1], segment.meta.contexts))
         }
