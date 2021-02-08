@@ -69,7 +69,16 @@ export class PrefixTree extends PrefixTrieNode {
     
     const addSegments = (tree, segments) => {
       if (segments.length === 0) return
-      let node = addWord(tree, segments[0], segments.length === 1)
+      let node = null
+      switch (this.getInputType(segments[0])) {
+      case InputTypes.Word:
+        node = addWord(tree, segments[0], segments.length === 1)
+        break
+      case InputTypes.Redirect:
+        addRedirect(tree, segments)
+        return
+      }
+      
       if (segments.length === 1) return
 
       if (this.getInputType(segments[1]) === InputTypes.Redirect) {
@@ -93,8 +102,9 @@ export class PrefixTree extends PrefixTrieNode {
     // decide how to handle input
     switch (this.getInputType(suggestion)) {
     case InputTypes.Segments:
-      if (suggestion.length === 1) { addWord(this, suggestion[0])  }          // treat just as a word.
-      else                         { addSegments(this, suggestion) }          // more than just a word.
+      addSegments(this, suggestion)
+      // if (suggestion.length === 1) { addWord(this, suggestion[0])  }          // treat just as a word.
+      // else                         { addSegments(this, suggestion) }          // more than just a word.
       break
     case InputTypes.Word:
       addWord(this, suggestion)
@@ -189,13 +199,13 @@ export class PrefixTree extends PrefixTrieNode {
       }
     }
 
+    if (!nested && isLastInput) subtrees = subtrees.map(s => s.subtree)
+    
     // get redirection subtrees // right now, this is never hit because the ADD method doesn't allow
     // redirects as the first node. must change this.
     for (const [ name, redirect ] of Object.entries(node.next.redirect)) {
       subtrees = subtrees.concat(this.getMatchingRedirect(input, redirect, dictionary, nested))
     }
-
-    if (!nested && isLastInput) subtrees = subtrees.map(s => s.subtree)
     
     return subtrees    
   }

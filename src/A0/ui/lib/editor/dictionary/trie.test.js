@@ -101,6 +101,15 @@ describe('PrefixTree', () => {
       expect(tree.next.char['c'].next.char['i'].next.char['n'].next.segment['q'].next.char['u'].next.char['a'].next.char['i'].end).toBeTruthy()
     })
 
+    it('inserts a segment with a redirection suggestion segment as the first segment into the tree', () => {
+      const tree = new PrefixTree()
+      tree.add([{ sound: 'symbols.sounds' }])
+
+      expect(keys(tree.next.redirect)).toEqual(['sound'])
+      expect(tree.next.redirect['sound'].end).toBeTruthy()
+    })
+
+    
     it('inserts a segment with a redirection suggestion segment into the tree', () => {
       const tree = new PrefixTree()
       tree.add(['edit', { sound: 'symbols.sounds' }])
@@ -251,15 +260,39 @@ describe('PrefixTree', () => {
       expect(tree.getMatches(['sea', 'bea'], tree, null)).toEqual([])
     })
 
-    // TODO currently, .add(..) doesn't support redirects as the first segment, we must change this.
-    it.skip('matches on a partial redirect (redirect as first segment)', () => {
+    it('matches on a partial redirect (redirect as first segment)', () => {
       const dictionary = new Dictionary()
       dictionary.new('critter', ['bug', 'fish'])
       
       const tree = new PrefixTree()
       tree.add([{ animal: ['critter'] }])
       
-      expect(tree.getMatches(['a', 'b'], tree, dictionary)).toEqual([ [tree.next.redirect['animal'], dictionary.get('critter').next.char['b'] ] ])
+      expect(tree.getMatches(['b'], tree, dictionary)).toEqual([ [tree.next.redirect['animal'], dictionary.get('critter').next.char['b'] ] ])
+    })
+
+    it('matches on a complete redirect (redirect as first segment) with remainder at the top level', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('critter', ['bug'])
+      
+      const tree = new PrefixTree()
+      tree.add([{ animal: ['critter'] }, 'dance'])
+      
+      expect(tree.getMatches(['bug', 'da'], tree, dictionary)).toEqual([
+        [ tree.next.redirect['animal'].next.segment['d'].next.char['a'] ]
+      ])
+    })
+
+    it('matches on a complete redirect (redirect as first segment) as well as a partial match on the redirect and with remainder at the top level', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('critter', ['bug', ['bug', 'dance']])
+      
+      const tree = new PrefixTree()
+      tree.add([{ animal: ['critter'] }, 'dance'])
+      
+      expect(tree.getMatches(['bug', 'da'], tree, dictionary)).toEqual([
+        [ tree.next.redirect['animal'].next.segment['d'].next.char['a'] ],
+        [ tree.next.redirect['animal'], dictionary.get('critter').next.char['b'].next.char['u'].next.char['g'].next.segment['d'].next.char['a'] ]
+      ])
     })
     
     it('matches on a partial redirect', () => {
