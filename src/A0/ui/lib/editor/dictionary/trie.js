@@ -30,6 +30,7 @@ export class PrefixTree extends PrefixTrieNode {
     }
   }
 
+  // TODO update to support redirects as the potential first node in a segment.
   add(suggestion) {
     const addWord = (node, str, ends=true) => {
       if ( str.length === 0) return node
@@ -55,7 +56,9 @@ export class PrefixTree extends PrefixTrieNode {
             addRedirect(tree.next.redirect[type], segments.slice(1))
             break
           case InputTypes.Word:
-            addSegments(tree.next.redirect[type], segments.slice(1))
+            const nextSegment = new PrefixTrieNode(segments[1][0])
+            tree.next.redirect[type].next.segment[segments[1][0]] = nextSegment
+            addSegments(nextSegment, [segments[1].substr(1)].concat(segments.length > 2 ? segments.slice(2) : []))
             break
           }
         } else {
@@ -114,8 +117,8 @@ export class PrefixTree extends PrefixTrieNode {
     
     let suggestions = []
 
-    // TODO update this to handle segmented inputs
-    const getSuggestions = (pattern, tree) => {
+
+    const complete = (tree, pattern) => {
       for (const i in tree.next.char) {  // getting a word
         const c = tree.next.char[i]
         const newPattern = [...pattern.slice(0, -1), pattern[pattern.length-1] + c.key]
@@ -133,32 +136,14 @@ export class PrefixTree extends PrefixTrieNode {
       }
     }
 
-    // TODO there may be multiple subtrees (due to redirects)
-    const subTree = this.getMatchingSubTree(input, this, dictionary) // TODO IF NEXT SUBTREE IS A REDIRECT... how will this work?
-    if (subTree) getSuggestions(input, subTree)
+    const matches = this.getMatches(input, this, dictionary)
+    for (const match of matches) {
+      complete(match, input)
+    }
 
     return suggestions.sort()    
   }
-
-  // works just like suggest, but instead of returning no results, it returns the best
-  // suggestions and their tailing remainders (the input that doesnt quite match)
-  // to it returns an array like,
-  // [
-  //   { suggestion: [...], remainder: [...]}
-  //   ...
-  // ]
-  getBestSuggestion(input, dictionary) {
-    let suggestions = []
-
-    const getSuggestions = (pattern, tree) => {
-      
-    }
-
-
-    
-    return suggestions
-  }
-
+  
   // TODO
   remove(word) {}
 
@@ -170,56 +155,114 @@ export class PrefixTree extends PrefixTrieNode {
     return null
   }
 
-  getSubTreeMatchingSegments(segments, tree, dictionary) {
-    let node = tree
-    while (segments.length > 0) {
-      node = this.getSubTreeMatchingWord(segments[0], node)
-      if (!node)                 return node
-      if (segments.length === 1) return node
+  getMatches(input, tree, dictionary, nested=false) {
+    let   node        = tree
+    let   subtrees    = [] // Array<{ subtree: Array<tree>, remainder: Array<words>}> where the inner Array is the sequence of nested scopes.
+    const isLastInput = input.length === 1
 
-      // if the current node is a redirect....
-      if (keys(node.next.redirect).length !== 0) {
-        // search other prefix trees! JUST PARSE HERE AND NOW and somehow add thes results (annotated) to the return results
-        // this way we can recursively parse suggestions!
-        for (const [type, segment] of Object.entries(node.next.redirect)) {
-          console.log(dictionary.suggest(segments[1], segment.meta.contexts))
+    const newNode = this.getMatchingWord(input[0], node)
+    if (newNode) {
+      if (isLastInput) {
+        // if newNode is end, we append an empty subtree? but what about if we are nested?
+        // if !nested:
+        //   if newNode.end || !newNode.end -> return the [newNode]
+        // if nested:
+        //   if newNode.end -> return []
+        //   else           -> return [newNode]
+        if (nested && newNode.end) {
+          subtrees.push({ subtree: [newNode], remainder: [] }) // TODO this used to be subTree: [], but this logic might be wrong. in fact, we might not need all these cases at all.
+        } else {
+          subtrees.push({ subtree: [newNode], remainder: [] })
+        }
+      } else {
+        if (newNode.end && nested) {
+          subtrees.push({ subtree: [], remainder: input.slice(1) })
+        }
+        if (input[1][0] in newNode.next.segment) {
+          subtrees = subtrees.concat(this.getMatches(input.slice(1), newNode.next.segment[input[1][0]], dictionary, nested))
         }
         
+        // get redirection subtrees
+        for (const [ name, redirect ] of Object.entries(newNode.next.redirect)) {
+          subtrees = subtrees.concat(this.getMatchingRedirect(input.slice(1), redirect, dictionary, nested))
+        }          
       }
-      
-      
-      const firstChar = segments[1][0]
-      if (!firstChar) return null
-
-      segments = [segments[1].substr(1)].concat(segments.length > 2 ? segments.slice(2) : [])
-      node     = node.next.segment[firstChar]
-
-      if (!node) return null
     }
-    return node
+
+    // get redirection subtrees // right now, this is never hit because the ADD method doesn't allow
+    // redirects as the first node. must change this.
+    for (const [ name, redirect ] of Object.entries(node.next.redirect)) {
+      subtrees = subtrees.concat(this.getMatchingRedirect(input, redirect, dictionary, nested))
+    }
+
+    if (!nested && isLastInput) subtrees = subtrees.map(s => s.subtree)
+    
+    return subtrees    
   }
 
-  getSubTreeMatchingWord(word, tree) {
+  // need to distinguish between when a subcontext:
+  // (1) has found fully qualified stuff and exhausted the input         (this case means there is definitely a match, just return this redirect node as a subtree to generate suggestions)
+  // (2) has found partially qualified stuff and has exhausted the input (this case means there is definitely a match, return the node from the sub context in an array with the redirect node prepending it-- so when generating suggestions, we first generate all suggestions for subcontext tree, then append all suggestions for the context higher up (before it in the array))
+  // (3) has found fully qualified stuff and not exhausted the input     (this case means there is still a possible match, must getSubtrees of this redirect node (in this context))
+  // (4) has found partially qualified stuff and not exausted the input  (this case means there is no possible match)
+  // get subtrees in nested contexts
+  getMatchingRedirect(input, redirect, dictionary, nested=false) {
+    let subtrees       = []
+    let appendRedirect = false
+    
+    for (const context of redirect.meta.contexts) {
+      for (const result of this.getMatches(input, dictionary.get(context), dictionary, true)) {
+        // analyze result above, which case does we fall into for this?
+        // (1) if subsubtree.node is []    AND subsubtree.remainder is []
+        // (2) if subsubtree.node is [...] AND subsubtree.remainder is []
+        // (3) if subsubtree.node is []    AND subsubtree.remainder is [...]
+        // (4) if subsubtree isn't even included in results.
+        
+        // (1) concat redirect node as subtree to generate autosuggestions
+        if (result.subtree.length === 0 && result.remainder.length === 0)
+          appendRedirect = true
+
+        // (2) concat [redirect, ...result.subtree] to subtree to generate autosuggetions
+        if (result.subtree.length !== 0 && result.remainder.length === 0) {
+          if (nested) {
+            subtrees.push({ subtree: [redirect, ...result.subtree], remainder: [] })   
+          } else {
+            subtrees.push([redirect, ...result.subtree])
+          }
+        }
+
+        // (3) concat result of getRemainders(result.remainder, redirect, dictionary, nested) to generate autosuggestions
+        if (result.subtree.length === 0 && result.remainder.length !== 0) {
+          if (result.remainder[0][0] in redirect.next.segment) {
+            subtrees = subtrees.concat(this.getMatches(result.remainder, redirect.next.segment[result.remainder[0][0]], dictionary, nested))
+          } else {
+            // if the remainder isn't in this context, we need to allow it to bubble up to the next one.
+            subtrees.push(result)
+          }
+          subtrees = subtrees.concat(this.getMatches(result.remainder, redirect, dictionary, nested))
+        }
+          
+      }
+    }
+
+    if (appendRedirect) subtrees.push({ subtree: [redirect], remainder: [] })
+
+    return subtrees
+  }
+  
+  getMatchingWord(word, tree) {
     let node = tree
+    // handle the case that this is not the starting node of a tree.
+    if (node.key !== null) {
+      // this must be the root of a Segment PrefixTree
+      // create a fake root node.
+      node = { next: { char: { [node.key]: node } } }
+    }
     while (word) {
       node = node.next.char[word[0]]
-      if (!node) return node
+      if (!node) return null
       word = word.substr(1)
     }
     return node
   }
-  
-  getMatchingSubTree(pattern, tree, dictionary=null) {
-    switch (this.getInputType(pattern)) {
-    case InputTypes.Segments:
-      if (pattern.length === 1) return this.getSubTreeMatchingWord(pattern[0], tree)               // treat just as a word.
-      else                      return this.getSubTreeMatchingSegments(pattern, tree, dictionary)  // more than just a word.
-    case InputTypes.Word:
-      return this.getSubTreeMatchingWord(pattern, tree)
-    default:
-      throw new Error('pattern is invalid type') // TODO update with more formalized error message
-    }
-  }
 }
-
-
