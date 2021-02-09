@@ -260,14 +260,28 @@ describe('PrefixTree', () => {
       expect(tree.getMatches(['sea', 'bea'], tree, null)).toEqual([])
     })
 
-    it('matches on a partial redirect (redirect as first segment)', () => {
+    it('matches on a partial redirect (redirect as first and only segment)', () => {
       const dictionary = new Dictionary()
       dictionary.new('critter', ['bug', 'fish'])
       
       const tree = new PrefixTree()
       tree.add([{ animal: ['critter'] }])
       
-      expect(tree.getMatches(['b'], tree, dictionary)).toEqual([ [tree.next.redirect['animal'], dictionary.get('critter').next.char['b'] ] ])
+      expect(tree.getMatches(['b'], tree, dictionary)).toEqual([
+        [dictionary.get('critter').next.char['b'] ]
+      ])
+    })
+
+    it('matches on a partial redirect (redirect as first segment) with additional candidates on the top-level context', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('critter', ['bug', 'fish'])
+      
+      const tree = new PrefixTree()
+      tree.add([{ animal: ['critter'] }, 'cool'])
+      
+      expect(tree.getMatches(['b'], tree, dictionary)).toEqual([
+        [tree.next.redirect['animal'], dictionary.get('critter').next.char['b'] ]
+      ])
     })
 
     it('matches on a complete redirect (redirect as first segment) with remainder at the top level', () => {
@@ -295,17 +309,31 @@ describe('PrefixTree', () => {
       ])
     })
     
-    it('matches on a partial redirect', () => {
+    it('matches on a partial redirect (with a redirect as the last segment)', () => {
       const dictionary = new Dictionary()
       dictionary.new('critter', ['bug', 'fish'])
       
       const tree = new PrefixTree()
       tree.add(['a', { animal: ['critter'] }])
       
-      expect(tree.getMatches(['a', 'b'], tree, dictionary)).toEqual([ [tree.next.char['a'].next.redirect['animal'], dictionary.get('critter').next.char['b'] ] ])
+      expect(tree.getMatches(['a', 'b'], tree, dictionary)).toEqual([
+        [dictionary.get('critter').next.char['b'] ]
+      ])
     })
 
-    it('matches on a partial nested redirect', () => {
+    it('matches on a partial redirect (with the redirect not as the last segment)', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('critter', ['bug', 'fish'])
+      
+      const tree = new PrefixTree()
+      tree.add(['a', { animal: ['critter'] }, 'ahoy'])
+      
+      expect(tree.getMatches(['a', 'b'], tree, dictionary)).toEqual([
+        [tree.next.char['a'].next.redirect['animal'], dictionary.get('critter').next.char['b'] ]
+      ])
+    })
+
+    it('matches on a partial nested redirect (with a redirect as the final segment)', () => {
       const dictionary = new Dictionary()
       dictionary.new('insects', ['ant', 'arachnid'])
       dictionary.new('critter', [['bug', {kind: 'insects'}], 'fish'])
@@ -315,14 +343,28 @@ describe('PrefixTree', () => {
       
       expect(tree.getMatches(['a', 'bug', 'a'], tree, dictionary)).toEqual([
         [
-          tree.next.char['a'].next.redirect['animal'],
-          dictionary.get('critter').next.char['b'].next.char['u'].next.char['g'].next.redirect['kind'],
           dictionary.get('insects').next.char['a'],
         ]
       ])
     })
 
-    it('matches on a fully qualified nested redirect', () => {
+    it('matches on a partial nested redirect (with a non-redirect as the final segment)', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('insects', ['ant', 'arachnid'])
+      dictionary.new('critter', [['bug', {kind: 'insects'}], 'fish'])
+      
+      const tree = new PrefixTree()
+      tree.add(['a', { animal: ['critter'] }, 'ahoy'])
+      
+      expect(tree.getMatches(['a', 'bug', 'a'], tree, dictionary)).toEqual([
+        [
+          tree.next.char['a'].next.redirect['animal'],
+          dictionary.get('insects').next.char['a'],
+        ]
+      ])
+    })
+
+    it('matches on a fully qualified nested redirect (with redirect as final segment)', () => {
       const dictionary = new Dictionary()
       dictionary.new('insects', ['a'])
       dictionary.new('critter', [['bug', {kind: 'insects'}], 'fish'])
@@ -332,30 +374,44 @@ describe('PrefixTree', () => {
       
       expect(tree.getMatches(['a', 'bug', 'a'], tree, dictionary)).toEqual([
         [
+          dictionary.get('insects').next.char['a'],
+        ]
+      ])
+    })
+
+    it('matches on a fully qualified nested redirect (with non-redirect as final segment)', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('insects', ['a'])
+      dictionary.new('critter', [['bug', {kind: 'insects'}, 'blah'], 'fish'])
+      
+      const tree = new PrefixTree()
+      tree.add(['a', { animal: ['critter'] }, 'ahoy'])
+      
+      expect(tree.getMatches(['a', 'bug', 'a'], tree, dictionary)).toEqual([
+        [
           tree.next.char['a'].next.redirect['animal'],
           dictionary.get('critter').next.char['b'].next.char['u'].next.char['g'].next.redirect['kind'],
           dictionary.get('insects').next.char['a'],
         ]
       ])
     })
-    
+
     it('matches on a fully qualified nested redirect (with more potential completions in the nested context)', () => {
       const dictionary = new Dictionary()
       dictionary.new('insects', ['a', 'arachnid'])
       dictionary.new('critter', [['bug', {kind: 'insects'}], 'fish'])
       
       const tree = new PrefixTree()
-      tree.add(['a', { animal: ['critter'] }])
+      tree.add(['a', { animal: ['critter'] }, 'a'])
       
       expect(tree.getMatches(['a', 'bug', 'a'], tree, dictionary)).toEqual([
         [
           tree.next.char['a'].next.redirect['animal'],
-          dictionary.get('critter').next.char['b'].next.char['u'].next.char['g'].next.redirect['kind'],
           dictionary.get('insects').next.char['a'], // because we WANT to include arachnid in the autosuggestions.
         ]
       ])
     })
-
+    
     it('matches on a fully qualified nested redirect with a remainder on the top context', () => {
       const dictionary = new Dictionary()
       dictionary.new('insects', ['a', 'arachnid'])
@@ -396,35 +452,35 @@ describe('PrefixTree', () => {
   
   
   describe('.suggest(...)', () => {
-    it.skip('suggests a word given a char and a trie populated with one word', () => {
+    it('suggests a word given a char and a trie populated with one word', () => {
       const tree = new PrefixTree()
       tree.add('starfish')
 
       expect(tree.suggest('s')).toEqual([ ['starfish'] ])
     })
 
-    it.skip('suggests a sequence given a char and a trie populated with a sequence', () => {
+    it('suggests a sequence given a char and a trie populated with a sequence', () => {
       const tree = new PrefixTree()
       tree.add(['become', 'empty', 'enter', 'the', 'void'])
 
       expect(tree.suggest('b')).toEqual([ ['become', 'empty', 'enter', 'the', 'void'] ])
     })
 
-    it.skip('suggests a sequence given a partial sequence and a trie populated with a sequence', () => {
+    it('suggests a sequence given a partial sequence and a trie populated with a sequence', () => {
       const tree = new PrefixTree()
       tree.add(['become', 'zmpty', 'enter', 'the', 'void'])
 
       expect(tree.suggest(['become', 'zmpty'])).toEqual([ ['become', 'zmpty', 'enter', 'the', 'void'] ])
     })
 
-    it.skip('suggests a sequence with a redirect', () => {
+    it('suggests a sequence with a redirect', () => {
       const tree = new PrefixTree()
       tree.add(['edit', { sound: 'symbols.sounds' }])
 
       expect(tree.suggest('e')).toEqual([ ['edit', { value: 'sound', redirect: true, contexts: ['symbols.sounds']}]])
     })
 
-    it.skip('suggests sequences given a pattern with a partially completed redirect', () => {
+    it('suggests sequences given a pattern with a partially completed redirect', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
       
@@ -432,12 +488,12 @@ describe('PrefixTree', () => {
       tree.add(['edit', { sound: 'symbols.sounds' }])
 
       expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
-        ['edit', 'flute'],
         ['edit', 'flugelhorn'],
+        ['edit', 'flute'],
       ])
     })
 
-    it.skip('suggests sequences given a partially completed redirect followed by a concrete match', () => {
+    it('suggests sequences given a partially completed redirect followed by a concrete match', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
       
@@ -445,8 +501,8 @@ describe('PrefixTree', () => {
       tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
 
       expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
-        ['edit', 'flute', 'now'],
         ['edit', 'flugelhorn', 'now'],
+        ['edit', 'flute', 'now'],
       ])
     })
     

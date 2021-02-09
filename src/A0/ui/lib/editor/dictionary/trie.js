@@ -30,7 +30,6 @@ export class PrefixTree extends PrefixTrieNode {
     }
   }
 
-  // TODO update to support redirects as the potential first node in a segment.
   add(suggestion) {
     const addWord = (node, str, ends=true) => {
       if ( str.length === 0) return node
@@ -114,6 +113,12 @@ export class PrefixTree extends PrefixTrieNode {
     }
   }
 
+  isLeaf(node) {
+    return keys(node.next.char).length     === 0 &&
+           keys(node.next.segment).length  === 0 &&
+           keys(node.next.redirect).length === 0      
+  }
+  
   // input can be a single string (word)
   // an arrray of strings (segments)
   //
@@ -127,22 +132,34 @@ export class PrefixTree extends PrefixTrieNode {
     
     let suggestions = []
 
+    const complete = (matches, pattern) => {
+      const match       = matches[matches.length-1]
+      const isLastMatch = matches.length === 1
 
-    const complete = (tree, pattern) => {
-      for (const i in tree.next.char) {  // getting a word
-        const c = tree.next.char[i]
+      for (const i in match.next.char) {  // getting a word
+        const c = match.next.char[i]
         const newPattern = [...pattern.slice(0, -1), pattern[pattern.length-1] + c.key]
-        if (c.end) suggestions.push(newPattern)
-        getSuggestions(newPattern, c)
+        const newMatches = this.isLeaf(c) ? matches.slice(0, -1) : [...matches.slice(0, -1), c]
+
+        if (c.end && isLastMatch) suggestions.push(newPattern)
+        
+        if (newMatches.length !== 0) complete(newMatches, newPattern)
+
       }
-      for (const i in tree.next.segment) {  // getting a segment
-        const s = tree.next.segment[i]
-        getSuggestions([...pattern, i], s)
+      for (const i in match.next.segment) {  // getting a segment
+        const s = match.next.segment[i]
+        const newPattern = [...pattern, i]
+        const newMatches = [...matches.slice(0, -1), s]
+        complete(newMatches, newPattern)
       }
-      for (const r in tree.next.redirect) {
-        const newPattern = [...pattern, {value: r, redirect: true, contexts: tree.next.redirect[r].meta.contexts}]
-        if (tree.next.redirect[r].end) suggestions.push(newPattern)
-        getSuggestions(newPattern, tree.next.redirect[r])
+      for (const i in match.next.redirect) {
+        const r = match.next.redirect[i]
+        const newPattern = [...pattern, {value: i, redirect: true, contexts: r.meta.contexts}]
+        const newMatches = this.isLeaf(r) ? matches.slice(0, -1) : [...matches.slice(0, -1), r]
+        
+        if (r.end && isLastMatch) suggestions.push(newPattern)
+        
+        if (newMatches.length !== 0) complete(newMatches, newPattern)
       }
     }
 
@@ -219,6 +236,8 @@ export class PrefixTree extends PrefixTrieNode {
   getMatchingRedirect(input, redirect, dictionary, nested=false) {
     let subtrees       = []
     let appendRedirect = false
+
+    
     
     for (const context of redirect.meta.contexts) {
       for (const result of this.getMatches(input, dictionary.get(context), dictionary, true)) {
@@ -234,10 +253,11 @@ export class PrefixTree extends PrefixTrieNode {
 
         // (2) concat [redirect, ...result.subtree] to subtree to generate autosuggetions
         if (result.subtree.length !== 0 && result.remainder.length === 0) {
+          const subtree = this.isLeaf(redirect) ? result.subtree : [redirect, ...result.subtree]
           if (nested) {
-            subtrees.push({ subtree: [redirect, ...result.subtree], remainder: [] })   
+            subtrees.push({ subtree, remainder: [] })   
           } else {
-            subtrees.push([redirect, ...result.subtree])
+            subtrees.push(subtree)
           }
         }
 
