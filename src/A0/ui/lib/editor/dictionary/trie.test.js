@@ -506,7 +506,7 @@ describe('PrefixTree', () => {
       ])
     })
     
-    it.skip('suggests sequences given a fully completed redirect followed by a concrete match', () => {
+    it('suggests sequences given a fully completed redirect followed by a concrete match', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flute', 'flugelhorn'])
       
@@ -518,7 +518,7 @@ describe('PrefixTree', () => {
       ])
     })
 
-    it.skip('suggests sequences given a fully completed redirect followed by a concrete match', () => {
+    it('suggests sequences given a fully completed redirect followed by a concrete match', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flu', 'flugelhorn'])
       
@@ -531,7 +531,7 @@ describe('PrefixTree', () => {
       ])
     })
 
-    it.skip('suggests sequences ...', () => {
+    it('suggests sequences ...', () => {
       const dictionary = new Dictionary()
       dictionary.new('symbols.sounds', ['flute', ['flugelhorn', 'now'] ])
       
@@ -539,12 +539,12 @@ describe('PrefixTree', () => {
       tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
 
       expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
-        ['edit', 'flute', 'now'],
         ['edit', 'flugelhorn', 'now', 'now'],
+        ['edit', 'flute', 'now'],
       ])      
     })
 
-    it.skip('suggests sequences ... ', () => {
+    it('suggests sequences ... ', () => {
       const dictionary = new Dictionary()
       dictionary.new('collections', ['one', 'two'])
       dictionary.new('symbols.sounds', ['flute', ['flugelhorn', {collection: 'collections'}] ])
@@ -553,12 +553,12 @@ describe('PrefixTree', () => {
       tree.add(['edit', { sound: 'symbols.sounds' }, 'now'])
 
       expect(tree.suggest(['edit', 'f'], dictionary)).toEqual([
-        ['edit', 'flute', 'now'],
         ['edit', 'flugelhorn', {value: 'collection', redirect: true, contexts: ['collections']}, 'now'],
+        ['edit', 'flute', 'now'],
       ])
     })
 
-    it.skip('suggests sequences ... ', () => {
+    it('suggests sequences ... ', () => {
       const dictionary = new Dictionary()
       dictionary.new('collections', ['now'])
       dictionary.new('symbols.sounds', ['flute', ['flute', {collection: 'collections'}] ])
@@ -572,7 +572,7 @@ describe('PrefixTree', () => {
       ])
     })
 
-    it.skip('suggests nothing when given a partial, non-matching sequence', () => {
+    it('suggests nothing when given a partial, non-matching sequence', () => {
       const tree = new PrefixTree()
       tree.add(['become', 'zmpty', 'enter', 'the', 'void'])
 
