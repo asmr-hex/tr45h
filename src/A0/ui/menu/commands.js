@@ -41,12 +41,19 @@ const Suggestion = withTheme(styled('div')({
 
 export const Commands = props => {
   const [suggestions, setSuggestions] = useState([])
+
+  const setSuggestionsA = s => {
+    setSuggestions(s.map(p => p.map(w => {
+      if (typeof w === 'object') return `<${w.value}>`
+      return w
+    }).join(' ')))
+  }
   
   return (
     <CommandInterfaceRoot>
       <CommandInterface>
         <CommandLine>
-          <CLI setSuggestions={setSuggestions} />
+          <CLI setSuggestions={setSuggestionsA} />
         </CommandLine>
         <Suggestions>
           { suggestions.map((s, i) => <Suggestion key={i}>{s}</Suggestion>) }

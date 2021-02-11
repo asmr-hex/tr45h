@@ -1,4 +1,4 @@
-import { filter, range, reduce } from 'lodash'
+import { filter, range, reduce, values } from 'lodash'
 import {
   EditorState,
   Modifier,
@@ -10,12 +10,12 @@ import {
 // TODO refactor this....to be more understandable...
 
 export class AutoSuggest {
-  constructor({ tokens, dictionary, suggestions, matchLine }) {
+  constructor({ tokens, dictionary, suggestions }) {
     this.tokens             = tokens
     this.setSuggestions     = suggestions.set
     this.inline             = suggestions.inline
     this.defaultSuggestions = suggestions.default
-    this.matchLine          = matchLine
+    this.matchLine          = suggestions.matchLine
     this.dictionary         = dictionary
 
     this.showDefaults = suggestions.default.length === 0 ? false : true
@@ -39,12 +39,11 @@ export class AutoSuggest {
       return newEditorState 
     }
 
-    if (this.matchLine) return this.analyzeLine(newEditorState)
-    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
 
+    if (this.matchLine) return this.analyzeLine(key, newEditorState)
     
     // is offset within a token?
     const token = this.getBoundingToken(key, offset)
@@ -66,14 +65,12 @@ export class AutoSuggest {
     }
     
     // what are the top suggestion matches for this token?
-    const suggestions = this.getSuggestions(contexts, token)
+    const suggestions = this.getSuggestions(contexts, [token])
 
     if (suggestions.length === 0) {
       this.updateSuggestions(null, [])
       return newEditorState 
     }
-
-    console.log(suggestions)
     
     // take the first suggestion
     const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestions[0], newEditorState)
@@ -84,16 +81,16 @@ export class AutoSuggest {
     return newEditorStateWithSuggestion
   }
 
-  analyzeLine(editorState) {
+  analyzeLine(key, editorState) {
     // search all default contexts for word match
-    const suggestions = this.getSuggestions(this.defaultSuggestions, this.tokens.map(t => t.value))
+    const suggestions = this.getSuggestions(this.defaultSuggestions, this.areTokensEmpty(key) ? [this.getDefaultSuggestionToken()] : values(this.tokens[key]))
 
     if (suggestions.length === 0) {
       this.updateSuggestions(null, [])
       return editorState 
     }
 
-    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, suggestion[0])
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.areTokensEmpty(key) ? [this.getDefaultSuggestionToken()] : values(this.tokens[key]), suggestions[0])
     
     // take the first suggestion
     const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestion, editorState)
@@ -131,11 +128,11 @@ export class AutoSuggest {
       return newEditorState 
     }
 
-    if (this.matchLine) return this.cycleForEntireLine(newEditorState)
-    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
+
+    if (this.matchLine) return this.cycleForEntireLine(key, newEditorState)
 
     // is offset within a token?
     const token = this.getBoundingToken(key, offset)
@@ -151,10 +148,10 @@ export class AutoSuggest {
     return newEditorStateWithSuggestion
   }
 
-  cycleForEntireLine(editorState) {
+  cycleForEntireLine(key, editorState) {
     // TODO some error checking?
 
-    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, this.suggestions.current)
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.areTokensEmpty(key) ? [this.getDefaultSuggestionToken()] : values(this.tokens[key]), this.suggestions.current)
 
     const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestion, editorState)
 
@@ -175,12 +172,12 @@ export class AutoSuggest {
       this.updateSuggestions(null, [])
       return newEditorState 
     }
-
-    if (this.matchLine) return this.completeForEntireLine(newEditorState)
     
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
+
+    if (this.matchLine) return this.completeForEntireLine(key, newEditorState)
 
     // is offset within a token?
     const token = this.getBoundingToken(key, offset)
@@ -194,8 +191,8 @@ export class AutoSuggest {
     return newEditorStateWithCompletion
   }
 
-  completeForEntireLine(editorState) {
-    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, this.suggestions.current)
+  completeForEntireLine(key, editorState) {
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.areTokensEmpty(key) ? [this.getDefaultSuggestionToken()] : values(this.tokens[key]), this.suggestions.current)
 
     const newEditorStateWithCompletion = this.insertAutoCompletion(token, suggestion, editorState)
 
@@ -339,8 +336,12 @@ export class AutoSuggest {
     return this.anchorToken
   }
 
-  getSuggestions(contexts, token) {
-    return this.dictionary.suggest(token.value, contexts)
+  areTokensEmpty(key) {
+    return (this.tokens[key] === undefined || this.tokens[key].length === 0)
+  }
+  
+  getSuggestions(contexts, tokens) {
+    return this.dictionary.suggest(tokens.map(t => t.value), contexts)
   }
 
   getDefaultSuggestionToken() {

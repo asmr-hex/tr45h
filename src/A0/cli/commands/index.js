@@ -30,7 +30,7 @@ export class BuiltInCommands extends Command {
   }
 
   addEntriesTo(dictionary, context) {
-    dictionary.add(context, ['edit'])
+    dictionary.add(context, [['edit', {sound: ['symbols.sounds']}]])
   }
 }
 
