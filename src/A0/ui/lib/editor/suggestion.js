@@ -59,6 +59,6 @@ export const embedSuggestionTrigger = (token, { contexts, lookAhead }) => ({
 export class SuggestionSegment {
   constructor() {
     this.type = type
-    this.kind = 
+    this.kind = ''
   }
 }

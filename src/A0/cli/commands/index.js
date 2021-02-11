@@ -28,6 +28,10 @@ export class BuiltInCommands extends Command {
 
     return super.parse(tokens, index)
   }
+
+  addEntriesTo(dictionary, context) {
+    dictionary.add(context, ['edit'])
+  }
 }
 
 

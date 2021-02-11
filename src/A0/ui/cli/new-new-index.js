@@ -56,6 +56,7 @@ export const CLI = props => {
       dictionary={dictionary}
       setSuggestions={setSuggestions}
       inlineSuggestions={false}
+      matchEntireLine={true}
       defaultSuggestions={['cli.commands', 'symbols.sounds']}
       onChange={onChange}
       handleKeyCommand={handleKeyCommand}

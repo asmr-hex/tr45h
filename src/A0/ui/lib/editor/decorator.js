@@ -21,7 +21,7 @@ export class Decorator {
   /**
    * @param {Interpreter} interpreter the interpreter engine for the language.
    */
-  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, defaultSuggestions) {
+  constructor(interpret, getTokenStyles, dictionary, setSuggestions, inlineSuggestions, defaultSuggestions, matchEntireLine) {
     this.interpret      = interpret
     this.getTokenStyles = getTokenStyles
     this.tokens         = {}
@@ -29,9 +29,10 @@ export class Decorator {
       tokens: this.tokens,
       dictionary,
       suggestions: {
-        set:     setSuggestions,
-        inline:  inlineSuggestions,
-        default: defaultSuggestions,
+        set:       setSuggestions,
+        inline:    inlineSuggestions,
+        default:   defaultSuggestions,
+        matchLine: matchEntireLine,
       }
     })
   }

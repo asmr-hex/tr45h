@@ -10,11 +10,14 @@ import { PrefixTree } from './trie'
  * be stored by context.
  */
 export class Dictionary {
-  constructor() {
+  constructor(sort=false) {
     this.contexts = {}
+    this.sort     = sort  // TODO if this is enabled, sort suggestions based on order in which contextst were added.
+    // this way, the configuration for search order is explicit according to how dictionary is initialized with
+    // only one additional config parameter.
   }
 
-  new(context, words=[]) {
+  new(context, words=[], sort=false) { // TODO add sort conf paramter to PRefixTreee in a similar way to above.
     set(this.contexts, context, new PrefixTree(words))
   }
   

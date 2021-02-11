@@ -136,8 +136,10 @@ export class PrefixTree extends PrefixTrieNode {
       const match       = matches[matches.length-1]
       const isLastMatch = matches.length === 1
 
+      console.log(matches)
+      
       if (match.end || this.isLeaf(match)) {
-        complete(matches.slice(0, -1), pattern)
+        if (matches.length !== 1) complete(matches.slice(0, -1), pattern)
       }
       
       for (const i in match.next.char) {  // getting a word

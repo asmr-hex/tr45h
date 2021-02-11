@@ -10,12 +10,13 @@ import {
 // TODO refactor this....to be more understandable...
 
 export class AutoSuggest {
-  constructor({ tokens, dictionary, suggestions }) {
-    this.tokens         = tokens
-    this.setSuggestions = suggestions.set
-    this.inline         = suggestions.inline
+  constructor({ tokens, dictionary, suggestions, matchLine }) {
+    this.tokens             = tokens
+    this.setSuggestions     = suggestions.set
+    this.inline             = suggestions.inline
     this.defaultSuggestions = suggestions.default
-    this.dictionary     = dictionary
+    this.matchLine          = matchLine
+    this.dictionary         = dictionary
 
     this.showDefaults = suggestions.default.length === 0 ? false : true
     
@@ -38,6 +39,8 @@ export class AutoSuggest {
       return newEditorState 
     }
 
+    if (this.matchLine) return this.analyzeLine(newEditorState)
+    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
@@ -56,7 +59,7 @@ export class AutoSuggest {
       return newEditorState       
     }
     
-    // TODO is the token a suggestion candidate?
+    // TODO is the token a suggestion candidate? LOOK FOR SUGGESTION TRIGGERS
     let contexts
     if ('contexts' in token.suggest) {
       contexts = token.suggest.contexts
@@ -81,6 +84,26 @@ export class AutoSuggest {
     return newEditorStateWithSuggestion
   }
 
+  analyzeLine(editorState) {
+    // search all default contexts for word match
+    const suggestions = this.getSuggestions(this.defaultSuggestions, this.tokens.map(t => t.value))
+
+    if (suggestions.length === 0) {
+      this.updateSuggestions(null, [])
+      return editorState 
+    }
+
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, suggestion[0])
+    
+    // take the first suggestion
+    const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestion, editorState)
+
+    // update suggestion list
+    this.updateSuggestions(suggestions[0], suggestions.slice(1))
+
+    return newEditorStateWithSuggestion
+  }
+  
   updateSuggestions(current, candidates) {
     this.suggestions = {
       current,
@@ -108,6 +131,8 @@ export class AutoSuggest {
       return newEditorState 
     }
 
+    if (this.matchLine) return this.cycleForEntireLine(newEditorState)
+    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
@@ -126,6 +151,18 @@ export class AutoSuggest {
     return newEditorStateWithSuggestion
   }
 
+  cycleForEntireLine(editorState) {
+    // TODO some error checking?
+
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, this.suggestions.current)
+
+    const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestion, editorState)
+
+    this.setSuggestions([...this.suggestions.candidates])
+
+    return newEditorStateWithSuggestion
+  }
+  
   complete(editorState) {
     if (this.suggestions.current === null) return editorState
 
@@ -139,6 +176,8 @@ export class AutoSuggest {
       return newEditorState 
     }
 
+    if (this.matchLine) return this.completeForEntireLine(newEditorState)
+    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
@@ -155,9 +194,18 @@ export class AutoSuggest {
     return newEditorStateWithCompletion
   }
 
+  completeForEntireLine(editorState) {
+    const { token, suggestion } = this.getLastTokenAndSuggestion(this.tokens, this.suggestions.current)
+
+    const newEditorStateWithCompletion = this.insertAutoCompletion(token, suggestion, editorState)
+
+    return newEditorStateWithCompletion
+  }
+  
+  // this is called when we actually tab complete to complete the suggestion
   insertAutoCompletion(token, suggestion, editorState) {
     // get non-overlapping suffix of suggestion
-    const remainder = suggestion.substr(token.value.length)
+    const remainder = [suggestion[0].substr(token.value.length), ...suggestion.slice(1)].join(' ')
     const endOfTokenOffset = token.start + token.length
 
     const selection    = editorState.getSelection()
@@ -229,13 +277,27 @@ export class AutoSuggest {
 
     return EditorState.forceSelection(editorStateWithoutSuggestion, selection)
   }
+
+  // this is kinda a shim for the time being.
+  // it is called when the suggestion input is an array of tokens and we want to get the final token
+  // and the suggestion token it coresponds to
+  getLastTokenAndSuggestion(tokens, suggestion) {
+    // get the final token and its index
+    const idx = tokens.length - 1
+    const token = tokens[idx]
+
+    // get the slice of the suggestions at the final token
+    const subsuggestion = suggestion.slice(idx)
+
+    return { token, suggestion: subsuggestion }
+  }
   
   insertSuggestion(token, suggestion, editorState) {
     // if (suggestions.length === 0) return editorState
     // const suggestion = suggestions[0]
     
     // get non-overlapping suffix of suggestion
-    const remainder = suggestion.substr(token.value.length)
+    const remainder = [suggestion[0].substr(token.value.length), ...suggestion.slice(1)].join(' ')
     const endOfTokenOffset = token.start + token.length
 
     const selection    = editorState.getSelection()
