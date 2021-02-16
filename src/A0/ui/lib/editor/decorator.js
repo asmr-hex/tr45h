@@ -73,7 +73,7 @@ export class Decorator {
 
     // handle autosuggestion entities
     const { suggestions, text } = this.extractSuggestions(block, contentState)
-
+    
     // initialize map for this block type for use later (in getPropsforkey)
     this.tokens[blockKey] = {}
     
@@ -131,10 +131,10 @@ export class Decorator {
 
       // if there is no entity or the entity type is different from the current suggestion
       // then we will push the current suggestion and begin a new one.
-      if (entity === null ) { //|| ( entity !== null && entity.getType() !== suggestion.type )) {
+      if (entity === null || ( entity !== null && entity.getType() !== suggestion.type )) {
         if (suggestion.start !== null & suggestion.end !== null)
           suggestion = push(suggestion)
-        continue
+        if (entity === null) continue
       }
 
       if (suggestion.start === null) {
@@ -144,7 +144,7 @@ export class Decorator {
 
       suggestion.end = i + 1
 
-      if (i === block.getLength() - 1) push(suggestion)
+      if (i === block.getLength() - 1) push(suggestion) 
     }
 
     return { suggestions, text }
@@ -188,6 +188,7 @@ export class Decorator {
       const suggestionStyle = {
         whiteSpace: 'nowrap'
       }
+
       const suggestions =
             <div style={suggestionStyles}>
               {this.autosuggest.suggestions.candidates.map(s => <div style={suggestionStyle}>{s}</div>)}

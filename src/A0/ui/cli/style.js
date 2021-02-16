@@ -10,5 +10,6 @@ export const useCliStyles = makeStyles(theme => ({
     color: theme.palette.text.cli.error,
     textDecoration: 'line-through',
   },
-  'SUGGESTION': { color: '#9c9c9c'}
+  'default': { color: 'cornflowerblue'},
+  'sound': {color: 'tomato'},
 }))

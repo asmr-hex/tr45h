@@ -8,7 +8,7 @@ export const ThemeProvider = props => {
   const { children } = props
 
   // Read current theme from localStorage or maybe from an api
-  const currentTheme = localStorage.getItem('slopStudioTheme') || Theme.Light
+  const currentTheme = Theme.Light //localStorage.getItem('slopStudioTheme') || Theme.Light
 
   // State to hold the selected theme name
   const [themeName, setThemeName] = useState(currentTheme)

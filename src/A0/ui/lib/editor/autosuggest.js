@@ -1,4 +1,4 @@
-import { filter, range, reduce, values } from 'lodash'
+import { filter, map, range, reduce, values } from 'lodash'
 import {
   EditorState,
   Modifier,
@@ -6,6 +6,11 @@ import {
   convertToRaw,
 } from 'draft-js'
 
+
+const suggestionEntityPrefix = 'INLINE-SUGGESTION-'
+const makeEntityType = type => `${suggestionEntityPrefix}${type}`
+export const isSuggestionEntity = type => type && (typeof type === 'string') && type.startsWith(suggestionEntityPrefix)
+export const getSuggestionEntityType = type => type.substr(suggestionEntityPrefix.length)
 
 // TODO refactor this....to be more understandable...
 
@@ -202,7 +207,16 @@ export class AutoSuggest {
   // this is called when we actually tab complete to complete the suggestion
   insertAutoCompletion(token, suggestion, editorState) {
     // get non-overlapping suffix of suggestion
-    const remainder = [suggestion[0].substr(token.value.length), ...suggestion.slice(1)].join(' ')
+    const remainder = [
+      suggestion[0].substr(token.value.length),
+      ...map(
+        suggestion.slice(1),
+        w => {
+          if (typeof w === 'object') return `<${w.value}>`  // convert redirect tokens to plain ol' strings
+          return w
+        }
+      )
+    ].join(' ') // TODO HOLD UP, we want to limit the autocomplete to the first redirect token
     const endOfTokenOffset = token.start + token.length
 
     const selection    = editorState.getSelection()
@@ -288,15 +302,27 @@ export class AutoSuggest {
 
     return { token, suggestion: subsuggestion }
   }
-  
-  insertSuggestion(token, suggestion, editorState) {
+
+  // DEPRECATE. this is not used.
+  _insertSuggestion(token, suggestion, editorState) {
     // if (suggestions.length === 0) return editorState
     // const suggestion = suggestions[0]
     
     // get non-overlapping suffix of suggestion
-    const remainder = [suggestion[0].substr(token.value.length), ...suggestion.slice(1)].join(' ')
+    const remainder = [
+      suggestion[0].substr(token.value.length),
+      ...map(
+        suggestion.slice(1),
+        w => {
+          if (typeof w === 'object') return `<${w.value}>`  // convert redirect tokens to plain ol' strings
+          return w
+        }
+      )
+    ].join(' ')
     const endOfTokenOffset = token.start + token.length
 
+    // TODO. iterate over remainder tokens, create distinct entities for each (with types)
+    
     const selection    = editorState.getSelection()
     const contentState = editorState.getCurrentContent()
     const insertSelection = SelectionState
@@ -320,6 +346,53 @@ export class AutoSuggest {
 
     return EditorState.forceSelection(editorStateWithSuggestion, selection)
   }
+
+  insertSuggestion(token, suggestion, editorState) {
+    // get non-overlapping suggestion tokens
+    const remainders = [suggestion[0].substr(token.value.length), ...suggestion.slice(1)]
+
+    const selection  = editorState.getSelection()
+    const blockKey   = selection.getAnchorKey()
+    let contentState = editorState.getCurrentContent()
+    let insertOffset = token.start + token.length
+    
+    // iterate over suggestions tokens and insert them into the text
+    for (const remainder of remainders) {
+      // get new selection for insertion
+      const insertSelection = SelectionState
+            .createEmpty(blockKey)
+            .merge({anchorOffset: insertOffset, focusOffset: insertOffset})
+
+      // get remainder suggestion text and type
+      let remainderText = remainder
+      let remainderType = 'default'
+      if (typeof remainder === 'object') {
+        remainderText = `<${remainder.value}>`
+        remainderType = remainder.value
+      }
+      remainderText = `${remainderText} `
+
+      // insert remainder suggestion text
+      contentState = contentState.createEntity(makeEntityType(remainderType), 'IMMUTABLE')
+      contentState = Modifier.insertText(
+        contentState,
+        insertSelection,
+        remainderText,
+        null,
+        contentState.getLastCreatedEntityKey(),
+      )
+
+      // update insertOffset
+      insertOffset += remainderText.length
+    }
+
+    const newEditorState = EditorState.set(
+      editorState,
+      { currentContent: contentState },
+    )
+
+    return EditorState.forceSelection(newEditorState, selection)
+  }
   
   getBoundingToken(key, offset) {
     // handle default suggestions (on empty)
@@ -330,7 +403,7 @@ export class AutoSuggest {
     
     const tokens = filter(
       this.tokens[key],
-      v => (offset >= v.start && offset <= (v.start + v.length) && v.type !== 'INLINE-SUGGESTION')
+      v => (offset >= v.start && offset <= (v.start + v.length) && !isSuggestionEntity(v.type))
     )
     this.anchorToken = tokens.length === 0 ? null : tokens[0]
     return this.anchorToken

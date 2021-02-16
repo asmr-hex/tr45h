@@ -38,7 +38,7 @@ export class Dictionary {
   suggest(str, contexts) {
     let suggestions = []
     for (const context of contexts) {
-      suggestions = [...suggestions, ...get(this.contexts, context).suggest(str)]
+      suggestions = [...suggestions, ...get(this.contexts, context).suggest(str, this)]
     }
 
     return suggestions

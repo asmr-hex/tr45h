@@ -108,7 +108,7 @@ export class Scheduler {
     this.theme = theme                                               // theme observable.... ?
 
     // TODO remove....just for debugging
-    this.toggleMute(true)
+    //this.toggleMute(true)
   }
 
   scheduleThread(key) {

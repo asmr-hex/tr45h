@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 
 import { Editor } from 'A0/ui/lib/editor'
+import { isSuggestionEntity, getSuggestionEntityType } from 'A0/ui/lib/editor/autosuggest'
 
 import {
   useCLI,
@@ -30,7 +31,17 @@ export const CLI = props => {
 
   
   const interpret = (block, index, text) => cli.interpret(text)
-  const getTokenStyles = () => ({})
+  const getTokenStyles = (key, token) => {
+    const isSuggestion = isSuggestionEntity(token.type)
+
+    if (isSuggestion) console.log(token)
+    return {
+      classes: [
+        isSuggestion ? theme.classes.cli[getSuggestionEntityType(token.type)] : ''
+      ],
+      styles: {}
+    }
+  }
   const onChange = n => n
   const handleClose = () => blurCLI()
 
