@@ -157,7 +157,7 @@ export class AutoSuggest {
     // TODO some error checking?
 
     const { token, suggestion } = this.getLastTokenAndSuggestion(this.areTokensEmpty(key) ? [this.getDefaultSuggestionToken()] : values(this.tokens[key]), this.suggestions.current)
-
+    
     const newEditorStateWithSuggestion = this.insertSuggestion(token, suggestion, editorState)
 
     this.setSuggestions([...this.suggestions.candidates])
@@ -300,7 +300,7 @@ export class AutoSuggest {
   // this is kinda a shim for the time being.
   // it is called when the suggestion input is an array of tokens and we want to get the final token
   // and the suggestion token it coresponds to
-  getLastTokenAndSuggestion(tokens, suggestion) {
+  getLastTokenAndSuggestion(tokens, suggestion) {    
     // get the final token and its index
     const idx = tokens.length - 1
     const token = tokens[idx]
@@ -418,7 +418,7 @@ export class AutoSuggest {
   }
 
   areTokensEmpty(key) {
-    return (this.tokens[key] === undefined || this.tokens[key].length === 0)
+    return (this.tokens[key] === undefined || filter(this.tokens[key], t => !isSuggestionEntity(t.type)).length === 0)
   }
   
   getSuggestions(contexts, tokens) {
