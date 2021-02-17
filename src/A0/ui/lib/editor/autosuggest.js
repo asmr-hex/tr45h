@@ -247,10 +247,10 @@ export class AutoSuggest {
     return EditorState.forceSelection(editorStateWithSuggestion, endSelection)    
   }
   
-  removeSuggestion(editorState) {    
+  removeSuggestion(editorState) {
     // remove old text
+    let   contentState = editorState.getCurrentContent()
     const selection    = editorState.getSelection()
-    const contentState = editorState.getCurrentContent()
     const block        = contentState.getBlockForKey(selection.getAnchorKey())
 
     // get any entity ranges....... MUST BE A BETTER WAY....
@@ -259,7 +259,7 @@ export class AutoSuggest {
       (acc, i) => {
         const entity = block.getEntityAt(i)
         if ( entity === null ) return acc
-
+        
         if (acc.start === null) return {start: i, end: i+1}
 
         return {...acc, end: i+1}
@@ -268,12 +268,20 @@ export class AutoSuggest {
     )
 
     if (start === null || end === null) return editorState
-    
+
     const insertSelection = SelectionState
           .createEmpty(selection.getAnchorKey())
           .merge({anchorOffset: start, focusOffset: end})
 
-    const contentStateWithoutSuggestion = Modifier.replaceText(
+    // remove entity from selection
+    contentState = Modifier.applyEntity(
+      contentState,
+      insertSelection,
+      null,
+    )
+    
+    // remove text
+    contentState = Modifier.replaceText(
       contentState,
       insertSelection,
       '',
@@ -283,7 +291,7 @@ export class AutoSuggest {
     
     const editorStateWithoutSuggestion = EditorState.set(
       editorState,
-      { currentContent: contentStateWithoutSuggestion },
+      { currentContent: contentState },
     )
 
     return EditorState.forceSelection(editorStateWithoutSuggestion, selection)

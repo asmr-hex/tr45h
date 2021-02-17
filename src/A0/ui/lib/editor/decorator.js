@@ -73,7 +73,7 @@ export class Decorator {
 
     // handle autosuggestion entities
     const { suggestions, text } = this.extractSuggestions(block, contentState)
-    
+
     // initialize map for this block type for use later (in getPropsforkey)
     this.tokens[blockKey] = {}
     
@@ -81,8 +81,8 @@ export class Decorator {
     // TODO standardize output....include metadata output (something to control like line style??)
     let { tokens = [] } = this.interpret(blockKey, blockIndex, text)
 
-    if ( tokens.length === 0 ) tokens = this.getDefaultTokens()
-    
+    //if ( tokens.length === 0 ) tokens = this.getDefaultTokens() // TODO taking this out prevented the bug that would ignore highlighting the first suggestion when the text box was empty. idk if we still need this though...
+
     for (const token of [ ...suggestions, ...tokens ]) {
       const tokenId      = `${token.start}`             // block-relative token id
       const componentKey = `${blockKey}-${token.start}` // block-scoped token id
@@ -114,8 +114,9 @@ export class Decorator {
     let text        = blockText
 
     const push = s => {
-      s.value  = blockText.substr(s.start, s.end)
       s.length = s.end - s.start
+      s.value  = blockText.substr(s.start, s.length)
+
       suggestions.push(s)
 
       // replace entity characters with empty space (so its not parsed)

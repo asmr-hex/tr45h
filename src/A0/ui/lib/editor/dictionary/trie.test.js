@@ -544,6 +544,19 @@ describe('PrefixTree', () => {
       ])      
     })
 
+    it('suggests sequences when next token is a redirect', () => {
+      const dictionary = new Dictionary()
+      dictionary.new('symbols.sounds', ['flute', 'flugelhorn' ])
+      
+      const tree = new PrefixTree()
+      tree.add(['edit', { sound: 'symbols.sounds' }])
+
+      expect(tree.suggest(['edit'], dictionary)).toEqual([
+        ['edit', 'flugelhorn'],
+        ['edit', 'flute'],
+      ])      
+    })
+
     it('suggests sequences ... ', () => {
       const dictionary = new Dictionary()
       dictionary.new('collections', ['one', 'two'])

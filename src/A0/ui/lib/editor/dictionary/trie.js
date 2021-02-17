@@ -132,7 +132,7 @@ export class PrefixTree extends PrefixTrieNode {
     
     let suggestions = []
 
-    const complete = (matches, pattern) => {
+    const complete = (matches, pattern, firstSuggestion=false) => {
       const match       = matches[matches.length-1]
       const isLastMatch = matches.length === 1
 
@@ -158,18 +158,24 @@ export class PrefixTree extends PrefixTrieNode {
       }
       for (const i in match.next.redirect) {
         const r = match.next.redirect[i]
-        const newPattern = [...pattern, {value: i, redirect: true, contexts: r.meta.contexts}]
+        let newPatterns = [ pattern ]
+        if (firstSuggestion) {
+          newPatterns = dictionary.suggest('', r.meta.contexts).map(s => [...pattern, ...s])
+        } else {
+          newPatterns = [ [...pattern, {value: i, redirect: true, contexts: r.meta.contexts}] ]
+        }
+        
         const newMatches = this.isLeaf(r) ? matches.slice(0, -1) : [...matches.slice(0, -1), r]
         
-        if (r.end && isLastMatch) suggestions.push(newPattern)
+        if (r.end && isLastMatch) suggestions = suggestions.concat(newPatterns)
         
-        if (newMatches.length !== 0) complete(newMatches, newPattern)
+        if (newMatches.length !== 0) newPatterns.forEach(newPattern => complete(newMatches, newPattern))
       }
     }
 
     const matches = this.getMatches(input, this, dictionary)
     for (const match of matches) {
-      complete(match, input)
+      complete(match, input, true)
     }
 
     return suggestions.sort()    

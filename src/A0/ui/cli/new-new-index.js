@@ -34,7 +34,6 @@ export const CLI = props => {
   const getTokenStyles = (key, token) => {
     const isSuggestion = isSuggestionEntity(token.type)
 
-    if (isSuggestion) console.log(token)
     return {
       classes: [
         isSuggestion ? theme.classes.cli[getSuggestionEntityType(token.type)] : ''
