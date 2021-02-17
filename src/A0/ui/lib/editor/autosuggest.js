@@ -34,6 +34,9 @@ export class AutoSuggest {
   }
 
   analyze(editorState) {
+    console.log(`---------------------`)
+    console.log(`PRE: ${editorState.getCurrentContent().getPlainText()}`)
+    
     const newEditorState = this.removeSuggestion(editorState)
     
     const selection = newEditorState.getSelection()
@@ -44,6 +47,8 @@ export class AutoSuggest {
       return newEditorState 
     }
 
+    console.log(`POS: ${newEditorState.getCurrentContent().getPlainText()}`)
+    
     // get selection offset
     const key    = selection.getAnchorKey()
     const offset = selection.getAnchorOffset()
@@ -279,6 +284,9 @@ export class AutoSuggest {
       insertSelection,
       null,
     )
+
+    console.log(`MID: ${contentState.getPlainText()}`)
+    console.log(`     ${reduce(range(0, block.getLength()), (acc, i) => i >= start && i < end ? `${acc}-` : `${acc} `, '')}`)
     
     // remove text
     contentState = Modifier.replaceText(

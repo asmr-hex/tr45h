@@ -192,7 +192,7 @@ export class Decorator {
 
       const suggestions =
             <div style={suggestionStyles}>
-              {this.autosuggest.suggestions.candidates.map(s => <div style={suggestionStyle}>{s}</div>)}
+              {this.autosuggest.suggestions.candidates.map(s => <div style={suggestionStyle}>{s.join(' ')}</div>)}
             </div>
       
       return (

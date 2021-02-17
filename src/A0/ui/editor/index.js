@@ -25,7 +25,12 @@ export const MusicEditor = props => {
   const [ currentLine, setCurrentLine ] = useState(null)
   const editorRef                       = useRef(null)
   
-  const interpret = (key, index, text) => annotator.update(key, interpreter.analyzeBlock(key, index, text))
+  const interpret = (key, index, text) => {
+    const { tokens } = annotator.update(key, interpreter.analyzeBlock(key, index, text))
+    return {
+      tokens: tokens.map(t => ({...t, suggest: {contexts: ['symbols.sounds']}})) // TODO remove me! tesing
+    }
+  }
 
   const onChange = newEditorState => {
     const selection = newEditorState.getSelection()
@@ -102,6 +107,7 @@ export const MusicEditor = props => {
         interpret={interpret}
         getTokenStyles={getTokenStyles}
         dictionary={dictionary}
+        defaultSuggestions={['symbols.sounds']}
         onChange={onChange}
         blockRenderMap={blockRenderMap}
         handleKeyCommand={handleKeyCommand}

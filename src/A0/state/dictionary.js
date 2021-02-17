@@ -23,6 +23,7 @@ export const DictionaryProvider = props => {
   const { cli }     = useCLI()
   const { symbols } = useRuntime()
   const [dictionary, setDictionary] = useState(new Dictionary())
+  const [ ready, setReady ] = useState(false)
 
   useEffect(() => {
     // create new contexts in the dictionary for stuff
@@ -31,7 +32,7 @@ export const DictionaryProvider = props => {
     dictionary.new('symbols.variables')
     dictionary.new('symbols.functions')
 
-    dictionary.add('symbols.sounds', ['star', 'starfish', 'starlight', 'starting'])
+    dictionary.add('symbols.sounds', ['star', 'starfish', 'starlight', 'starting', 'ska', ['ski', 'mask']])
 
     // TODO add commands to dictionary
     
@@ -43,6 +44,8 @@ export const DictionaryProvider = props => {
     })
 
     // TODO add more subscriptions.....
+
+    setReady(true)
   }, [])
   
   const context = {
@@ -51,7 +54,7 @@ export const DictionaryProvider = props => {
   
   return (
     <DictionaryContext.Provider value={context}>
-      {props.children}
+    {ready ? props.children : null}
     </DictionaryContext.Provider>
   )
 }
